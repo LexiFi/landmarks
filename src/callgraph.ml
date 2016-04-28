@@ -1,3 +1,7 @@
+(* This file is released under the terms of an MIT-like license.     *)
+(* See the attached LICENSE file.                                    *)
+(* Copyright 2016 by LexiFi.                                         *)
+
 open Misc
 
 type id = int
@@ -196,11 +200,6 @@ let label graph =
     else name
 
 let output oc graph =
-
-  let profile_with_sys_time = ref true in
-  let profile_with_gc_stat = ref true in
-  let cache_miss_ref = ref 0 in
-
   Printf.fprintf oc "Call graph:\n-----------\n%!";
   let label = label graph in
   let color = color graph in
@@ -251,21 +250,22 @@ let output oc graph =
   in
   let normal_nodes = List.filter (fun n -> n.kind = Normal || n.kind = Root) all_nodes in
   let sample_nodes = List.filter (fun n -> n.kind = Sampler) all_nodes in
+  let profile_with_sys_time = List.exists (fun {sys_time; _} -> sys_time <> 0.0) normal_nodes in
+  let profile_with_gc_stat = List.exists (fun {gc_stat; _} -> gc_stat <> 0.0) normal_nodes in
   let optional_headers =
-    match !profile_with_sys_time, !profile_with_gc_stat with
+    match profile_with_sys_time, profile_with_gc_stat with
     | true, true -> Printf.sprintf "; %8s; %8s" "Sys time" "Allocated bytes"
     | true, false -> Printf.sprintf "; %8s" "Sys time"
     | false, true -> Printf.sprintf "; %8s" "Allocated bytes"
     | false, false -> ""
   in
   let optional_columns sys_time gc_stat =
-    match !profile_with_sys_time, !profile_with_gc_stat with
+    match profile_with_sys_time, profile_with_gc_stat with
     | true, true -> Printf.sprintf "; %8.3f; %8.0f" sys_time gc_stat
     | true, false -> Printf.sprintf "; %8.3f" sys_time
     | false, true -> Printf.sprintf "; %8.0f" gc_stat
     | false, false -> ""
   in
-  Printf.fprintf oc "\nCache misses / total number of calls: %d / %d\n%!" !cache_miss_ref (total_number_of_calls graph);
 
   Printf.fprintf oc "\nAggregated table:\n----------------\n%!";
   Printf.fprintf oc "%35s; %20s; %8s; %8s%s\n%!"

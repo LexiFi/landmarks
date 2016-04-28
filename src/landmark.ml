@@ -1,3 +1,7 @@
+(* This file is released under the terms of an MIT-like license.     *)
+(* See the attached LICENSE file.                                    *)
+(* Copyright 2016 by LexiFi.                                         *)
+
 open Callgraph
 
 external clock: unit -> Int64.t = "caml_highres_clock"
@@ -187,12 +191,17 @@ and dummy_node = {
 
 (** STATE **)
 
+type profile_output =
+  | Silent
+  | Temporary 
+  | Channel of out_channel
+
 let profiling_ref = ref false
 
 let profile_with_debug = ref false
 let profile_with_gc_stat = ref false
 let profile_with_sys_time = ref false
-let profile_stderr = ref false
+let profile_output = ref Silent
 
 let profiling () = !profiling_ref
 
@@ -454,10 +463,31 @@ let unsafe_wrap node f x =
 
 (** PROFILERS **)
 
+type profiling_options = {
+  debug : bool;
+  gc_stat: bool;
+  sys_time : bool;
+  output : profile_output;
+}
 
-let start_profiling () =
+let default_options = {
+  debug = false;
+  gc_stat = true;
+  sys_time = false;
+  output = Channel stderr;
+}
+
+let set_profiling_options {debug; gc_stat; sys_time; output} = 
+  profile_with_gc_stat := gc_stat;
+  profile_with_sys_time := sys_time;
+  profile_with_debug := debug;
+  profile_output := output
+  
+
+let start_profiling ?(profiling_options = default_options) () =
   if !profiling_ref then
     failwith "In profiling: it is not allowed to nest profilings.";
+  set_profiling_options profiling_options;
   if !profile_with_debug then
     Printf.eprintf "[Profiling] Start profiling %s...\n%!"
       (match !profile_with_gc_stat, !profile_with_sys_time with
@@ -573,9 +603,11 @@ let exit_hook () =
   if !profiling_ref then begin
     stop_profiling ();
     let cg = export () in
-    if !profile_stderr then
-      Callgraph.output stderr cg
-    else
+    match !profile_output with
+    | Silent -> ()
+    | Channel out ->
+      Callgraph.output out cg
+    | Temporary ->
       let tmp_file, oc = Filename.open_temp_file "profile_at_exit" ".tmp" in
       Printf.printf "[Profiling] Dumping profiling information in file '%s'.\n" tmp_file;
       flush stdout;

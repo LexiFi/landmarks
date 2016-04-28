@@ -1,3 +1,7 @@
+(* This file is released under the terms of an MIT-like license.     *)
+(* See the attached LICENSE file.                                    *)
+(* Copyright 2016 by LexiFi.                                         *)
+
 type landmark
 type counter
 type sampler
@@ -56,7 +60,22 @@ val merge: Callgraph.graph -> unit
 (** These functions allow to check if the profiling is ongoing. *)
 val profiling: unit -> bool
 
-val start_profiling:  unit -> unit
+type profile_output =
+  | Silent
+  | Temporary 
+  | Channel of out_channel
+
+type profiling_options = {
+  debug : bool;
+  gc_stat: bool;
+  sys_time : bool;
+  output : profile_output;
+}
+
+val default_options: profiling_options
+val set_profiling_options: profiling_options -> unit
+
+val start_profiling: ?profiling_options:profiling_options ->  unit -> unit
 
 val stop_profiling: unit -> unit
 

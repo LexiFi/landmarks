@@ -1,3 +1,7 @@
+(* This file is released under the terms of an MIT-like license.     *)
+(* See the attached LICENSE file.                                    *)
+(* Copyright 2016 by LexiFi.                                         *)
+
 let group_proj f l = 
   let tbl = Hashtbl.create (List.length l) in
   List.iter (fun x -> let key = f x in
