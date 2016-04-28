@@ -1,5 +1,3 @@
-
-
 let call = Landmark.register "fib"
 let main = Landmark.register "main"
 

@@ -44,17 +44,17 @@ val landmark_of_id: int -> landmark
 val reset: unit -> unit
 (** Reset the profiling information gathered by the current process. *)
 
-val export: unit -> Callgraph.graph
+val export: unit -> Landmark_graph.graph
 (** Export the profiling information of the current process. *)
 
-val export_and_reset: unit -> Callgraph.graph
+val export_and_reset: unit -> Landmark_graph.graph
 (** Export the profiling information of the current process; then reset 
     internal state. *)
 
 (** Aggregate the profiling information (exported by another process) to the
     current one. This should is used by the master process to merge exported
     profiles of slaves. *)
-val merge: Callgraph.graph -> unit
+val merge: Landmark_graph.graph -> unit
 
 (** These functions allow to check if the profiling is ongoing. *)
 val profiling: unit -> bool

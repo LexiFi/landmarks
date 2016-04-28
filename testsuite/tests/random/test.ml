@@ -164,7 +164,7 @@ let () = begin
     Printf.printf "done (%d nodes).\n%!" res
   end
 
-open Callgraph
+open Landmark_graph
 
 let check_invariants graph =
   let root = root graph in

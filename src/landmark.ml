@@ -2,11 +2,12 @@
 (* See the attached LICENSE file.                                    *)
 (* Copyright 2016 by LexiFi.                                         *)
 
-open Callgraph
-
 external clock: unit -> Int64.t = "caml_highres_clock"
 
 exception LandmarkFailure of string
+
+module Graph = Landmark_graph
+
 
 module SparseArray = struct
   type 'a t = {
@@ -125,7 +126,7 @@ end
 
 type landmark = {
     id: int;
-    kind : kind;
+    kind : Graph.kind;
     name: string;
     filename: string;
 
@@ -169,7 +170,7 @@ let new_floats () = {
 }
 
 let rec landmark_root = {
-    kind = Root;
+    kind = Graph.Root;
     id = 0;
     name = "ROOT";
     filename = __FILE__;
@@ -248,7 +249,10 @@ let new_node landmark =
 let root_node = new_node landmark_root
 
 let registered_landmarks = ref [landmark_root]
-let landmark_of_id id = List.nth !registered_landmarks ((List.length !registered_landmarks) - (id + 1))
+
+let landmark_of_id id =
+  List.nth !registered_landmarks
+    ((List.length !registered_landmarks) - (id + 1))
 
 let register_generic kind name call_stack =
   let backtrace_slots = Printexc.backtrace_slots call_stack in
@@ -266,7 +270,9 @@ let register_generic kind name call_stack =
   if List.exists (fun landmark ->
       name = landmark.name && filename = landmark.filename)
       !registered_landmarks then
-    failwith (Printf.sprintf "The landmark '%s' is registered twice in '%s'." name filename);
+    failwith 
+      (Printf.sprintf 
+         "The landmark '%s' is registered twice in '%s'." name filename);
   registered_landmarks := landmark :: !registered_landmarks;
   if !profile_with_debug then
     Printf.eprintf "[Profiling] registering(%s)\n%!" name;
@@ -274,15 +280,15 @@ let register_generic kind name call_stack =
 
 let register name =
   let call_stack = Printexc.get_callstack 3 in
-  register_generic Normal name call_stack
+  register_generic Graph.Normal name call_stack
 
 let register_counter name =
   let call_stack = Printexc.get_callstack 3 in
-  register_generic Counter name call_stack
+  register_generic Graph.Counter name call_stack
 
 let register_sampler name =
   let call_stack = Printexc.get_callstack 3 in
-  register_generic Sampler name call_stack
+  register_generic Graph.Sampler name call_stack
 
 let current_node_ref = ref root_node
 let cache_miss_ref = ref 0
@@ -505,7 +511,9 @@ let stop_profiling () =
   let current_node = !current_node_ref in
   if current_node != root_node then
     landmark_failure
-      (Printf.sprintf "The landmark '%s' is still opened at the end of profiling." current_node.landmark.name);
+      (Printf.sprintf
+         "The landmark '%s' is still opened at the end of profiling." 
+         current_node.landmark.name);
   aggregate_stat_for current_node;
   if !profile_with_debug then
     Printf.eprintf "[Profiling] Stop profiling.\n%!";
@@ -514,6 +522,7 @@ let stop_profiling () =
 
 (** EXPORTING / IMPORTING SLAVE PROFILINGS **)
 
+
 let export () =
   let export_node {landmark; id; calls; floats; sons; distrib; _} =
     let {id = landmark_id; name; filename; kind; _} = landmark in
@@ -521,19 +530,22 @@ let export () =
     let sons =
       List.map (fun ({id;_} : node) -> id) (SparseArray.values sons)
     in
-    {Callgraph.landmark_id; id; name; filename; calls; time; kind;
+    {Graph.landmark_id; id; name; filename; calls; time; kind;
      gc_stat; sys_time; sons; distrib = Stack.to_array distrib}
   in
   if !current_node_ref != root_node then
     (let msg = Printf.sprintf
-         "Export of call graph is only allowed when all landmarks have been exited ('%s' is still open)" !current_node_ref.landmark.name
+         "Export of call graph is only allowed when all landmarks have been \
+          exited ('%s' is still open)" !current_node_ref.landmark.name
      in
      failwith msg);
   let clock = clock () in
-  root_node.floats.time <- root_node.floats.time +. (Int64.to_float (Int64.sub clock root_node.timestamp));
+  root_node.floats.time <-
+    root_node.floats.time +.
+    (Int64.to_float (Int64.sub clock root_node.timestamp));
   root_node.timestamp <- clock;
   let all_nodes = List.rev !allocated_nodes in
-  graph_of_nodes (List.map export_node all_nodes)
+  Graph.graph_of_nodes (List.map export_node all_nodes)
 
 let export_and_reset () =
   let profiling = !profiling_ref in
@@ -545,7 +557,7 @@ let export_and_reset () =
     start_profiling ();
   res
 
-let rec merge_branch node graph (imported : Callgraph.node) =
+let rec merge_branch node graph (imported : Graph.node) =
   let floats = node.floats in
   floats.time <- imported.time +. floats.time;
   floats.sys_time <- imported.sys_time +. floats.sys_time;
@@ -553,14 +565,14 @@ let rec merge_branch node graph (imported : Callgraph.node) =
   node.calls <- imported.calls + node.calls;
   Array.iter (Stack.push node.distrib) imported.distrib;
 
-  let sons = Callgraph.sons graph imported in
-  List.iter (fun (imported_son : Callgraph.node) ->
+  let sons = Graph.sons graph imported in
+  List.iter (fun (imported_son : Graph.node) ->
       match SparseArray.get node.sons imported_son.landmark_id with
       | exception Not_found ->
         new_branch node graph imported_son
       | son -> merge_branch son graph imported_son) sons
 
-and new_branch parent graph ({landmark_id; _} as imported : Callgraph.node) =
+and new_branch parent graph ({landmark_id; _} as imported : Graph.node) =
   let landmark =
     match landmark_of_id landmark_id with
     | exception Not_found ->
@@ -580,22 +592,28 @@ and new_branch parent graph ({landmark_id; _} as imported : Callgraph.node) =
   floats.sys_time <- imported.sys_time;
   Array.iter (Stack.push node.distrib) imported.distrib;
   SparseArray.set parent.sons landmark_id node;
-  List.iter (new_branch node graph) (Callgraph.sons graph imported);
+  List.iter (new_branch node graph) (Graph.sons graph imported);
 
-and inconsistency_msg = "Inconsistency while importing profiling information of slaves processes:\n"
+and inconsistency_msg =
+ "Inconsistency while importing profiling information of slaves processes:\n"
+
 and check_landmark landmark imported =
-  if landmark.name <> imported.name || landmark.filename <> imported.filename then
+  if landmark.name <> imported.name 
+  || landmark.filename <> imported.filename then
     let msg =
-      Printf.sprintf "%sThe 'master' landmark '%s' ('%s') has the same id (%d) than the 'slave' landmark'%s' ('%s')"
-        inconsistency_msg landmark.name landmark.filename landmark.id imported.name imported.filename
+      Printf.sprintf 
+        "%sThe 'master' landmark '%s' ('%s') has the same id (%d) than the \
+         'slave' landmark'%s' ('%s')"
+        inconsistency_msg landmark.name landmark.filename landmark.id 
+        imported.name imported.filename
     in
     failwith msg
 
 
-let merge (graph : Callgraph.graph) =
+let merge (graph : Graph.graph) =
   if !profile_with_debug then
     Printf.eprintf "[Profiling] merging foreign graph\n%!";
-  merge_branch root_node graph (Callgraph.root graph)
+  merge_branch root_node graph (Graph.root graph)
 
 let exit_hook () =
   if !profile_with_debug then
@@ -606,12 +624,13 @@ let exit_hook () =
     match !profile_output with
     | Silent -> ()
     | Channel out ->
-      Callgraph.output out cg
+      Graph.output out cg
     | Temporary ->
       let tmp_file, oc = Filename.open_temp_file "profile_at_exit" ".tmp" in
-      Printf.printf "[Profiling] Dumping profiling information in file '%s'.\n" tmp_file;
+      Printf.printf
+        "[Profiling] Dumping profiling information in file '%s'.\n" tmp_file;
       flush stdout;
-      Callgraph.output oc cg;
+      Graph.output oc cg;
       close_out oc
   end
 

@@ -4,12 +4,12 @@ OCAMLDEP=ocamldep
 OCAMLMKLIB=ocamlmklib
 
 INCLUDES=-I .
-OCAMLFLAGS=-w +A-30-42-41-48 -safe-string -strict-sequence -ccopt -fPIC
+OCAMLFLAGS=-w +A-30-42-41-48-40 -safe-string -strict-sequence -ccopt -fPIC
 OCAMLCFLAGS=$(INCLUDES) $(OCAMLFLAGS)
 OCAMLOPTFLAGS=$(INCLUDES) $(OCAMLFLAGS)
 
 NAME=landmarks
-MODULES=misc callgraph landmark
+MODULES=misc landmark_graph landmark
 
 OBJS=clock.o
 
