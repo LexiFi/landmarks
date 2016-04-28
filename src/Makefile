@@ -9,7 +9,7 @@ OCAMLCFLAGS=$(INCLUDES) $(OCAMLFLAGS)
 OCAMLOPTFLAGS=$(INCLUDES) $(OCAMLFLAGS)
 
 NAME=landmarks
-MODULES=misc landmark_graph landmark
+MODULES=landmark_misc landmark_graph landmark
 
 OBJS=clock.o
 

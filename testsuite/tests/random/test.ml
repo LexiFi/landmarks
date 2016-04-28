@@ -171,7 +171,7 @@ let check_invariants graph =
   let roots = List.find_all (fun node -> node.id = root.id) (nodes graph) in
   assert (roots = [root]); (* only one root *)
   List.iter (fun node ->
-      match Misc.duplicated_elements ~proj:(fun node -> node.landmark_id) (sons graph node) with
+      match Landmark_misc.duplicated_elements ~proj:(fun node -> node.landmark_id) (sons graph node) with
       | _ :: _ -> assert false
       | [] -> ()
     ) (nodes graph) (* at most one son with a given landmark_id *)
