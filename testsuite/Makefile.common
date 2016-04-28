@@ -1,0 +1,26 @@
+BASEDIR=../../..
+
+.PHONY: clean native batch
+
+native: test
+	@./test 2> log.err > log.out && printf "%10s : \033[32mOK\033[0m\n" $$(basename $$PWD) \
+                                     || printf "%10s : \033[31mKO\033[0m\n" $$(basename $$PWD)
+
+batch: test.batch
+	@./test.batch 2> log.err > log.out && printf "%10s : \033[32mOK\033[0m\n" $$(basename $$PWD) \
+                                           || printf "%10s : \033[31mKO\033[0m\n" $$(basename $$PWD)
+
+test: test.ml $(BASEDIR)/src/landmarks.cmxa
+	@ocamlopt -I $(BASEDIR)/src -o test landmarks.cmxa $(EXTRA_NATIVE) test.ml
+
+test.batch: test.ml $(BASEDIR)/src/landmarks.cma
+	@ocamlc -I $(BASEDIR)/src -o test.batch landmarks.cma $(EXTRA_BATCH) test.ml
+
+$(BASEDIR)/src/landmarks.cma:
+	make -C $(BASEDIR)/src/ landmarks.cma
+
+$(BASEDIR)/src/landmarks.cmxa:
+	make -C $(BASEDIR)/src/ landmarks.cmxa
+
+clean:
+	rm -f test test.batch *.cm[xoi] *.o log.err log.out
