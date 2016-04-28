@@ -44,7 +44,13 @@ let rec choose f = function
     | Some x -> x :: (choose f tl)
     | None -> choose f tl
         
-let duplicated_elements l =
-  List.sort compare l
-  |> group_by 
+let duplicated_elements proj l =
+  List.sort (fun x y -> compare (proj x) (proj y)) l
+  |> group_by ~equals:(fun x y -> proj x = proj y)
   |> choose (function x :: _ :: _ -> Some x | _ -> None)
+
+let duplicated_elements ?proj l =
+  match proj with 
+  | Some proj -> duplicated_elements proj l
+  | None -> duplicated_elements (fun x -> x) l
+

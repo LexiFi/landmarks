@@ -12,7 +12,6 @@ exception LandmarkFailure of string
 
 val register: string -> landmark
 (** [register name] registers a new landmark.
-
     /!\ Should always be called at top-level /!\ *)
 
 val register_counter: string -> counter
@@ -43,18 +42,18 @@ val unsafe_wrap: landmark -> ('a -> 'b) -> 'a -> 'b
 val landmark_of_id: int -> landmark
 
 val reset: unit -> unit
-(** Reset the profiling information gathered by the current process. **)
+(** Reset the profiling information gathered by the current process. *)
 
 val export: unit -> Callgraph.graph
-(** Export the profiling information of the current process. **)
-
+(** Export the profiling information of the current process. *)
 
 val export_and_reset: unit -> Callgraph.graph
-(** Export the profiling information of the current process; then reset internal state. **)
+(** Export the profiling information of the current process; then reset 
+    internal state. *)
 
 (** Aggregate the profiling information (exported by another process) to the
     current one. This should is used by the master process to merge exported
-    profiles of slaves. **)
+    profiles of slaves. *)
 val merge: Callgraph.graph -> unit
 
 (** These functions allow to check if the profiling is ongoing. *)

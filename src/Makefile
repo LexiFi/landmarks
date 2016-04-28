@@ -19,10 +19,10 @@ CMXS=$(patsubst %,%.cmx,$(MODULES))
 all: $(NAME).cma $(NAME).cmxa
 
 $(NAME).cma: $(OBJS) $(CMOS)
-		$(OCAMLMKLIB) -o $(NAME) $^
+		$(OCAMLMKLIB) -custom -o $(NAME) $^
 
 $(NAME).cmxa: $(OBJS) $(CMXS)
-		$(OCAMLMKLIB) -o $(NAME) $^
+		$(OCAMLMKLIB) -custom -o $(NAME) $^
 
 .SUFFIXES: .ml .mli .cmo .cmi .cmx
 

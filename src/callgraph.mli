@@ -32,7 +32,7 @@ val root: graph -> node
 
 val sons: graph -> node -> node list
 (** Returns the sons of node([sons graph node] is equivalent to
-     [List.map (node_of_id graph) node.sons] *)
+    [List.map (node_of_id graph) node.sons] *)
 
 val label: graph -> node -> string
 (** Returns a fully qualified name (ie. filename.name) if it is needed. *)
@@ -40,15 +40,18 @@ val label: graph -> node -> string
 val output: out_channel -> graph -> unit
 (** Pretty printed output a call graph on an out_channel. *)
 
-val dfs: (node list -> node -> unit) -> (node list -> node -> unit) -> graph -> unit
-val path_dfs: (bool -> node list -> node -> unit) -> (node list -> node -> unit) -> graph -> unit
+val dfs: (node list -> node -> unit) ->
+         (node list -> node -> unit) -> graph -> unit
+
+val path_dfs: (bool -> node list -> node -> unit) ->
+                      (node list -> node -> unit) -> graph -> unit
 (** [dfs f g graph] traverses the graph in the depth-first fashion starting
-    from the root. At each step we call [f visited path v] or [g path v]
-    where [v] is the visited node and [path] is the path from the root that led us
-    to that node. The function [g] is called when the visited node [v] belongs to
-    [path]; it indicates a loop (and the traversal does not continue with the sons of g).
-    The function [f] is called when [v] does not belong to [path].
-    The flag [visited] is true when the vertex has already been visited. *)
+    from the root. At each step we call [f visited path v] or [g path v] where
+    [v] is the visited node and [path] is the path from the root that led us to
+    that node. The function [g] is called when the visited node [v] belongs to
+    [path]; it indicates a loop (and the traversal does not continue with the
+    sons of g). The function [f] is called when [v] does not belong to [path].
+    The flag visited] is true when the vertex has already been visited. *)
 
 val depth: graph -> node -> int
 
@@ -60,5 +63,6 @@ val intensity: graph -> node -> float
 val total_number_of_calls: graph -> int
 
 val aggregate_landmarks: graph -> graph
-(** [aggregate_landmarks g] computes the quotient by the relation "being an instance of the same landmark". *)
+(** [aggregate_landmarks g] computes the quotient by the relation "being an
+    instance of the same landmark". *)
 
