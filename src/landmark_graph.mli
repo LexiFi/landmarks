@@ -40,6 +40,9 @@ val label: graph -> node -> string
 val output: out_channel -> graph -> unit
 (** Pretty printed output a call graph on an out_channel. *)
 
+val output_json: out_channel -> graph -> unit
+(** Output a JSON representation of a call graph on an out_channel. *)
+
 val dfs: (node list -> node -> unit) ->
          (node list -> node -> unit) -> graph -> unit
 

@@ -64,11 +64,16 @@ type profile_output =
   | Temporary 
   | Channel of out_channel
 
+type profile_format = 
+  | JSON
+  | Textual
+
 type profiling_options = {
   debug : bool;
   gc_stat: bool;
   sys_time : bool;
   output : profile_output;
+  format : profile_format
 }
 
 val default_options: profiling_options

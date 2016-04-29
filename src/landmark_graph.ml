@@ -8,6 +8,12 @@ type id = int
 
 type kind = Normal | Root | Counter | Sampler
 
+let string_of_kind = function
+  | Normal -> "normal"
+  | Root -> "root"
+  | Counter -> "counter"
+  | Sampler -> "sampler"
+
 type node = {
   id: int;
   kind : kind;
@@ -204,7 +210,10 @@ let output oc graph =
   let label = label graph in
   let color = color graph in
   let human x =
-    if x < 1e3 then x, " " else if x < 1e6 then x /. 1e3, "K" else if x < 1e9 then x /. 1e6, "M" else x /. 1e9, "G"
+    if x < 1e3 then x, " " 
+    else if x < 1e6 then x /. 1e3, "K" 
+    else if x < 1e9 then x /. 1e6, "M"
+    else x /. 1e9, "G"
   in
   let spaces depth =
     let bytes = Bytes.make (4*depth + 1) ' ' in
@@ -293,3 +302,74 @@ let output oc graph =
       )
       sample_nodes;
   end
+
+module JSON = struct
+
+type json = 
+  | String of string
+  | Int of int
+  | Float of float
+  | Map of (string * json) list
+  | List of json list
+
+open Format
+
+let rec output oc = function
+  | String s -> 
+    fprintf oc "\"%s\"" (String.escaped s)
+  | Int n -> 
+    fprintf oc "%d" n
+  | Float f -> 
+    fprintf oc "%f" f
+  | Map l -> 
+    fprintf oc "{@,";
+    let first = ref true in
+    List.iter (fun (name, json) ->
+        if !first then
+          first := false
+        else 
+          fprintf oc ",@,";
+        fprintf oc "@[<v 2>%S: %a@]" name output json
+    ) l;
+    fprintf oc "@;<0 -2>}"
+  | List [] -> fprintf oc "[]"
+  | List [x] -> fprintf oc "[%a]" output x
+  | List l -> 
+    fprintf oc "[@,";
+    let first = ref true in
+    List.iter (fun json ->
+        if !first then
+          first := false
+        else 
+          fprintf oc ",@,";
+        fprintf oc "@[<v 2>%a@]" output json
+    ) l;
+    fprintf oc "@;<0 -2>]"
+
+let output oc = 
+  fprintf (formatter_of_out_channel oc) "@[<v 2>%a@]@." output
+
+end
+
+open JSON
+
+let json_of_node
+    {id; kind; landmark_id; name; filename; 
+     calls; time; sons; sys_time; gc_stat; distrib} = 
+  Map [ "id", Int id;
+        "kind", String (string_of_kind kind);
+        "landmark_id", Int landmark_id;
+        "name", String name;
+        "filename", String filename;
+        "calls", Int calls;
+        "time", Float time;
+        "sons", List (List.map (fun x -> Int x) sons);
+        "sys_time", Float sys_time;
+        "gc_stat", Float gc_stat;
+        "distrib", List (List.map (fun x -> Float x) (Array.to_list distrib)) ]
+
+let json_of_graphs {nodes} =
+  Map ["nodes", List (List.map json_of_node (Array.to_list nodes))]
+
+let output_json oc graph = JSON.output oc (json_of_graphs graph)
+

@@ -7,7 +7,8 @@ let rec fib n =
 
 
 let () = 
-  Landmark.start_profiling ();
-  Landmark.enter main;
+  let open Landmark in
+  start_profiling ~profiling_options:{default_options with format = JSON} ();
+  enter main;
   Printf.printf "%d\n%!" (fib 10);
-  Landmark.exit main
+  exit main

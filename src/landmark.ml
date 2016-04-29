@@ -197,12 +197,17 @@ type profile_output =
   | Temporary 
   | Channel of out_channel
 
+type profile_format = 
+  | JSON
+  | Textual
+
 let profiling_ref = ref false
 
 let profile_with_debug = ref false
 let profile_with_gc_stat = ref false
 let profile_with_sys_time = ref false
 let profile_output = ref Silent
+let profile_format = ref Textual
 
 let profiling () = !profiling_ref
 
@@ -474,6 +479,7 @@ type profiling_options = {
   gc_stat: bool;
   sys_time : bool;
   output : profile_output;
+  format : profile_format
 }
 
 let default_options = {
@@ -481,13 +487,15 @@ let default_options = {
   gc_stat = true;
   sys_time = false;
   output = Channel stderr;
+  format = Textual;
 }
 
-let set_profiling_options {debug; gc_stat; sys_time; output} = 
+let set_profiling_options {debug; gc_stat; sys_time; output; format} = 
   profile_with_gc_stat := gc_stat;
   profile_with_sys_time := sys_time;
   profile_with_debug := debug;
-  profile_output := output
+  profile_output := output;
+  profile_format := format
   
 
 let start_profiling ?(profiling_options = default_options) () =
@@ -621,16 +629,20 @@ let exit_hook () =
   if !profiling_ref then begin
     stop_profiling ();
     let cg = export () in
-    match !profile_output with
-    | Silent -> ()
-    | Channel out ->
+    match !profile_output, !profile_format with
+    | Silent, _ -> ()
+    | Channel out, Textual ->
       Graph.output out cg
-    | Temporary ->
+    | Channel out, JSON ->
+      Graph.output_json out cg
+    | Temporary, format ->
       let tmp_file, oc = Filename.open_temp_file "profile_at_exit" ".tmp" in
       Printf.printf
         "[Profiling] Dumping profiling information in file '%s'.\n" tmp_file;
       flush stdout;
-      Graph.output oc cg;
+      (match format with 
+      | Textual -> Graph.output oc cg
+      | JSON -> Graph.output_json oc cg);
       close_out oc
   end
 
