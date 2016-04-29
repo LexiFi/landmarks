@@ -2,7 +2,7 @@ module L = Landmark
 
 let () =
   if not (L.profiling ()) then begin
-    let profiling_options = { L.default_options with L.output = L.Channel stderr;} in
+    let profiling_options = { L.default_options with L.output = L.Channel stderr; L.format = L.JSON} in
     L.start_profiling ~profiling_options ()
   end
 
