@@ -4,7 +4,6 @@
 
 type id = int
 
-type graph
 
 type kind = Normal | Root | Counter | Sampler
 
@@ -21,6 +20,8 @@ type node = {
   gc_stat: float;
   distrib: float array;
 }
+
+type graph = { nodes : node array }
 
 val graph_of_nodes: node list -> graph
 
