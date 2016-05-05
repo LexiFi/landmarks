@@ -14,6 +14,13 @@ module Kinds = struct
   module Html = struct
     type body [@@js]
     type input [@@js]
+
+    type table [@@js]
+    type tbody [@@js]
+    type td [@@js]
+    type th [@@js]
+    type thead [@@js]
+    type tr [@@js]
   end
 end 
 
@@ -90,6 +97,7 @@ module Element : sig
   val has_attribute: 'a t -> string -> bool
   val set_attribute: 'a t -> string -> string -> unit
   val get_attribute: 'a t -> string -> string
+  val remove_attribute: 'a t -> string -> unit
 
   val set_class_name: 'a t -> string -> unit
   val get_class_name: 'a t -> string
@@ -114,6 +122,7 @@ end = struct
       val has_attribute: untyped -> string -> bool
       val set_attribute: untyped -> string -> string -> unit
       val get_attribute: untyped -> string -> string
+      val remove_attribute: untyped -> string -> unit
 
       val set_class_name: untyped -> string -> unit
       val get_class_name: untyped -> string
@@ -149,8 +158,27 @@ module Document = struct
    val body: t -> Kinds.Html.body Element.t
   end)
 
-  let create_html_input_element document =
-    (create_element document "input" |> Element.unsafe_cast : Kinds.Html.input Element.t)
+  let create_html_input document =
+    (create_element document "input" 
+    |> Element.unsafe_cast : Kinds.Html.input Element.t)
+  let create_html_table document =
+    (create_element document "table" 
+    |> Element.unsafe_cast : Kinds.Html.table Element.t)
+  let create_html_tr document =
+    (create_element document "tr"
+    |> Element.unsafe_cast : Kinds.Html.tr Element.t)
+  let create_html_td document =
+    (create_element document "td" 
+    |> Element.unsafe_cast : Kinds.Html.td Element.t)
+  let create_html_th document =
+    (create_element document "th"
+    |> Element.unsafe_cast : Kinds.Html.th Element.t)
+  let create_html_tbody document =
+    (create_element document "tbody"
+    |> Element.unsafe_cast : Kinds.Html.tbody Element.t)
+  let create_html_thead document =
+    (create_element document "thead"
+    |> Element.unsafe_cast : Kinds.Html.thead Element.t)
 end
 
 module Window : sig
@@ -187,7 +215,9 @@ val console: Console.t
 
 module JSON : sig
   val parse: string -> Ojs.t
+    [@@js.global "JSON.parse"]
   val stringify: Ojs.t -> string
+    [@@js.global "JSON.stringify"]
 end = [%js] 
 
 module File : sig
@@ -234,6 +264,11 @@ module Html = struct
   let retype x = 
     match String.lowercase_ascii (Element.tag_name x) with
     | "input" -> `Input (Element.unsafe_cast x : Kinds.Html.input Element.t) 
+    | "table" -> `Table (Element.unsafe_cast x : Kinds.Html.table Element.t) 
+    | "tr" -> `Tr (Element.unsafe_cast x : Kinds.Html.tr Element.t) 
+    | "td" -> `Td (Element.unsafe_cast x : Kinds.Html.td Element.t) 
     | "body" -> `Body (Element.unsafe_cast x : Kinds.Html.body Element.t)
+    | "tbody" -> `Tbody (Element.unsafe_cast x : Kinds.Html.tbody Element.t)
+    | "thead" -> `Thead (Element.unsafe_cast x : Kinds.Html.thead Element.t)
     | _ -> `Unknown
 end

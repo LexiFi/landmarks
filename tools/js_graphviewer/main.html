@@ -55,6 +55,36 @@ ul {
   list-style-type: square;
 }
 
+table {
+  width: 80%;
+  border-collapse: collapse;
+}
+
+td {
+  text-align:right;
+  border-bottom: 1px solid #aaa;
+}
+
+tr:nth-child(even) {
+    background-color: #ccc;
+}
+
+th {
+   cursor: pointer;
+}
+
+ul.tabs li {
+  display: inline-block;
+  margin-left: 1em;
+  padding-bottom: 0.5em;
+  cursor: pointer;
+}
+
+ul.tabs li.active {
+  border-bottom: 3px solid #4285F4;
+  color: #4285F4;  
+}
+
 </style>
 </head>
 <body>
@@ -63,11 +93,13 @@ ul {
     <input type="file" id="filename">
     <input type="button" id="filenameButton" value="Load">
   </form>
-  <h2> Source Tree </h2>
+  <ul class="tabs"> 
+    <li id="sourceTreeTab"> Source Tree </li> 
+    <li id="tableTab"> Aggregated Table </li>
+  </ul>
   <div id="sourceTree">
   </div>
-  <h2> Aggregated Table </h2>
-  <div id="table">
+  <div id="aggregatedTable">
   </div>
 </body>
 </html>
