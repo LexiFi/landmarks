@@ -245,7 +245,7 @@ module FileReader = struct
     type t = private Ojs.t
     val t_of_js: Ojs.t -> t
     val t_to_js: t -> Ojs.t
-    val new_file_reader : unit -> t option [@@js.new]
+    val new_file_reader : unit -> t [@@js.new]
     val ready_state : t -> state
     val result: t -> string option
     val set_onload: t -> (unit -> unit) -> unit

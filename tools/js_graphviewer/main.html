@@ -2,6 +2,7 @@
 <html>
 <head>
 <title>Test</title>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="main.js"></script>
 <style>
 
@@ -10,7 +11,7 @@ body {
 }
 
 input[type=file] {
-    width: 100%;
+    width: 80%;
     padding: 12px 20px;
     margin: 8px 0;
     display: inline-block;
@@ -20,7 +21,7 @@ input[type=file] {
 }
 
 input[type=button] {
-    width: 100%;
+    width: 10%;
     background-color: #4CAF50;
     color: white;
     padding: 14px 20px;
@@ -30,14 +31,15 @@ input[type=button] {
     cursor: pointer;
 }
 
-input[type=submit]:hover {
+input[type=button]:hover {
     background-color: #45a049;
 }
 
 form {
+    width: 100%;
     border-radius: 5px;
     background-color: #f2f2f2;
-    padding: 40px;
+    padding: 10px;
 }
 
 .collapsible {
@@ -85,6 +87,15 @@ ul.tabs li.active {
   color: #4285F4;  
 }
 
+ul.tabs{
+  border-bottom: 1px solid #ddd;
+}
+
+#main {
+  margin-left: 40px;
+  margin-right: 40px;
+}
+
 </style>
 </head>
 <body>
@@ -93,13 +104,15 @@ ul.tabs li.active {
     <input type="file" id="filename">
     <input type="button" id="filenameButton" value="Load">
   </form>
-  <ul class="tabs"> 
-    <li id="sourceTreeTab"> Source Tree </li> 
-    <li id="tableTab"> Aggregated Table </li>
-  </ul>
-  <div id="sourceTree">
-  </div>
-  <div id="aggregatedTable">
+  <div id="main">
+    <ul class="tabs"> 
+	  <li id="sourceTreeTab"> Source Tree </li> 
+	  <li id="tableTab"> Aggregated Table </li>
+    </ul>
+    <div id="sourceTree">
+    </div>
+    <div id="aggregatedTable">
+    </div>
   </div>
 </body>
 </html>

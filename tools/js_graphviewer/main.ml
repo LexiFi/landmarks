@@ -4,7 +4,12 @@
 
 open Js_core
 
+let error s = 
+  alert ("Error: "^s); 
+  failwith s
+
 let document = Window.document window
+
 module Helper = struct
   let removeAll element = 
     while 
@@ -12,6 +17,43 @@ module Helper = struct
      | Some child -> Node.remove_child element child; true
      | None -> false
     do () done
+
+  let element_of_id id = 
+    match Document.get_element_by_id document id with
+    | Some element -> element
+    | None -> error (Printf.sprintf "Element of id '%s' not found" id)
+
+  let input_of_id id = 
+    match Html.retype (element_of_id id) with
+    | `Input input -> input
+    | _ ->
+      error (Printf.sprintf "Element of id '%s' should be an input element." id)
+
+  let hide element = 
+    Element.set_attribute element "style" "display: none"
+
+  let show element = 
+    Element.remove_attribute element "style"
+
+  let tabs_logic l = 
+    let tabs, contents = List.split l in
+    let tabs = List.map element_of_id tabs |> Array.of_list in
+    let contents = List.map element_of_id contents |> Array.of_list in
+    let size = Array.length contents in
+    let activate k = 
+      Element.set_class_name tabs.(k) "active";
+      show contents.(k);
+      for i = 0 to size - 1 do
+        if i <> k then begin
+          Element.set_class_name tabs.(i) "";
+          hide contents.(i);
+        end
+      done;
+    in
+    activate 0;
+    for k = 0 to size - 1 do
+      Element.set_onclick tabs.(k) (fun () -> activate k);
+    done
 
   let rec sortable_table cols rows inside =
     let open Document in
@@ -87,7 +129,8 @@ module Graph = struct
 
   type graph = Landmark_graph.graph = {nodes: node array} [@@js]
 
-  let graph_of_string s = graph_of_js (JSON.parse s)
+  let graph_of_string s =
+   try graph_of_js (JSON.parse s) with Ojs_exn.Error _ -> error "Invalid input format."
   let string_of_graph s = JSON.stringify (graph_to_js s)
 
   let aggregated_table graph = 
@@ -131,10 +174,13 @@ module Graph = struct
 
 end
 
-let create ?text ?class_name name =
+let create ?text ?class_name ?style name =
   let element = Document.create_element document name in
   (match text with
     | Some text -> Node.set_text_content element text
+    | _ -> ());
+  (match style with
+    | Some style -> Element.set_attribute element "style" style
     | _ -> ());
   (match class_name with
     | Some class_name -> Element.set_class_name element class_name
@@ -146,7 +192,7 @@ module TreeView = struct
   let open_button = "[+]"
   let close_button = "[-]"
 
-  let rec generate render children inside parent x =
+  let rec generate render expand children inside parent x =
      let li = create "li" in
      let div = create "div" in
      let content = render parent x in
@@ -154,16 +200,22 @@ module TreeView = struct
      Node.append_child li div;
      let sons = children x in
      if sons <> [] then begin
+       let expanded = expand x in
        let span = create "span" ~text:open_button ~class_name:"collapseButton" in
        Element.set_class_name div "collapsible";
        Node.append_child div span;
        let expanded_state = ref [] in
        let ul = create "ul" in
        Node.append_child li ul;
+       let do_expand () =
+         Node.set_text_content span close_button;
+         expanded_state := List.map (generate render expand children ul (Some x)) sons
+       in
+       if expand x then 
+         do_expand ();
        let onclick _ = 
          if !expanded_state = [] then begin
-           Node.set_text_content span close_button;
-           expanded_state := List.map (generate render children ul (Some x)) sons
+           do_expand ()
          end else begin
            Node.set_text_content span open_button;
            List.iter (Node.remove_child ul) !expanded_state;
@@ -175,29 +227,71 @@ module TreeView = struct
      Node.append_child inside li;
      li
 
-  let append render children inside root = 
+  let append render expand children inside root = 
      let ul = create "ul" in
      Node.append_child inside ul;
-     generate render children ul None root |> ignore
+     generate render expand children ul None root |> ignore
 
-  let callgraph inside {Graph.nodes} = 
+  let callgraph inside ({Graph.nodes} as graph) = 
     let root =
       if Array.length nodes = 0 then 
-        failwith "callgraph: no root" 
+        error "callgraph: no root" 
       else nodes.(0) 
     in
-    let render (parent : Graph.node option) {Graph.name; time = node_time; _} =
-      let span = create "span" ~class_name:"conten" ~text:name in
-      (match parent with
-         None -> ()
-       | Some {Graph.time = parent_time; _} -> 
+    let intensity = Landmark_graph.intensity graph in
+    let color node =
+      let rgb = Printf.sprintf "rgb(%d,%d,%d)" in
+      let open Graph in
+      match node.kind with
+      | Normal -> begin
+          let i = intensity node in
+          (* Implements the bijection:
+                 [0, 1] --> [0,1]
+                              ______________
+                   i   |--> \/ 1 - (i - 1)^2
+
+             to "amplify" the intensity (it is a quarter of a circle).
+          *)
+          let i = i -. 1.0 in
+          let i = i *. i in
+          let i = sqrt (1.0 -. i) in
+          rgb (int_of_float (255.0 *. i)) 0 0
+        end
+      | Root -> rgb 125 125 125
+      | Counter -> rgb 0 125 200
+      | Sampler -> rgb 0 200 125
+    in
+    let render (parent : Graph.node option) ({Graph.name; time = node_time; kind; calls; distrib; _} as node) =
+      let span = create "span" ~class_name:"conten" ~text:name ~style:(Printf.sprintf "color:%s" (color node)) in
+      (match parent, kind with
+       | Some {Graph.time = parent_time; _}, Graph.Normal -> 
          let text = 
            Printf.sprintf " (%2.2f%%) " (100.0 *. node_time /. parent_time)
          in
          let span_time = create ~class_name:"time" ~text "span" in
-         Node.append_child span span_time);
+         Node.append_child span span_time
+       | _, Graph.Counter ->
+         let text = 
+           Printf.sprintf " (%d calls) " calls
+         in
+         let span_time = create ~class_name:"calls" ~text "span" in
+         Node.append_child span span_time
+       | _, Graph.Sampler ->
+         let text = 
+           Printf.sprintf " (%d values) " (Array.length distrib)
+         in
+         let span_time = create ~class_name:"values" ~text "span" in
+         Node.append_child span span_time
+       | _ -> ());
       span
     in
+    let reference = Landmark_graph.shallow_ancestor graph in
+    let depth = Landmark_graph.depth graph in
+    let expand node = 
+      let reference = reference node in
+      let open Graph in
+      depth node <= 1 || node.time > 0.1 *. reference.time
+    in 
     let children {Graph.sons; _} = 
       let children = ref [] in
       List.iter
@@ -205,68 +299,39 @@ module TreeView = struct
         sons;
       List.rev !children
     in
-    append render children inside root
+    append render expand children inside root
 
 end
 
-let element_of_id id = 
-  match Document.get_element_by_id document id with
-  | Some element -> element
-  | None -> failwith (Printf.sprintf "Element of id '%s' not found" id)
-
-let input_of_id id = 
-  match Html.retype (element_of_id id) with
-  | `Input input -> input
-  | _ ->
-    failwith (Printf.sprintf "Element of id '%s' should be an input element." id)
 
 let filename_onclick _ = 
-  let source_tree_div = element_of_id "sourceTree" in
-  let aggregated_table_div = element_of_id "aggregatedTable" in
-  let filename = input_of_id "filename" in
+  let source_tree_div = Helper.element_of_id "sourceTree" in
+  let aggregated_table_div = Helper.element_of_id "aggregatedTable" in
+  let filename = Helper.input_of_id "filename" in
   let file = FileList.item (Html.Input.files filename) 0 in
   let filereader = FileReader.new_file_reader () in
-  let filereader = 
-    match filereader with Some fr -> fr | None -> failwith "filereader" 
-  in
   match file with 
-  | None -> failwith "Unable to open file."
+  | None -> error "Unable to open file."
   | Some file ->
     let onload _ = 
       let result = FileReader.result filereader in
       match result with
-      | None -> failwith "Error while reading file."
+      | None -> error "Error while reading file."
       | Some text -> 
         let open Graph in
         let graph = graph_of_string text in
+        Helper.show (Helper.element_of_id "main");
         Helper.removeAll source_tree_div;
         TreeView.callgraph source_tree_div graph;
-        Graph.aggregated_table graph aggregated_table_div
+        Graph.aggregated_table graph aggregated_table_div 
     in
     FileReader.read_as_text filereader file;
     FileReader.set_onload filereader onload
 
 let onload _ = begin
-  let filename_button = element_of_id "filenameButton" in
+  let filename_button = Helper.element_of_id "filenameButton" in
   Element.set_onclick filename_button filename_onclick;
-  (* TODO: Generalize this logic to multiple tabs *)
-  let source_tree_tab = element_of_id "sourceTreeTab" in
-  let source_tree_div = element_of_id "sourceTree" in
-  let aggregated_table_div = element_of_id "aggregatedTable" in
-  let table_tab = element_of_id "tableTab" in
-  Element.set_attribute aggregated_table_div "style" "display: none";
-  Element.set_class_name source_tree_tab "active";
-  Element.set_onclick source_tree_tab (fun () ->
-    Element.set_class_name source_tree_tab "active";
-    Element.set_class_name table_tab "";
-    Element.set_attribute aggregated_table_div "style" "display: none";
-    Element.remove_attribute source_tree_div "style";
-  );
-  Element.set_onclick table_tab (fun () ->
-    Element.set_class_name source_tree_tab "";
-    Element.set_class_name table_tab "active";
-    Element.set_attribute source_tree_div "style" "display: none";
-    Element.remove_attribute aggregated_table_div "style";
-  );
+  Helper.hide (Helper.element_of_id "main");
+  Helper.tabs_logic ["sourceTreeTab", "sourceTree"; "tableTab", "aggregatedTable"]
 end
 let () = Window.set_onload window onload 
