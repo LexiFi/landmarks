@@ -259,18 +259,20 @@ let landmark_of_id id =
   List.nth !registered_landmarks
     ((List.length !registered_landmarks) - (id + 1))
 
-let register_generic kind name call_stack =
-  let backtrace_slots = Printexc.backtrace_slots call_stack in
+let register_generic ?filename kind name call_stack =
   let filename =
-    match backtrace_slots with
-    | Some slots when Array.length slots >= 2 ->
+    match filename with
+    | Some name -> name
+    | None -> 
+      let backtrace_slots = Printexc.backtrace_slots call_stack in
+      match backtrace_slots with
+      | Some slots when Array.length slots >= 2 ->
         let loc = Printexc.Slot.location slots.(1) in
         (match loc with
          | Some loc -> loc.Printexc.filename
          | None -> "internal")
-    | _ -> "unknown"
+      | _ -> "unknown"
   in
-
   let landmark = new_landmark name filename kind in
   if List.exists (fun landmark ->
       name = landmark.name && filename = landmark.filename)
@@ -283,9 +285,9 @@ let register_generic kind name call_stack =
     Printf.eprintf "[Profiling] registering(%s)\n%!" name;
   landmark
 
-let register name =
+let register ?filename name =
   let call_stack = Printexc.get_callstack 3 in
-  register_generic Graph.Normal name call_stack
+  register_generic ?filename Graph.Normal name call_stack
 
 let register_counter name =
   let call_stack = Printexc.get_callstack 3 in

@@ -10,7 +10,7 @@ val clock: unit -> Int64.t
 
 exception LandmarkFailure of string
 
-val register: string -> landmark
+val register: ?filename:string -> string -> landmark
 (** [register name] registers a new landmark.
     /!\ Should always be called at top-level /!\ *)
 

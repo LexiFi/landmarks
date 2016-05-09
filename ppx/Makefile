@@ -1,8 +1,8 @@
-landmarks_ppx.byte: landmarks_ppx.cmo
-	ocamlfind ocamlc -package compiler-libs ocamlcommon.cma -o $@ $<
+landmarks_ppx.opt: landmarks_ppx.cmx
+	ocamlfind ocamlopt -package compiler-libs ocamlcommon.cmxa -o $@ $<
 
-landmarks_ppx.cmo: landmarks_ppx.ml
-	ocamlfind ocamlc -package compiler-libs -c $<
+landmarks_ppx.cmx: landmarks_ppx.ml
+	ocamlfind ocamlopt -package compiler-libs -c $<
 
 clean:
-	rm -f *.cm* 
+	rm -f *.cm* landmarks_ppx.opt

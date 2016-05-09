@@ -1,7 +1,12 @@
-.PHONY: landmarks tests clean
+.PHONY: landmarks tests clean ppx all
+
+all: landmarks ppx
 
 landmarks:
 	@$(MAKE) -C src
+
+ppx:
+	@$(MAKE) -C ppx
 
 tests: landmarks
 	@echo ""
