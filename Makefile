@@ -18,4 +18,5 @@ tests: landmarks
 
 clean:
 	@$(MAKE) -C src clean
+	@$(MAKE) -C ppx clean
 	@$(MAKE) -C testsuite clean

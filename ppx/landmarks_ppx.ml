@@ -36,13 +36,23 @@ let rec string_of_pattern pat =
  match pat.ppat_desc with
  | Ppat_any -> "_"
  | Ppat_var {txt; _} -> txt
- | Ppat_alias (pat, _) -> string_of_pattern pat
- | Ppat_constant _ -> "constant"
- | Ppat_interval _ -> "interval"
+ | Ppat_lazy p
+ | Ppat_constraint (p, _)
+ | Ppat_exception p 
+ | Ppat_construct (_, Some p)
+ | Ppat_alias (p, _) -> string_of_pattern p
+ | Ppat_construct (c, None) -> String.concat "." (Longident.flatten c.txt)
+ | Ppat_constant _ -> "CONSTANT"
+ | Ppat_interval _ -> "INTERVAL"
+ | Ppat_array l 
  | Ppat_tuple l -> String.concat "_" (List.map string_of_pattern l)
  | Ppat_variant (x, None) -> x
  | Ppat_variant (x, Some p) -> x ^ "_" ^ string_of_pattern p
- | _ -> "name_generator_not_implemented"
+ | Ppat_record (l, _) -> String.concat "_" (List.map (fun (_, x) -> string_of_pattern x) l)
+ | Ppat_or (a, b) -> string_of_pattern a ^ "_" ^ string_of_pattern b
+ | Ppat_type _ -> "TYPE"
+ | Ppat_extension _ -> "EXTENSION"
+ | Ppat_unpack m -> m.txt
 
 let string_of_loc (l : Location.t) = Format.asprintf "%a" Location.print_loc l
 
