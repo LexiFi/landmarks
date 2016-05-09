@@ -48,7 +48,7 @@ val export: unit -> Landmark_graph.graph
 (** Export the profiling information of the current process. *)
 
 val export_and_reset: unit -> Landmark_graph.graph
-(** Export the profiling information of the current process; then reset 
+(** Export the profiling information of the current process; then reset
     internal state. *)
 
 (** Aggregate the profiling information (exported by another process) to the
@@ -61,10 +61,10 @@ val profiling: unit -> bool
 
 type profile_output =
   | Silent
-  | Temporary 
+  | Temporary
   | Channel of out_channel
 
-type profile_format = 
+type profile_format =
   | JSON
   | Textual
 

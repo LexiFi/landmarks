@@ -4,43 +4,43 @@
 
 open Js_core
 
-let error s = 
-  alert ("Error: "^s); 
+let error s =
+  alert ("Error: "^s);
   failwith s
 
 let document = Window.document window
 
 module Helper = struct
-  let removeAll element = 
-    while 
+  let removeAll element =
+    while
      match Node.last_child element with
      | Some child -> Node.remove_child element child; true
      | None -> false
     do () done
 
-  let element_of_id id = 
+  let element_of_id id =
     match Document.get_element_by_id document id with
     | Some element -> element
     | None -> error (Printf.sprintf "Element of id '%s' not found" id)
 
-  let input_of_id id = 
+  let input_of_id id =
     match Html.retype (element_of_id id) with
     | `Input input -> input
     | _ ->
       error (Printf.sprintf "Element of id '%s' should be an input element." id)
 
-  let hide element = 
+  let hide element =
     Element.set_attribute element "style" "display: none"
 
-  let show element = 
+  let show element =
     Element.remove_attribute element "style"
 
-  let tabs_logic l = 
+  let tabs_logic l =
     let tabs, contents = List.split l in
     let tabs = List.map element_of_id tabs |> Array.of_list in
     let contents = List.map element_of_id contents |> Array.of_list in
     let size = Array.length contents in
-    let activate k = 
+    let activate k =
       Element.set_class_name tabs.(k) "active";
       show contents.(k);
       for i = 0 to size - 1 do
@@ -66,13 +66,13 @@ module Helper = struct
     Node.append_child table tbody;
     let first_row = create_html_tr document in
     Node.append_child thead first_row;
-    List.iter (fun (header, cmp, _) -> 
+    List.iter (fun (header, cmp, _) ->
       let th = create_html_th document in
       Element.set_onclick th (fun () ->
         let rows = List.sort cmp rows in
-        let cols = 
+        let cols =
           List.map (fun (header, cmp, proj) ->
-                     (header, (fun x y -> cmp y x), proj)) cols 
+                     (header, (fun x y -> cmp y x), proj)) cols
         in
         sortable_table cols rows inside
       );
@@ -82,7 +82,7 @@ module Helper = struct
     List.iter (fun row ->
       let tr = create_html_tr document in
       Node.append_child tbody tr;
-      List.iter (fun (_, _, proj) -> 
+      List.iter (fun (_, _, proj) ->
         let td = create_html_td document in
         let cell = proj row in
         Node.append_child tr td;
@@ -99,7 +99,7 @@ module Helper = struct
       if k mod 3 = m && k < n-1 then
         Buffer.add_char b ' '
     done;
-    Buffer.contents b  
+    Buffer.contents b
 end
 
 module Graph = struct
@@ -111,7 +111,7 @@ module Graph = struct
    | Root [@js "root"]
    | Counter  [@js "counter"]
    | Sampler [@js "sampler"]
-   [@@js] [@@js.enum] 
+   [@@js] [@@js.enum]
 
   type node = Landmark_graph.node = {
     id: int;
@@ -133,42 +133,42 @@ module Graph = struct
    try graph_of_js (JSON.parse s) with Ojs_exn.Error _ -> error "Invalid input format."
   let string_of_graph s = JSON.stringify (graph_to_js s)
 
-  let aggregated_table graph = 
+  let aggregated_table graph =
     let graph = Landmark_graph.aggregate_landmarks graph in
     let all_nodes =
       List.sort
         (fun {time = time1; _} {time = time2; _} -> compare time2 time1)
         (Landmark_graph.nodes graph)
-    in 
-    let normal_nodes = 
+    in
+    let normal_nodes =
       List.filter (fun n -> n.kind = Normal || n.kind = Root) all_nodes
     in
-    let sample_nodes = 
+    let sample_nodes =
       List.filter (fun n -> n.kind = Sampler) all_nodes
     in
     let text x = Document.create_text_node document x in
-    let profile_with_sys_time = 
+    let profile_with_sys_time =
       if List.exists (fun {sys_time; _} -> sys_time <> 0.0) normal_nodes then
-        [text "System Time", (fun x y -> compare x.sys_time y.sys_time), 
+        [text "System Time", (fun x y -> compare x.sys_time y.sys_time),
          fun {sys_time; _} -> text (Printf.sprintf "%.0f" sys_time |> Helper.format_number)]
       else []
     in
-    let profile_with_gc_stat = 
+    let profile_with_gc_stat =
       if List.exists (fun {gc_stat; _} -> gc_stat <> 0.0) normal_nodes then
         [text "Garbage Collector", (fun x y -> compare x.gc_stat y.gc_stat),
          fun {gc_stat; _} -> text (Printf.sprintf "%.0f" gc_stat |> Helper.format_number)]
       else []
     in
     let cols = [
-        (text "Name", (fun x y -> compare x.name y.name), 
-                      fun {name; _} -> text name); 
-        (text "Filename", (fun x y -> compare x.filename y.filename), 
+        (text "Name", (fun x y -> compare x.name y.name),
+                      fun {name; _} -> text name);
+        (text "Filename", (fun x y -> compare x.filename y.filename),
                          fun {filename; _} -> text filename);
-        (text "Calls", (fun x y -> compare x.calls y.calls), 
+        (text "Calls", (fun x y -> compare x.calls y.calls),
                        fun {calls; _} -> text (string_of_int calls |> Helper.format_number));
-        (text "Time", (fun x y -> compare x.time y.time), 
+        (text "Time", (fun x y -> compare x.time y.time),
                       fun {time; _} -> text (Printf.sprintf "%.0f" time |> Helper.format_number));
-      ] @ profile_with_sys_time @ profile_with_gc_stat 
+      ] @ profile_with_sys_time @ profile_with_gc_stat
     in
     Helper.sortable_table cols all_nodes
 
@@ -211,9 +211,9 @@ module TreeView = struct
          Node.set_text_content span close_button;
          expanded_state := List.map (generate render expand children ul (Some x)) sons
        in
-       if expand x then 
+       if expand x then
          do_expand ();
-       let onclick _ = 
+       let onclick _ =
          if !expanded_state = [] then begin
            do_expand ()
          end else begin
@@ -227,16 +227,16 @@ module TreeView = struct
      Node.append_child inside li;
      li
 
-  let append render expand children inside root = 
+  let append render expand children inside root =
      let ul = create "ul" in
      Node.append_child inside ul;
      generate render expand children ul None root |> ignore
 
-  let callgraph inside ({Graph.nodes} as graph) = 
+  let callgraph inside ({Graph.nodes} as graph) =
     let root =
-      if Array.length nodes = 0 then 
-        error "callgraph: no root" 
-      else nodes.(0) 
+      if Array.length nodes = 0 then
+        error "callgraph: no root"
+      else nodes.(0)
     in
     let intensity = Landmark_graph.intensity graph in
     let color node =
@@ -264,20 +264,20 @@ module TreeView = struct
     let render (parent : Graph.node option) ({Graph.name; time = node_time; kind; calls; distrib; _} as node) =
       let span = create "span" ~class_name:"conten" ~text:name ~style:(Printf.sprintf "color:%s" (color node)) in
       (match parent, kind with
-       | Some {Graph.time = parent_time; _}, Graph.Normal -> 
-         let text = 
+       | Some {Graph.time = parent_time; _}, Graph.Normal ->
+         let text =
            Printf.sprintf " (%2.2f%%) " (100.0 *. node_time /. parent_time)
          in
          let span_time = create ~class_name:"time" ~text "span" in
          Node.append_child span span_time
        | _, Graph.Counter ->
-         let text = 
+         let text =
            Printf.sprintf " (%d calls) " calls
          in
          let span_time = create ~class_name:"calls" ~text "span" in
          Node.append_child span span_time
        | _, Graph.Sampler ->
-         let text = 
+         let text =
            Printf.sprintf " (%d values) " (Array.length distrib)
          in
          let span_time = create ~class_name:"values" ~text "span" in
@@ -287,12 +287,12 @@ module TreeView = struct
     in
     let reference = Landmark_graph.shallow_ancestor graph in
     let depth = Landmark_graph.depth graph in
-    let expand node = 
+    let expand node =
       let reference = reference node in
       let open Graph in
       depth node <= 1 || node.time > 0.1 *. reference.time
-    in 
-    let children {Graph.sons; _} = 
+    in
+    let children {Graph.sons; _} =
       let children = ref [] in
       List.iter
         (fun id -> children := nodes.(id) :: !children)
@@ -304,26 +304,26 @@ module TreeView = struct
 end
 
 
-let filename_onclick _ = 
+let filename_onclick _ =
   let source_tree_div = Helper.element_of_id "sourceTree" in
   let aggregated_table_div = Helper.element_of_id "aggregatedTable" in
   let filename = Helper.input_of_id "filename" in
   let file = FileList.item (Html.Input.files filename) 0 in
   let filereader = FileReader.new_file_reader () in
-  match file with 
+  match file with
   | None -> error "Unable to open file."
   | Some file ->
-    let onload _ = 
+    let onload _ =
       let result = FileReader.result filereader in
       match result with
       | None -> error "Error while reading file."
-      | Some text -> 
+      | Some text ->
         let open Graph in
         let graph = graph_of_string text in
         Helper.show (Helper.element_of_id "main");
         Helper.removeAll source_tree_div;
         TreeView.callgraph source_tree_div graph;
-        Graph.aggregated_table graph aggregated_table_div 
+        Graph.aggregated_table graph aggregated_table_div
     in
     FileReader.read_as_text filereader file;
     FileReader.set_onload filereader onload
@@ -334,4 +334,4 @@ let onload _ = begin
   Helper.hide (Helper.element_of_id "main");
   Helper.tabs_logic ["sourceTreeTab", "sourceTree"; "tableTab", "aggregatedTable"]
 end
-let () = Window.set_onload window onload 
+let () = Window.set_onload window onload

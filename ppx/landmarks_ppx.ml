@@ -9,15 +9,15 @@ open Parsetree
 open Longident
 open Location
 
-let landmark_id = ref 0 
+let landmark_id = ref 0
 let landmarks_to_register = ref []
 
 let has_name key ({txt; _}, _) = txt = key
 
-let rec has_attribute key l = 
-  if List.exists (has_name key) l then 
+let rec has_attribute key l =
+  if List.exists (has_name key) l then
     Some (List.filter (fun x -> not (has_name key x)) l)
-  else 
+  else
     None
 
 let has_landmark_attribute = has_attribute "landmark"
@@ -25,26 +25,26 @@ let has_landmark_attribute = has_attribute "landmark"
 
 let var x = Exp.ident (mknoloc (Longident.parse x))
 
-let rec filter_map f = function 
+let rec filter_map f = function
   | [] -> []
-  | hd :: tl -> 
+  | hd :: tl ->
      match f hd with
      | Some x -> x :: (filter_map f tl)
      | None -> filter_map f tl
 
-let rec string_of_pattern pat = 
+let rec string_of_pattern pat =
  match pat.ppat_desc with
  | Ppat_any -> "_"
  | Ppat_var {txt; _} -> txt
  | Ppat_lazy p
  | Ppat_constraint (p, _)
- | Ppat_exception p 
+ | Ppat_exception p
  | Ppat_construct (_, Some p)
  | Ppat_alias (p, _) -> string_of_pattern p
  | Ppat_construct (c, None) -> String.concat "." (Longident.flatten c.txt)
  | Ppat_constant _ -> "CONSTANT"
  | Ppat_interval _ -> "INTERVAL"
- | Ppat_array l 
+ | Ppat_array l
  | Ppat_tuple l -> String.concat "_" (List.map string_of_pattern l)
  | Ppat_variant (x, None) -> x
  | Ppat_variant (x, Some p) -> x ^ "_" ^ string_of_pattern p
@@ -61,32 +61,32 @@ let end_landmark lm = Exp.apply (var "Landmark.exit") [Nolabel, var lm]
 let register_landmark name filename = Exp.apply (var "Landmark.register") [Nolabel, Const.string name |> Exp.constant; Labelled "filename", Const.string filename |> Exp.constant]
 
 
-let rec wrap_landmark landmark expr = 
+let rec wrap_landmark landmark expr =
   match expr.pexp_desc with
   | Pexp_fun (l,o,p,e) -> Exp.fun_ l o p (wrap_landmark landmark e)
   | _ ->
       Exp.sequence (begin_landmark landmark)
-       (Exp.let_ Nonrecursive 
+       (Exp.let_ Nonrecursive
           [Vb.mk (Pat.var (mknoloc "r"))
              (Exp.try_ expr
                 [Exp.case (Pat.var (mknoloc "e"))
                    (Exp.sequence
-                      (end_landmark landmark) 
+                      (end_landmark landmark)
                       (Exp.apply (var "raise") [Nolabel, var "e"]))])]
-             (Exp.sequence 
+             (Exp.sequence
                 (end_landmark landmark)
                 (var "r")))
 
-let new_landmark landmark_name loc = 
+let new_landmark landmark_name loc =
   incr landmark_id;
   let landmark = Printf.sprintf "__generated_landmark_%d" !landmark_id in
   let landmark_filename = string_of_loc loc in
-  landmarks_to_register := 
+  landmarks_to_register :=
     (landmark, landmark_name, landmark_filename) :: !landmarks_to_register;
   landmark
 
-let rec arity {pexp_desc; _} = 
-  match pexp_desc with 
+let rec arity {pexp_desc; _} =
+  match pexp_desc with
   | Pexp_fun (_, _, _, e ) -> 1 + arity e
   | Pexp_function cases ->
     1 + (List.fold_left
@@ -94,36 +94,36 @@ let rec arity {pexp_desc; _} =
       0 cases)
   | _ -> 0
 
-let eta_expand f t n = 
+let eta_expand f t n =
   let vars =
     let rec gen = function
       | 0 -> []
       | n -> (Printf.sprintf "x%d" n) :: (gen (n - 1))
-    in 
+    in
     gen n
   in
-  let rec app acc = function 
+  let rec app acc = function
     | [] -> acc
     | hd :: tl -> app (Exp.apply acc [Nolabel, Exp.ident (mknoloc (Lident hd))]) tl
-  in 
+  in
   let rec lam = function
     | [] -> f (app t vars)
     | hd :: tl -> Exp.fun_ Nolabel None (Pat.var (mknoloc hd)) (lam tl)
   in
   lam vars
-    
+
 
 let deep_mapper =
   { default_mapper with
     structure = (fun mapper l ->
-      List.map 
+      List.map
         (function
           | { pstr_desc = Pstr_value (Recursive, vbs); pstr_loc} ->
-            let vbs_arity_name = 
-              List.map 
+            let vbs_arity_name =
+              List.map
                 (fun vb -> match vb, has_landmark_attribute vb.pvb_attributes with
-                  | { pvb_expr; pvb_loc; 
-                       pvb_pat = 
+                  | { pvb_expr; pvb_loc;
+                       pvb_pat =
                          {ppat_desc =
                             Ppat_var {txt = name; _}; _};
                        _}, Some attr ->
@@ -131,20 +131,20 @@ let deep_mapper =
                   | _, _ -> (vb, None))
                 vbs
             in
-            let vbs = List.map (function 
+            let vbs = List.map (function
                 | (vb, None) ->
                   mapper.value_binding mapper vb
                 | {pvb_pat; pvb_loc; pvb_expr; _}, Some (_, _, _, attrs) ->
                   (* Remove landmark attribute: *)
                   let vb = Vb.mk ~attrs ~loc:pvb_loc pvb_pat pvb_expr in
-                  default_mapper.value_binding mapper vb) vbs_arity_name 
+                  default_mapper.value_binding mapper vb) vbs_arity_name
             in
             let str = Str.value ~loc:pstr_loc Recursive vbs in
             let arity_name = filter_map snd vbs_arity_name in
             if arity_name = [] then [str]
             else
-            [str; Str.value Nonrecursive 
-               (List.map (fun (arity, name, loc, _) -> 
+            [str; Str.value Nonrecursive
+               (List.map (fun (arity, name, loc, _) ->
                 let ident = Exp.ident (mknoloc (Lident name)) in
                 let landmark = new_landmark name loc in
                 let expr = eta_expand (wrap_landmark landmark) ident arity in
@@ -163,18 +163,18 @@ let deep_mapper =
           {vb with pvb_expr}
   }
 
-let shallow_mapper = 
-  { deep_mapper with 
-     structure = fun _ l -> 
-       let l = deep_mapper.structure deep_mapper l in 
-       let landmarks = 
+let shallow_mapper =
+  { deep_mapper with
+     structure = fun _ l ->
+       let l = deep_mapper.structure deep_mapper l in
+       let landmarks =
          Str.value Nonrecursive
            (List.map (fun (landmark, landmark_name, landmark_filename) ->
              Vb.mk (Pat.var (mknoloc landmark))
                    (register_landmark landmark_name landmark_filename)) (List.rev !landmarks_to_register))
       in landmarks :: l }
-            
- 
-       
+
+
+
 
 let () = register "landmarks" (fun _ -> shallow_mapper)

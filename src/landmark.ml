@@ -194,10 +194,10 @@ and dummy_node = {
 
 type profile_output =
   | Silent
-  | Temporary 
+  | Temporary
   | Channel of out_channel
 
-type profile_format = 
+type profile_format =
   | JSON
   | Textual
 
@@ -263,7 +263,7 @@ let register_generic ?filename kind name call_stack =
   let filename =
     match filename with
     | Some name -> name
-    | None -> 
+    | None ->
       let backtrace_slots = Printexc.backtrace_slots call_stack in
       match backtrace_slots with
       | Some slots when Array.length slots >= 2 ->
@@ -277,8 +277,8 @@ let register_generic ?filename kind name call_stack =
   if List.exists (fun landmark ->
       name = landmark.name && filename = landmark.filename)
       !registered_landmarks then
-    failwith 
-      (Printf.sprintf 
+    failwith
+      (Printf.sprintf
          "The landmark '%s' is registered twice in '%s'." name filename);
   registered_landmarks := landmark :: !registered_landmarks;
   if !profile_with_debug then
@@ -492,13 +492,13 @@ let default_options = {
   format = Textual;
 }
 
-let set_profiling_options {debug; gc_stat; sys_time; output; format} = 
+let set_profiling_options {debug; gc_stat; sys_time; output; format} =
   profile_with_gc_stat := gc_stat;
   profile_with_sys_time := sys_time;
   profile_with_debug := debug;
   profile_output := output;
   profile_format := format
-  
+
 
 let start_profiling ?(profiling_options = default_options) () =
   if !profiling_ref then
@@ -522,7 +522,7 @@ let stop_profiling () =
   if current_node != root_node then
     landmark_failure
       (Printf.sprintf
-         "The landmark '%s' is still opened at the end of profiling." 
+         "The landmark '%s' is still opened at the end of profiling."
          current_node.landmark.name);
   aggregate_stat_for current_node;
   if !profile_with_debug then
@@ -608,13 +608,13 @@ and inconsistency_msg =
  "Inconsistency while importing profiling information of slaves processes:\n"
 
 and check_landmark landmark imported =
-  if landmark.name <> imported.name 
+  if landmark.name <> imported.name
   || landmark.filename <> imported.filename then
     let msg =
-      Printf.sprintf 
+      Printf.sprintf
         "%sThe 'master' landmark '%s' ('%s') has the same id (%d) than the \
          'slave' landmark'%s' ('%s')"
-        inconsistency_msg landmark.name landmark.filename landmark.id 
+        inconsistency_msg landmark.name landmark.filename landmark.id
         imported.name imported.filename
     in
     failwith msg
@@ -642,7 +642,7 @@ let exit_hook () =
       Printf.printf
         "[Profiling] Dumping profiling information in file '%s'.\n" tmp_file;
       flush stdout;
-      (match format with 
+      (match format with
       | Textual -> Graph.output oc cg
       | JSON -> Graph.output_json oc cg);
       close_out oc

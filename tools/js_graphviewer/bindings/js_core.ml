@@ -26,7 +26,7 @@ module Kinds = struct
     type thead [@@js]
     type tr [@@js]
   end
-end 
+end
 
 open Kinds
 
@@ -49,7 +49,7 @@ module Node : sig
   val get_text_content: 'a t -> string -> unit
 
   open Kinds.Node
-  val node_type: 'a t -> 
+  val node_type: 'a t ->
      [ `Element of element t
      | `Text of text t
      | `ProcessingInstructionNde of processing_instruction_node t
@@ -59,8 +59,8 @@ module Node : sig
      | `DocumentFragment of document_fragment t
      | `Deprecated of deprecated t ]
 end = struct
-  include ([%js] : sig 
-    type untyped = private Ojs.t 
+  include ([%js] : sig
+    type untyped = private Ojs.t
     val untyped_of_js: Ojs.t -> untyped
     val untyped_to_js: untyped -> Ojs.t
 
@@ -80,7 +80,7 @@ end = struct
   let t_of_js _ x = untyped_of_js x
   let t_to_js _ x = untyped_to_js x
 
-  let node_type x = 
+  let node_type x =
     let open Kinds.Node in
     match node_type x with
     | 1 -> `Element (x : element t)
@@ -93,7 +93,7 @@ end = struct
     | _ -> `Deprecated (x: deprecated t)
 end
 
-module Element : sig 
+module Element : sig
   type 'a t = Kinds.Node.element Node.t
   val t_of_js: (Ojs.t -> 'a) -> Ojs.t -> 'a t
   val t_to_js: ('a -> Ojs.t) -> 'a t -> Ojs.t
@@ -163,16 +163,16 @@ module Document = struct
   end)
 
   let create_html_input document =
-    (create_element document "input" 
+    (create_element document "input"
     |> Element.unsafe_cast : Kinds.Html.input Element.t)
   let create_html_table document =
-    (create_element document "table" 
+    (create_element document "table"
     |> Element.unsafe_cast : Kinds.Html.table Element.t)
   let create_html_tr document =
     (create_element document "tr"
     |> Element.unsafe_cast : Kinds.Html.tr Element.t)
   let create_html_td document =
-    (create_element document "td" 
+    (create_element document "td"
     |> Element.unsafe_cast : Kinds.Html.td Element.t)
   let create_html_th document =
     (create_element document "th"
@@ -196,7 +196,7 @@ module Window : sig
   val set_onload: t -> (unit -> unit) -> unit
 end = [%js]
 
-val window: Window.t 
+val window: Window.t
   [@@js]
 
 val alert: string -> unit
@@ -222,13 +222,13 @@ module JSON : sig
     [@@js.global "JSON.parse"]
   val stringify: Ojs.t -> string
     [@@js.global "JSON.stringify"]
-end = [%js] 
+end = [%js]
 
 module File : sig
   type t = private Ojs.t
   val t_of_js: Ojs.t -> t
   val t_to_js: t -> Ojs.t
-  val name: t -> string 
+  val name: t -> string
 end = [%js]
 
 module FileList : sig
@@ -240,7 +240,7 @@ module FileList : sig
 end = [%js]
 
 module FileReader = struct
-  type state = 
+  type state =
     | Empty [@js 0]
     | Loading [@js 1]
     | Done [@js 2] [@@js] [@@js.enum]
@@ -265,12 +265,12 @@ module Html = struct
      end)
   end
 
-  let retype x = 
+  let retype x =
     match String.lowercase_ascii (Element.tag_name x) with
-    | "input" -> `Input (Element.unsafe_cast x : Kinds.Html.input Element.t) 
-    | "table" -> `Table (Element.unsafe_cast x : Kinds.Html.table Element.t) 
-    | "tr" -> `Tr (Element.unsafe_cast x : Kinds.Html.tr Element.t) 
-    | "td" -> `Td (Element.unsafe_cast x : Kinds.Html.td Element.t) 
+    | "input" -> `Input (Element.unsafe_cast x : Kinds.Html.input Element.t)
+    | "table" -> `Table (Element.unsafe_cast x : Kinds.Html.table Element.t)
+    | "tr" -> `Tr (Element.unsafe_cast x : Kinds.Html.tr Element.t)
+    | "td" -> `Td (Element.unsafe_cast x : Kinds.Html.td Element.t)
     | "body" -> `Body (Element.unsafe_cast x : Kinds.Html.body Element.t)
     | "tbody" -> `Tbody (Element.unsafe_cast x : Kinds.Html.tbody Element.t)
     | "thead" -> `Thead (Element.unsafe_cast x : Kinds.Html.thead Element.t)

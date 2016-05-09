@@ -32,16 +32,16 @@ type graph = {
   nodes : node array;
 }
 
-let graph_of_nodes nodes = 
+let graph_of_nodes nodes =
   { nodes = Array.of_list nodes }
 
 let sons {nodes} node =
   List.map (fun k -> nodes.(k)) node.sons
 
-let nodes {nodes} = 
+let nodes {nodes} =
   Array.to_list nodes
 
-let root {nodes} = 
+let root {nodes} =
   nodes.(0)
 
 module SetNode = Set.Make(struct
@@ -195,7 +195,7 @@ let label graph =
       List.sort_uniq Pervasives.compare
         (List.map (fun {name; _} -> name) l)) nodes
   in
-  let needs_filename = 
+  let needs_filename =
     StringSet.of_list
       (duplicated_elements names)
   in
@@ -210,8 +210,8 @@ let output oc graph =
   let label = label graph in
   let color = color graph in
   let human x =
-    if x < 1e3 then x, " " 
-    else if x < 1e6 then x /. 1e3, "K" 
+    if x < 1e3 then x, " "
+    else if x < 1e6 then x /. 1e3, "K"
     else if x < 1e9 then x /. 1e6, "M"
     else x /. 1e9, "G"
   in
@@ -305,7 +305,7 @@ let output oc graph =
 
 module JSON = struct
 
-type json = 
+type json =
   | String of string
   | Int of int
   | Float of float
@@ -315,38 +315,38 @@ type json =
 open Format
 
 let rec output oc = function
-  | String s -> 
+  | String s ->
     fprintf oc "\"%s\"" (String.escaped s)
-  | Int n -> 
+  | Int n ->
     fprintf oc "%d" n
-  | Float f -> 
+  | Float f ->
     fprintf oc "%f" f
-  | Map l -> 
+  | Map l ->
     fprintf oc "{@,";
     let first = ref true in
     List.iter (fun (name, json) ->
         if !first then
           first := false
-        else 
+        else
           fprintf oc ",@,";
         fprintf oc "@[<v 2>%S: %a@]" name output json
     ) l;
     fprintf oc "@;<0 -2>}"
   | List [] -> fprintf oc "[]"
   | List [x] -> fprintf oc "[%a]" output x
-  | List l -> 
+  | List l ->
     fprintf oc "[@,";
     let first = ref true in
     List.iter (fun json ->
         if !first then
           first := false
-        else 
+        else
           fprintf oc ",@,";
         fprintf oc "@[<v 2>%a@]" output json
     ) l;
     fprintf oc "@;<0 -2>]"
 
-let output oc = 
+let output oc =
   fprintf (formatter_of_out_channel oc) "@[<v 2>%a@]@." output
 
 end
@@ -354,8 +354,8 @@ end
 open JSON
 
 let json_of_node
-    {id; kind; landmark_id; name; filename; 
-     calls; time; sons; sys_time; gc_stat; distrib} = 
+    {id; kind; landmark_id; name; filename;
+     calls; time; sons; sys_time; gc_stat; distrib} =
   Map [ "id", Int id;
         "kind", String (string_of_kind kind);
         "landmark_id", Int landmark_id;
