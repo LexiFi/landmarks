@@ -14,14 +14,13 @@ let landmarks_to_register = ref []
 
 let has_name key ({txt; _}, _) = txt = key
 
-let rec has_attribute key l =
-  if List.exists (has_name key) l then
+let rec has_attribute ?(auto = false) key l =
+  if auto || List.exists (has_name key) l then
     Some (List.filter (fun x -> not (has_name key x)) l)
   else
     None
 
-let has_landmark_attribute = has_attribute "landmark"
-
+let has_landmark_attribute ?auto = has_attribute ?auto "landmark"
 
 let var x = Exp.ident (mknoloc (Longident.parse x))
 
@@ -113,7 +112,7 @@ let eta_expand f t n =
   lam vars
 
 
-let deep_mapper =
+let rec deep_mapper auto =
   { default_mapper with
     structure = (fun mapper l ->
       List.map
@@ -121,7 +120,7 @@ let deep_mapper =
           | { pstr_desc = Pstr_value (Recursive, vbs); pstr_loc} ->
             let vbs_arity_name =
               List.map
-                (fun vb -> match vb, has_landmark_attribute vb.pvb_attributes with
+                (fun vb -> match vb, has_landmark_attribute ~auto vb.pvb_attributes with
                   | { pvb_expr; pvb_loc;
                        pvb_pat =
                          {ppat_desc =
@@ -133,11 +132,11 @@ let deep_mapper =
             in
             let vbs = List.map (function
                 | (vb, None) ->
-                  mapper.value_binding mapper vb
+                  mapper.value_binding (deep_mapper false) vb
                 | {pvb_pat; pvb_loc; pvb_expr; _}, Some (_, _, _, attrs) ->
                   (* Remove landmark attribute: *)
                   let vb = Vb.mk ~attrs ~loc:pvb_loc pvb_pat pvb_expr in
-                  default_mapper.value_binding mapper vb) vbs_arity_name
+                  default_mapper.value_binding (deep_mapper false) vb) vbs_arity_name
             in
             let str = Str.value ~loc:pstr_loc Recursive vbs in
             let arity_name = filter_map snd vbs_arity_name in
@@ -150,11 +149,11 @@ let deep_mapper =
                 let expr = eta_expand (wrap_landmark landmark) ident arity in
                 Vb.mk (Pat.var (mknoloc name)) expr
               ) arity_name)]
-          | sti -> [default_mapper.structure_item mapper sti]) l |> List.flatten);
+          | sti -> [default_mapper.structure_item (deep_mapper false) sti]) l |> List.flatten);
     value_binding =
       fun mapper ({pvb_pat; pvb_expr; pvb_attributes; _} as vb) ->
-        let pvb_expr = mapper.expr mapper pvb_expr in
-        match has_landmark_attribute pvb_attributes with
+        let pvb_expr = mapper.expr (deep_mapper false) pvb_expr in
+        match has_landmark_attribute ~auto pvb_attributes with
         | Some pvb_attributes ->
           let landmark_name = string_of_pattern pvb_pat in
           let landmark = new_landmark landmark_name pvb_pat.ppat_loc in
@@ -163,10 +162,12 @@ let deep_mapper =
           {vb with pvb_expr}
   }
 
-let shallow_mapper =
-  { deep_mapper with
+let shallow_mapper auto =
+  let mapper = deep_mapper auto in
+  { mapper with
      structure = fun _ l ->
-       let l = deep_mapper.structure deep_mapper l in
+       let l = (deep_mapper auto).structure (deep_mapper auto) l in
+       if !landmarks_to_register = [] then l else
        let landmarks =
          Str.value Nonrecursive
            (List.map (fun (landmark, landmark_name, landmark_filename) ->
@@ -174,7 +175,16 @@ let shallow_mapper =
                    (register_landmark landmark_name landmark_filename)) (List.rev !landmarks_to_register))
       in landmarks :: l }
 
+let remove_attributes = 
+  { default_mapper with 
+     attributes = fun mapper attributes -> 
+       match has_landmark_attribute attributes with 
+       | Some attrs -> attrs
+       | None -> attributes }
 
-
-
-let () = register "landmarks" (fun _ -> shallow_mapper)
+let () = register "landmarks" (fun _ -> 
+    match Sys.getenv "OCAML_LANDMARKS" with 
+    | exception Not_found -> shallow_mapper false
+    | "0" -> remove_attributes
+    | "auto" -> shallow_mapper true
+    | _ -> shallow_mapper false)
