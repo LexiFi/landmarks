@@ -297,7 +297,7 @@ module TreeView = struct
       List.iter
         (fun id -> children := nodes.(id) :: !children)
         sons;
-      List.rev !children
+      List.sort (fun {Graph.time;_} {Graph.time=time';_} -> compare time' time) !children
     in
     append render expand children inside root
 

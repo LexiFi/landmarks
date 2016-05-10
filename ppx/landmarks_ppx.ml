@@ -56,7 +56,9 @@ let rec string_of_pattern pat =
  | Ppat_extension _ -> "EXTENSION"
  | Ppat_unpack m -> m.txt
 
-let string_of_loc (l : Location.t) = Format.asprintf "%a" Location.print_loc l
+let string_of_loc (l : Location.t) = 
+  let file, line, _ = Location.get_pos_info l.loc_start in
+  Printf.sprintf "%s:%d" (Location.show_filename file) line
 
 let begin_landmark lm = Exp.apply (var "Landmark.enter") [Nolabel, var lm]
 let end_landmark lm = Exp.apply (var "Landmark.exit") [Nolabel, var lm]
@@ -65,11 +67,29 @@ let register_landmark name filename =
     [Nolabel, Const.string name |> Exp.constant;
      Labelled "filename", Const.string filename |> Exp.constant]
 
+let new_landmark landmark_name loc =
+  incr landmark_id;
+  let landmark = Printf.sprintf "__generated_landmark_%d" !landmark_id in
+  let landmark_filename = string_of_loc loc in
+  landmarks_to_register :=
+    (landmark, landmark_name, landmark_filename) :: !landmarks_to_register;
+  landmark
 
-let rec wrap_landmark landmark expr =
+let rec wrap_landmark landmark_name loc expr =
   match expr.pexp_desc with
-  | Pexp_fun (l,o,p,e) -> Exp.fun_ l o p (wrap_landmark landmark e)
+  | Pexp_ident _
+  | Pexp_constant _ -> expr
+  | Pexp_constraint (e, c) ->
+    { expr with 
+      pexp_desc = Pexp_constraint (wrap_landmark landmark_name loc e, c) }
+  | Pexp_fun (l,o,p,e) -> 
+    { expr with 
+      pexp_desc = Pexp_fun (l, o, p, wrap_landmark landmark_name loc e) }
+  | Pexp_lazy e -> 
+    { expr with 
+      pexp_desc = Pexp_lazy (wrap_landmark landmark_name loc e) }
   | _ ->
+      let landmark = new_landmark landmark_name loc in
       Exp.sequence (begin_landmark landmark)
        (Exp.let_ Nonrecursive
           [Vb.mk (Pat.var (mknoloc "r"))
@@ -81,14 +101,6 @@ let rec wrap_landmark landmark expr =
              (Exp.sequence
                 (end_landmark landmark)
                 (var "r")))
-
-let new_landmark landmark_name loc =
-  incr landmark_id;
-  let landmark = Printf.sprintf "__generated_landmark_%d" !landmark_id in
-  let landmark_filename = string_of_loc loc in
-  landmarks_to_register :=
-    (landmark, landmark_name, landmark_filename) :: !landmarks_to_register;
-  landmark
 
 let min_list l1 l2 =
   if List.length l1 < List.length l2 then
@@ -128,7 +140,7 @@ let rec deep_mapper auto =
     structure = (fun mapper l ->
       List.map
         (function
-          | { pstr_desc = Pstr_value (Recursive, vbs); pstr_loc} ->
+          | { pstr_desc = Pstr_value (rec_flag, vbs); pstr_loc} ->
             let vbs_arity_name =
               List.map
                 (fun vb -> match vb, has_landmark_attribute ~auto vb.pvb_attributes with
@@ -137,7 +149,9 @@ let rec deep_mapper auto =
                          {ppat_desc =
                             Ppat_var {txt = name; _}; _};
                        _}, Some attr ->
-                    (vb, Some (arity pvb_expr, name, pvb_loc, attr))
+                    let arity = arity pvb_expr in
+                    if arity = [] then (vb, None)
+                    else (vb, Some (arity, name, pvb_loc, attr))
                   | _, _ -> (vb, None))
                 vbs
             in
@@ -149,7 +163,7 @@ let rec deep_mapper auto =
                   let vb = Vb.mk ~attrs ~loc:pvb_loc pvb_pat pvb_expr in
                   default_mapper.value_binding (deep_mapper false) vb) vbs_arity_name
             in
-            let str = Str.value ~loc:pstr_loc Recursive vbs in
+            let str = Str.value ~loc:pstr_loc rec_flag vbs in
             let arity_name = filter_map snd vbs_arity_name in
             if arity_name = [] then [str]
             else
@@ -159,8 +173,7 @@ let rec deep_mapper auto =
               let include_wrapper =
                 List.map (fun (arity, name, loc, _) ->
                     let ident = Exp.ident (mknoloc (Lident name)) in
-                    let landmark = new_landmark name loc in
-                    let expr = eta_expand (wrap_landmark landmark) ident arity in
+                    let expr = eta_expand (wrap_landmark name loc) ident arity in
                     Vb.mk (Pat.var (mknoloc name)) expr
                   ) arity_name
                 |> Str.value Nonrecursive
@@ -174,11 +187,10 @@ let rec deep_mapper auto =
     value_binding =
       fun mapper ({pvb_pat; pvb_expr; pvb_attributes; _} as vb) ->
         let pvb_expr = mapper.expr (deep_mapper false) pvb_expr in
-        match has_landmark_attribute ~auto pvb_attributes with
+        match has_landmark_attribute pvb_attributes with
         | Some pvb_attributes ->
           let landmark_name = string_of_pattern pvb_pat in
-          let landmark = new_landmark landmark_name pvb_pat.ppat_loc in
-          {vb with pvb_expr = wrap_landmark landmark pvb_expr; pvb_attributes}
+          {vb with pvb_expr = wrap_landmark landmark_name pvb_pat.ppat_loc pvb_expr; pvb_attributes}
         | None ->
           {vb with pvb_expr}
   }
@@ -207,5 +219,5 @@ let () = register "landmarks" (fun _ ->
     match Sys.getenv "OCAML_LANDMARKS" with
     | exception Not_found -> shallow_mapper false
     | "0" -> remove_attributes
-    | "auto" -> shallow_mapper true
+    | str when String.contains str 'a' -> shallow_mapper true
     | _ -> shallow_mapper false)
