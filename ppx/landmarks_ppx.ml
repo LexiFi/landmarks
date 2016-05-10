@@ -84,30 +84,35 @@ let new_landmark landmark_name loc =
     (landmark, landmark_name, landmark_filename) :: !landmarks_to_register;
   landmark
 
+let min_list l1 l2 =
+  if List.length l1 < List.length l2 then
+    l1
+  else
+    l2
+
 let rec arity {pexp_desc; _} =
   match pexp_desc with
-  | Pexp_fun (_, _, _, e ) -> 1 + arity e
+  | Pexp_fun (a, _, _, e ) -> a :: arity e
   | Pexp_function cases ->
-    1 + (List.fold_left
-      (fun acc {pc_rhs; _} -> min (arity pc_rhs) acc)
-      0 cases)
-  | _ -> 0
+    Nolabel :: (List.fold_left
+      (fun acc {pc_rhs; _} -> min_list (arity pc_rhs) acc)
+      [] cases)
+  | _ -> []
 
 let eta_expand f t n =
+  let k = ref 0 in
   let vars =
-    let rec gen = function
-      | 0 -> []
-      | n -> (Printf.sprintf "x%d" n) :: (gen (n - 1))
-    in
-    gen n
+    List.map (fun x -> match x with
+        | Nolabel -> incr k; (x, Printf.sprintf "x%d" !k)
+        | Optional s | Labelled s -> (x, s)) n
   in
   let rec app acc = function
     | [] -> acc
-    | hd :: tl -> app (Exp.apply acc [Nolabel, Exp.ident (mknoloc (Lident hd))]) tl
+    | (l,x) :: tl -> app (Exp.apply acc [l, Exp.ident (mknoloc (Lident x))]) tl
   in
   let rec lam = function
     | [] -> f (app t vars)
-    | hd :: tl -> Exp.fun_ Nolabel None (Pat.var (mknoloc hd)) (lam tl)
+    | (l,x) :: tl -> Exp.fun_ l None (Pat.var (mknoloc x)) (lam tl)
   in
   lam vars
 
@@ -175,15 +180,15 @@ let shallow_mapper auto =
                    (register_landmark landmark_name landmark_filename)) (List.rev !landmarks_to_register))
       in landmarks :: l }
 
-let remove_attributes = 
-  { default_mapper with 
-     attributes = fun mapper attributes -> 
-       match has_landmark_attribute attributes with 
+let remove_attributes =
+  { default_mapper with
+     attributes = fun mapper attributes ->
+       match has_landmark_attribute attributes with
        | Some attrs -> attrs
        | None -> attributes }
 
-let () = register "landmarks" (fun _ -> 
-    match Sys.getenv "OCAML_LANDMARKS" with 
+let () = register "landmarks" (fun _ ->
+    match Sys.getenv "OCAML_LANDMARKS" with
     | exception Not_found -> shallow_mapper false
     | "0" -> remove_attributes
     | "auto" -> shallow_mapper true
