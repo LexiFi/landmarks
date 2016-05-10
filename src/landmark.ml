@@ -345,26 +345,20 @@ let get_entering_node ({id;_} as landmark) =
   if current_node == landmark.last_parent && landmark.last_son != dummy_node then
     landmark.last_son
   else begin
-    (* Detects a recursive call and creates a cycle in the graph. *)
-    let last_self = landmark.last_self in
-    if last_self != dummy_node then
-      last_self
-    else begin
-      incr cache_miss_ref;
-      (* We fetch the son or create it. *)
-      let sons = current_node.sons in
-      let son = try
-          SparseArray.get sons id
-        with Not_found ->
-          let son = new_node landmark in
-          SparseArray.set current_node.sons id son;
-          son
-      in
-      (* Fill the "cache". *)
-      landmark.last_parent <- current_node;
-      landmark.last_son <- son;
-      son
-    end
+    incr cache_miss_ref;
+    (* We fetch the son or create it. *)
+    let sons = current_node.sons in
+    let son = try
+        SparseArray.get sons id
+      with Not_found ->
+        let son = new_node landmark in
+        SparseArray.set current_node.sons id son;
+        son
+    in
+    (* Fill the "cache". *)
+    landmark.last_parent <- current_node;
+    landmark.last_son <- son;
+    son
   end
 
 let get_exiting_node current_node =
@@ -399,16 +393,12 @@ let enter landmark =
   node.calls <- node.calls + 1;
   Stack.push node.fathers !current_node_ref;
   current_node_ref := node;
-
-  (* "Stamps" are only collected when it is not a recursive call. *)
-  if landmark.last_self == dummy_node then begin
-    landmark.last_self <- node;
-    node.timestamp <- clock ();
-    if !profile_with_gc_stat then
-      node.floats.gc_statstamp <- Gc.allocated_bytes ();
-    if !profile_with_sys_time then
-      node.floats.sys_timestamp <- Sys.time ();
-  end
+  landmark.last_self <- node;
+  node.timestamp <- clock ();
+  if !profile_with_gc_stat then
+    node.floats.gc_statstamp <- Gc.allocated_bytes ();
+  if !profile_with_sys_time then
+    node.floats.sys_timestamp <- Sys.time ()
 
 let mismatch_recovering landmark current_node =
   let expected_landmark = current_node.landmark in
@@ -649,3 +639,33 @@ let exit_hook () =
   end
 
 let () = Pervasives.at_exit exit_hook
+
+let () = match Sys.getenv "OCAML_LANDMARKS" with
+  | exception Not_found -> ()
+  | "0" -> ()
+  | str ->
+    let debug = String.contains str 'd' in
+    let output =
+       if String.contains str 'e' then
+         Channel stderr
+       else if String.contains str 'o' then
+         Channel stdout
+       else if String.contains str 't' then 
+         Temporary
+       else if String.contains str 'n' then
+         Silent
+       else
+         Channel stderr
+    in
+    let format = 
+      if String.contains str 'j' then
+        JSON
+      else
+        Textual
+    in
+    let sys_time = String.contains str 's' in
+    let gc_stat = String.contains str 'g' in
+    start_profiling ~profiling_options:{
+       debug; gc_stat; sys_time; output; format
+    } ()
+         
