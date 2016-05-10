@@ -22,6 +22,9 @@ let rec has_attribute ?(auto = false) key l =
 
 let has_landmark_attribute ?auto = has_attribute ?auto "landmark"
 
+let payload_of_string x =
+  PStr [Str.eval (Exp.constant (Const.string x))]
+
 let var x = Exp.ident (mknoloc (Longident.parse x))
 
 let rec filter_map f = function
@@ -57,7 +60,10 @@ let string_of_loc (l : Location.t) = Format.asprintf "%a" Location.print_loc l
 
 let begin_landmark lm = Exp.apply (var "Landmark.enter") [Nolabel, var lm]
 let end_landmark lm = Exp.apply (var "Landmark.exit") [Nolabel, var lm]
-let register_landmark name filename = Exp.apply (var "Landmark.register") [Nolabel, Const.string name |> Exp.constant; Labelled "filename", Const.string filename |> Exp.constant]
+let register_landmark name filename =
+  Exp.apply (var "Landmark.register")
+    [Nolabel, Const.string name |> Exp.constant;
+     Labelled "filename", Const.string filename |> Exp.constant]
 
 
 let rec wrap_landmark landmark expr =
@@ -147,14 +153,24 @@ let rec deep_mapper auto =
             let arity_name = filter_map snd vbs_arity_name in
             if arity_name = [] then [str]
             else
-            [str; Str.value Nonrecursive
-               (List.map (fun (arity, name, loc, _) ->
-                let ident = Exp.ident (mknoloc (Lident name)) in
-                let landmark = new_landmark name loc in
-                let expr = eta_expand (wrap_landmark landmark) ident arity in
-                Vb.mk (Pat.var (mknoloc name)) expr
-              ) arity_name)]
-          | sti -> [default_mapper.structure_item (deep_mapper false) sti]) l |> List.flatten);
+              let warning_off =
+                Str.attribute (mknoloc "ocaml.warning", payload_of_string "-32")
+              in
+              let include_wrapper =
+                List.map (fun (arity, name, loc, _) ->
+                    let ident = Exp.ident (mknoloc (Lident name)) in
+                    let landmark = new_landmark name loc in
+                    let expr = eta_expand (wrap_landmark landmark) ident arity in
+                    Vb.mk (Pat.var (mknoloc name)) expr
+                  ) arity_name
+                |> Str.value Nonrecursive
+                |> fun x -> Mod.structure [warning_off; x]
+                            |> Incl.mk
+                            |> Str.include_
+              in
+              [str; include_wrapper]
+          | sti -> [mapper.structure_item mapper sti])
+        l |> List.flatten);
     value_binding =
       fun mapper ({pvb_pat; pvb_expr; pvb_attributes; _} as vb) ->
         let pvb_expr = mapper.expr (deep_mapper false) pvb_expr in
