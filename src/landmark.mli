@@ -70,7 +70,7 @@ type profile_format =
 
 type profiling_options = {
   debug : bool;
-  gc_stat: bool;
+  allocated_bytes: bool;
   sys_time : bool;
   output : profile_output;
   format : profile_format

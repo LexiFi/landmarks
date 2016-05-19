@@ -123,7 +123,7 @@ module Graph = struct
     time: float;
     sons: id list;
     sys_time: float;
-    gc_stat: float;
+    allocated_bytes: float;
     distrib: float array;
   } [@@js] [@@js.verbatim_names]
 
@@ -153,10 +153,10 @@ module Graph = struct
          fun {sys_time; _} -> text (Printf.sprintf "%.0f" sys_time |> Helper.format_number)]
       else []
     in
-    let profile_with_gc_stat =
-      if List.exists (fun {gc_stat; _} -> gc_stat <> 0.0) normal_nodes then
-        [text "Garbage Collector", (fun x y -> compare x.gc_stat y.gc_stat),
-         fun {gc_stat; _} -> text (Printf.sprintf "%.0f" gc_stat |> Helper.format_number)]
+    let profile_with_allocated_bytes =
+      if List.exists (fun {allocated_bytes; _} -> allocated_bytes <> 0.0) normal_nodes then
+        [text "Garbage Collector", (fun x y -> compare x.allocated_bytes y.allocated_bytes),
+         fun {allocated_bytes; _} -> text (Printf.sprintf "%.0f" allocated_bytes |> Helper.format_number)]
       else []
     in
     let cols = [
@@ -168,7 +168,7 @@ module Graph = struct
                        fun {calls; _} -> text (string_of_int calls |> Helper.format_number));
         (text "Time", (fun x y -> compare x.time y.time),
                       fun {time; _} -> text (Printf.sprintf "%.0f" time |> Helper.format_number));
-      ] @ profile_with_sys_time @ profile_with_gc_stat
+      ] @ profile_with_sys_time @ profile_with_allocated_bytes
     in
     Helper.sortable_table cols all_nodes
 

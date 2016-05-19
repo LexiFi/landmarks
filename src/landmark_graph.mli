@@ -17,7 +17,7 @@ type node = {
   time: float;
   sons: id list;
   sys_time: float;
-  gc_stat: float;
+  allocated_bytes: float;
   distrib: float array;
 }
 
