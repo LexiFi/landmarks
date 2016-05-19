@@ -127,7 +127,7 @@ type landmark = {
     id: int;
     kind : Graph.kind;
     name: string;
-    filename: string;
+    location: string;
 
     mutable last_parent: node;
     mutable last_son: node;
@@ -172,7 +172,7 @@ let rec landmark_root = {
     kind = Graph.Root;
     id = 0;
     name = "ROOT";
-    filename = __FILE__;
+    location = __FILE__;
     last_parent = dummy_node;
     last_son = dummy_node;
     last_self = dummy_node;
@@ -214,13 +214,13 @@ let profiling () = !profiling_ref
 (** REGISTERING **)
 
 let last_landmark_id = ref 1
-let new_landmark name filename kind =
+let new_landmark name location kind =
   let id = !last_landmark_id in
   incr last_landmark_id;
   {
     id;
     name;
-    filename;
+    location;
     kind;
     last_parent = dummy_node;
     last_self = dummy_node;
@@ -258,9 +258,9 @@ let landmark_of_id id =
   List.nth !registered_landmarks
     ((List.length !registered_landmarks) - (id + 1))
 
-let register_generic ?filename kind name call_stack =
-  let filename =
-    match filename with
+let register_generic ?location kind name call_stack =
+  let location =
+    match location with
     | Some name -> name
     | None ->
       let backtrace_slots = Printexc.backtrace_slots call_stack in
@@ -272,21 +272,21 @@ let register_generic ?filename kind name call_stack =
          | None -> "internal")
       | _ -> "unknown"
   in
-  let landmark = new_landmark name filename kind in
+  let landmark = new_landmark name location kind in
   if List.exists (fun landmark ->
-      name = landmark.name && filename = landmark.filename)
+      name = landmark.name && location = landmark.location)
       !registered_landmarks then
     failwith
       (Printf.sprintf
-         "The landmark '%s' is registered twice in '%s'." name filename);
+         "The landmark '%s' is registered twice in '%s'." name location);
   registered_landmarks := landmark :: !registered_landmarks;
   if !profile_with_debug then
     Printf.eprintf "[Profiling] registering(%s)\n%!" name;
   landmark
 
-let register ?filename name =
+let register ?location name =
   let call_stack = Printexc.get_callstack 3 in
-  register_generic ?filename Graph.Normal name call_stack
+  register_generic ?location Graph.Normal name call_stack
 
 let register_counter name =
   let call_stack = Printexc.get_callstack 3 in
@@ -524,12 +524,12 @@ let stop_profiling () =
 
 let export () =
   let export_node {landmark; id; calls; floats; sons; distrib; _} =
-    let {id = landmark_id; name; filename; kind; _} = landmark in
+    let {id = landmark_id; name; location; kind; _} = landmark in
     let {time; allocated_bytes; sys_time; _} = floats in
     let sons =
       List.map (fun ({id;_} : node) -> id) (SparseArray.values sons)
     in
-    {Graph.landmark_id; id; name; filename; calls; time; kind;
+    {Graph.landmark_id; id; name; location; calls; time; kind;
      allocated_bytes; sys_time; sons; distrib = Stack.to_array distrib}
   in
   if !current_node_ref != root_node then
@@ -598,13 +598,13 @@ and inconsistency_msg =
 
 and check_landmark landmark imported =
   if landmark.name <> imported.name
-  || landmark.filename <> imported.filename then
+  || landmark.location <> imported.location then
     let msg =
       Printf.sprintf
         "%sThe 'master' landmark '%s' ('%s') has the same id (%d) than the \
          'slave' landmark'%s' ('%s')"
-        inconsistency_msg landmark.name landmark.filename landmark.id
-        imported.name imported.filename
+        inconsistency_msg landmark.name landmark.location landmark.id
+        imported.name imported.location
     in
     failwith msg
 

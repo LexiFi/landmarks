@@ -118,7 +118,7 @@ module Graph = struct
     kind : kind;
     landmark_id : int;
     name: string;
-    filename: string;
+    location: string;
     calls: int;
     time: float;
     sons: id list;
@@ -149,24 +149,24 @@ module Graph = struct
     let text x = Document.create_text_node document x in
     let profile_with_sys_time =
       if List.exists (fun {sys_time; _} -> sys_time <> 0.0) normal_nodes then
-        [text "System Time", (fun x y -> compare x.sys_time y.sys_time),
+        [text "Time", (fun x y -> compare x.sys_time y.sys_time),
          fun {sys_time; _} -> text (Printf.sprintf "%.0f" sys_time |> Helper.format_number)]
       else []
     in
     let profile_with_allocated_bytes =
       if List.exists (fun {allocated_bytes; _} -> allocated_bytes <> 0.0) normal_nodes then
-        [text "Garbage Collector", (fun x y -> compare x.allocated_bytes y.allocated_bytes),
+        [text "Allocated Bytes", (fun x y -> compare x.allocated_bytes y.allocated_bytes),
          fun {allocated_bytes; _} -> text (Printf.sprintf "%.0f" allocated_bytes |> Helper.format_number)]
       else []
     in
     let cols = [
         (text "Name", (fun x y -> compare x.name y.name),
                       fun {name; _} -> text name);
-        (text "Filename", (fun x y -> compare x.filename y.filename),
-                         fun {filename; _} -> text filename);
+        (text "Location", (fun x y -> compare x.location y.location),
+                         fun {location; _} -> text location);
         (text "Calls", (fun x y -> compare x.calls y.calls),
                        fun {calls; _} -> text (string_of_int calls |> Helper.format_number));
-        (text "Time", (fun x y -> compare x.time y.time),
+        (text "Cycles", (fun x y -> compare x.time y.time),
                       fun {time; _} -> text (Printf.sprintf "%.0f" time |> Helper.format_number));
       ] @ profile_with_sys_time @ profile_with_allocated_bytes
     in

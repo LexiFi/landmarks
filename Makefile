@@ -1,4 +1,4 @@
-.PHONY: landmarks tests clean ppx all
+.PHONY: landmarks tests clean ppx all tools
 
 all: landmarks ppx
 
@@ -7,6 +7,9 @@ landmarks:
 
 ppx:
 	@$(MAKE) -C ppx
+
+tools:
+	@$(MAKE) -C tools/js_graphviewer
 
 tests: landmarks
 	@echo ""

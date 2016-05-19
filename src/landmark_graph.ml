@@ -19,7 +19,7 @@ type node = {
   kind : kind;
   landmark_id : int;
   name: string;
-  filename: string;
+  location: string;
   calls: int;
   time: float;
   sons: id list;
@@ -188,21 +188,21 @@ let color graph =
 
 let label graph =
   let nodes =
-    group_proj (fun {filename; _} -> filename)
+    group_proj (fun {location; _} -> location)
       (nodes graph)
   in
   let names = flatten_map (fun l ->
       List.sort_uniq Pervasives.compare
         (List.map (fun {name; _} -> name) l)) nodes
   in
-  let needs_filename =
+  let needs_location =
     StringSet.of_list
       (duplicated_elements names)
   in
-  fun {filename; name; _}->
-    if StringSet.mem name needs_filename then
-      let filename = base_name filename in
-      filename^"."^name
+  fun {location; name; _}->
+    if StringSet.mem name needs_location then
+      let location = base_name location in
+      Printf.sprintf "%s (%s)" name location
     else name
 
 let output oc graph =
@@ -279,11 +279,11 @@ let output oc graph =
   Printf.fprintf oc "\nAggregated table:\n----------------\n%!";
   Printf.fprintf oc "%35s; %20s; %8s; %8s%s\n%!"
     "Name" "Filename" "Calls" "Time" optional_headers;
-  let print_row ({name; filename; calls;
+  let print_row ({name; location; calls;
                   time; allocated_bytes; sys_time; _}) =
     let time, unit = human time in
     Printf.fprintf oc "%35s; %20s; %8d; %7.2f%1s%s\n%!"
-      name filename calls time unit (optional_columns sys_time allocated_bytes)
+      name location calls time unit (optional_columns sys_time allocated_bytes)
   in
   List.iter print_row normal_nodes;
   if sample_nodes <> [] then begin
@@ -354,13 +354,13 @@ end
 open JSON
 
 let json_of_node
-    {id; kind; landmark_id; name; filename;
+    {id; kind; landmark_id; name; location;
      calls; time; sons; sys_time; allocated_bytes; distrib} =
   Map [ "id", Int id;
         "kind", String (string_of_kind kind);
         "landmark_id", Int landmark_id;
         "name", String name;
-        "filename", String filename;
+        "location", String location;
         "calls", Int calls;
         "time", Float time;
         "sons", List (List.map (fun x -> Int x) sons);

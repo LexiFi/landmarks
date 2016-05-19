@@ -12,7 +12,7 @@ type node = {
   kind : kind;
   landmark_id : int;
   name: string;
-  filename: string;
+  location: string;
   calls: int;
   time: float;
   sons: id list;
@@ -36,7 +36,7 @@ val sons: graph -> node -> node list
     [List.map (node_of_id graph) node.sons] *)
 
 val label: graph -> node -> string
-(** Returns a fully qualified name (ie. filename.name) if it is needed. *)
+(** Returns a fully qualified name if it is needed. *)
 
 val output: out_channel -> graph -> unit
 (** Pretty printed output a call graph on an out_channel. *)
