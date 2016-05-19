@@ -64,8 +64,8 @@ let begin_landmark lm = Exp.apply (var "Landmark.enter") [Nolabel, var lm]
 let end_landmark lm = Exp.apply (var "Landmark.exit") [Nolabel, var lm]
 let register_landmark name location =
   Exp.apply (var "Landmark.register")
-    [Nolabel, Const.string name |> Exp.constant;
-     Labelled "location", Const.string location |> Exp.constant]
+    [ Labelled "location", Const.string location |> Exp.constant;
+      Nolabel, Const.string name |> Exp.constant]
 
 let new_landmark landmark_name loc =
   incr landmark_id;

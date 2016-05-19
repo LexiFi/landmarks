@@ -1,5 +1,5 @@
-EXTRAS=-ppx $(BASEDIR)/ppx/landmarks_ppx.opt
 ENV=OCAML_LANDMARKS=a
+EXTRAS=-dsource
 
 include ../../Makefile.common
 
