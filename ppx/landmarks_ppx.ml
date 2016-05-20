@@ -55,6 +55,7 @@ let rec string_of_pattern pat =
  | Ppat_type _ -> "TYPE"
  | Ppat_extension _ -> "EXTENSION"
  | Ppat_unpack m -> m.txt
+ | _ -> "UNKNOWN"
 
 let string_of_loc (l : Location.t) = 
   let file, line, _ = Location.get_pos_info l.loc_start in
@@ -97,7 +98,7 @@ let rec wrap_landmark landmark_name loc expr =
                 [Exp.case (Pat.var (mknoloc "e"))
                    (Exp.sequence
                       (end_landmark landmark)
-                      (Exp.apply (var "raise") [Nolabel, var "e"]))])]
+                      (Exp.apply (var "Pervasives.raise") [Nolabel, var "e"]))])]
              (Exp.sequence
                 (end_landmark landmark)
                 (var "r")))
