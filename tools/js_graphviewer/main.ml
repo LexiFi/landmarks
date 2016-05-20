@@ -133,6 +133,12 @@ module Graph = struct
    try graph_of_js (JSON.parse s) with Ojs_exn.Error _ -> error "Invalid input format."
   let string_of_graph s = JSON.stringify (graph_to_js s)
 
+  let has_sys_time {nodes} = 
+    Array.exists (fun {sys_time; _} -> sys_time <> 0.0) nodes
+
+  let has_allocated_bytes {nodes} = 
+    Array.exists (fun {gc_stat; _} -> gc_stat <> 0.0) nodes
+
   let aggregated_table graph =
     let graph = Landmark_graph.aggregate_landmarks graph in
     let all_nodes =
@@ -148,13 +154,13 @@ module Graph = struct
     in
     let text x = Document.create_text_node document x in
     let profile_with_sys_time =
-      if List.exists (fun {sys_time; _} -> sys_time <> 0.0) normal_nodes then
+      if has_sys_time graph then
         [text "System Time", (fun x y -> compare x.sys_time y.sys_time),
          fun {sys_time; _} -> text (Printf.sprintf "%.0f" sys_time |> Helper.format_number)]
       else []
     in
     let profile_with_gc_stat =
-      if List.exists (fun {gc_stat; _} -> gc_stat <> 0.0) normal_nodes then
+      if has_allocated_bytes graph then
         [text "Garbage Collector", (fun x y -> compare x.gc_stat y.gc_stat),
          fun {gc_stat; _} -> text (Printf.sprintf "%.0f" gc_stat |> Helper.format_number)]
       else []
@@ -232,13 +238,13 @@ module TreeView = struct
      Node.append_child inside ul;
      generate render expand children ul None root |> ignore
 
-  let callgraph inside ({Graph.nodes} as graph) =
+  let callgraph inside ({Graph.nodes} as graph) proj =
     let root =
       if Array.length nodes = 0 then
         error "callgraph: no root"
       else nodes.(0)
     in
-    let intensity = Landmark_graph.intensity graph in
+    let intensity = Landmark_graph.intensity ~proj graph in
     let color node =
       let rgb = Printf.sprintf "rgb(%d,%d,%d)" in
       let open Graph in
@@ -262,25 +268,27 @@ module TreeView = struct
       | Sampler -> rgb 0 200 125
     in
     let render (parent : Graph.node option) ({Graph.name; time = node_time; kind; calls; distrib; _} as node) =
+      let node_value = proj node in
       let span = create "span" ~class_name:"conten" ~text:name ~style:(Printf.sprintf "color:%s" (color node)) in
       (match parent, kind with
-       | Some {Graph.time = parent_time; _}, Graph.Normal ->
+       | Some parent, Graph.Normal ->
+         let parent_value = proj parent in
          let text =
-           Printf.sprintf " (%2.2f%%) " (100.0 *. node_time /. parent_time)
+           Printf.sprintf " (%2.2f%%) " (100.0 *. node_value /. parent_value)
          in
-         let span_time = create ~class_name:"time" ~text "span" in
-         Node.append_child span span_time
+         let span_value = create ~text "span" in
+         Node.append_child span span_value
        | _, Graph.Counter ->
          let text =
            Printf.sprintf " (%d calls) " calls
          in
-         let span_time = create ~class_name:"calls" ~text "span" in
+         let span_time = create ~text "span" in
          Node.append_child span span_time
        | _, Graph.Sampler ->
          let text =
            Printf.sprintf " (%d values) " (Array.length distrib)
          in
-         let span_time = create ~class_name:"values" ~text "span" in
+         let span_time = create ~text "span" in
          Node.append_child span span_time
        | _ -> ());
       span
@@ -290,14 +298,15 @@ module TreeView = struct
     let expand node =
       let reference = reference node in
       let open Graph in
-      depth node <= 1 || node.time > 0.1 *. reference.time
+      depth node <= 1 || proj node > 0.1 *. proj reference
     in
     let children {Graph.sons; _} =
       let children = ref [] in
       List.iter
         (fun id -> children := nodes.(id) :: !children)
         sons;
-      List.sort (fun {Graph.time;_} {Graph.time=time';_} -> compare time' time) !children
+      List.sort (fun node node' ->
+		      compare (proj node) (proj node')) !children
     in
     append render expand children inside root
 
@@ -306,6 +315,8 @@ end
 
 let filename_onclick _ =
   let source_tree_div = Helper.element_of_id "sourceTree" in
+  let source_tree_sys_time_div = Helper.element_of_id "sourceTreeTime" in
+  let source_tree_allocation_div = Helper.element_of_id "sourceTreeAllocation" in
   let aggregated_table_div = Helper.element_of_id "aggregatedTable" in
   let filename = Helper.input_of_id "filename" in
   let file = FileList.item (Html.Input.files filename) 0 in
@@ -322,7 +333,9 @@ let filename_onclick _ =
         let graph = graph_of_string text in
         Helper.show (Helper.element_of_id "main");
         Helper.removeAll source_tree_div;
-        TreeView.callgraph source_tree_div graph;
+        TreeView.callgraph source_tree_div graph (fun {time; _} -> time);
+        TreeView.callgraph source_tree_sys_time_div graph (fun {sys_time; _} -> sys_time);
+        TreeView.callgraph source_tree_allocation_div graph (fun {gc_stat; _} -> gc_stat);
         Graph.aggregated_table graph aggregated_table_div
     in
     FileReader.read_as_text filereader file;
@@ -332,6 +345,6 @@ let onload _ = begin
   let filename_button = Helper.element_of_id "filenameButton" in
   Element.set_onclick filename_button filename_onclick;
   Helper.hide (Helper.element_of_id "main");
-  Helper.tabs_logic ["sourceTreeTab", "sourceTree"; "tableTab", "aggregatedTable"]
+  Helper.tabs_logic ["sourceTreeTab", "sourceTree"; "sourceTreeTimeTab", "sourceTreeTime"; "sourceTreeAllocationTab", "sourceTreeAllocation"; "tableTab", "aggregatedTable"]
 end
 let () = Window.set_onload window onload

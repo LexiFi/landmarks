@@ -20,5 +20,6 @@ bindings:
 
 
 clean:
+	make -C bindings clean
 	rm -f main.byte main.js main.cm*
 

@@ -404,8 +404,9 @@ let mismatch_recovering landmark current_node =
   let expected_landmark = current_node.landmark in
   if expected_landmark != landmark then begin
     let msg =
-      Printf.sprintf "landmark failure when closing '%s', expecting '%s'."
-                                      landmark.name expected_landmark.name
+      Printf.sprintf "landmark failure when closing '%s' (%s), expecting '%s' (%s)."
+      landmark.name landmark.filename 
+      expected_landmark.name expected_landmark.filename
     in
     Printf.eprintf "Warning: %s\n%!" msg;
     unroll_until landmark.last_self;

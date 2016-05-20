@@ -145,15 +145,18 @@ let aggregate_landmarks {nodes} =
   let nodes = Array.of_list (List.map aggregate_nodes group_nodes) in
   { nodes }
 
-let intensity graph =
+let intensity ?(proj = fun {time;_} -> time) graph =
   let sa = shallow_ancestor graph in
   fun node ->
-    let not_accounted_time =
-      List.fold_left (fun t {time; _ } -> t -. time)
-        node.time (sons graph node)
+    let not_accounted =
+      List.fold_left (fun t node -> t -. proj node)
+        (proj node) (sons graph node)
     in
-    let reference = (sa node).time in
-    if reference = 0.0 then 0.0 else not_accounted_time /. reference
+    let reference = proj (sa node) in
+    if reference = 0.0 then 
+      0.0 
+    else 
+      not_accounted /. reference
 
 let color graph =
   let intensity = intensity graph in

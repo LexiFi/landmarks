@@ -61,7 +61,7 @@ val depth: graph -> node -> int
 
 val shallow_ancestor: graph -> node -> node
 
-val intensity: graph -> node -> float
+val intensity: ?proj:(node -> float) -> graph -> node -> float
 (** Returns an arbitrary number between 0.0 and 1.0. *)
 
 val total_number_of_calls: graph -> int
