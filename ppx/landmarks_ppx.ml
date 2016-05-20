@@ -2,6 +2,7 @@
 (* See the attached LICENSE file.                                    *)
 (* Copyright 2016 by LexiFi.                                         *)
 
+
 open Ast_mapper
 open Ast_helper
 open Asttypes
@@ -14,11 +15,17 @@ let landmarks_to_register = ref []
 
 let has_name key ({txt; _}, _) = txt = key
 
-let rec has_attribute ?(auto = false) key l =
+let has_attribute ?(auto = false) key l =
   if auto || List.exists (has_name key) l then
     Some (List.filter (fun x -> not (has_name key x)) l)
   else
     None
+
+let get_string_payload key = function
+    {txt; _}, PStr [{pstr_desc = Pstr_eval ({
+        pexp_desc = Pexp_constant (Pconst_string (x, None)); _
+      }, _); _}] when txt = key -> Some x
+  | _ -> None
 
 let has_landmark_attribute ?auto = has_attribute ?auto "landmark"
 
@@ -139,12 +146,18 @@ let eta_expand f t n =
 let rec deep_mapper auto =
   { default_mapper with
     structure = (fun mapper l ->
+      let auto = ref auto in
       List.map
         (function
+          | { pstr_desc = Pstr_attribute attr; _} as pstr ->
+            (match get_string_payload "landmark" attr with
+            | Some "auto" -> auto := true; []
+            | Some "auto-off" -> auto := false; []
+            | _ -> [pstr])
           | { pstr_desc = Pstr_value (rec_flag, vbs); pstr_loc} ->
             let vbs_arity_name =
               List.map
-                (fun vb -> match vb, has_landmark_attribute ~auto vb.pvb_attributes with
+                (fun vb -> match vb, has_landmark_attribute ~auto:!auto vb.pvb_attributes with
                   | { pvb_expr; pvb_loc;
                        pvb_pat =
                          {ppat_desc =

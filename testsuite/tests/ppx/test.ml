@@ -26,10 +26,25 @@ let[@landmark] prime n =
 let[@landmark] rec next_prime n =
   if prime n then n else next_prime (n + 1)
 
+[@@@landmark "auto"]
+
+let auto1 () = print_endline "auto1"
+let[@landmark] auto2 () = print_endline "auto2"
+let auto3 () = print_endline "auto3"
+
+
+[@@@landmark "auto-off"]
+
+let noauto () = print_endline "no-auto"
+
 let () =
   let open Landmark in
   let[@landmark] () =
     Printf.printf "%d\n%!" (fib 10);
     Printf.printf "%d\n%!" (next_prime 123456789);
+    auto1 ();
+    auto2 ();
+    auto3 ();
+    noauto ();
   in
   ()
