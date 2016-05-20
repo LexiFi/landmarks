@@ -10,7 +10,7 @@ val clock: unit -> Int64.t
 
 exception LandmarkFailure of string
 
-val register: ?filename:string -> string -> landmark
+val register: ?location:string -> string -> landmark
 (** [register name] registers a new landmark.
     /!\ Should always be called at top-level /!\ *)
 
@@ -70,7 +70,7 @@ type profile_format =
 
 type profiling_options = {
   debug : bool;
-  gc_stat: bool;
+  allocated_bytes: bool;
   sys_time : bool;
   output : profile_output;
   format : profile_format

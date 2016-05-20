@@ -19,12 +19,12 @@ type node = {
   kind : kind;
   landmark_id : int;
   name: string;
-  filename: string;
+  location: string;
   calls: int;
   time: float;
   sons: id list;
   sys_time: float;
-  gc_stat: float;
+  allocated_bytes: float;
   distrib: float array;
 }
 
@@ -131,7 +131,7 @@ let aggregate_landmarks {nodes} =
       let time = List.fold_left (fun acc {time; _} -> acc +. time) hd.time tl in
       let calls = List.fold_left (fun acc {calls; _} -> acc + calls) hd.calls tl in
       let sys_time = List.fold_left (fun acc {sys_time; _} -> acc +. sys_time) hd.sys_time tl in
-      let gc_stat = List.fold_left (fun acc {gc_stat; _} -> acc +. gc_stat) hd.gc_stat tl in
+      let allocated_bytes = List.fold_left (fun acc {allocated_bytes; _} -> acc +. allocated_bytes) hd.allocated_bytes tl in
       let sons =
         let lm_ids_of_sons {sons; _} =
           IntSet.of_list (List.map (fun id -> nodes.(id).landmark_id) sons)
@@ -140,7 +140,7 @@ let aggregate_landmarks {nodes} =
         |> IntSet.elements
         |> List.map (Hashtbl.find translator)
       in
-      { hd with id; time; calls; sys_time; gc_stat; sons}
+      { hd with id; time; calls; sys_time; allocated_bytes; sons}
   in
   let nodes = Array.of_list (List.map aggregate_nodes group_nodes) in
   { nodes }
@@ -191,21 +191,21 @@ let color graph =
 
 let label graph =
   let nodes =
-    group_proj (fun {filename; _} -> filename)
+    group_proj (fun {location; _} -> location)
       (nodes graph)
   in
   let names = flatten_map (fun l ->
       List.sort_uniq Pervasives.compare
         (List.map (fun {name; _} -> name) l)) nodes
   in
-  let needs_filename =
+  let needs_location =
     StringSet.of_list
       (duplicated_elements names)
   in
-  fun {filename; name; _}->
-    if StringSet.mem name needs_filename then
-      let filename = base_name filename in
-      filename^"."^name
+  fun {location; name; _}->
+    if StringSet.mem name needs_location then
+      let location = base_name location in
+      Printf.sprintf "%s (%s)" name location
     else name
 
 let output oc graph =
@@ -263,30 +263,30 @@ let output oc graph =
   let normal_nodes = List.filter (fun n -> n.kind = Normal || n.kind = Root) all_nodes in
   let sample_nodes = List.filter (fun n -> n.kind = Sampler) all_nodes in
   let profile_with_sys_time = List.exists (fun {sys_time; _} -> sys_time <> 0.0) normal_nodes in
-  let profile_with_gc_stat = List.exists (fun {gc_stat; _} -> gc_stat <> 0.0) normal_nodes in
+  let profile_with_allocated_bytes = List.exists (fun {allocated_bytes; _} -> allocated_bytes <> 0.0) normal_nodes in
   let optional_headers =
-    match profile_with_sys_time, profile_with_gc_stat with
+    match profile_with_sys_time, profile_with_allocated_bytes with
     | true, true -> Printf.sprintf "; %8s; %8s" "Sys time" "Allocated bytes"
     | true, false -> Printf.sprintf "; %8s" "Sys time"
     | false, true -> Printf.sprintf "; %8s" "Allocated bytes"
     | false, false -> ""
   in
-  let optional_columns sys_time gc_stat =
-    match profile_with_sys_time, profile_with_gc_stat with
-    | true, true -> Printf.sprintf "; %8.3f; %8.0f" sys_time gc_stat
+  let optional_columns sys_time allocated_bytes =
+    match profile_with_sys_time, profile_with_allocated_bytes with
+    | true, true -> Printf.sprintf "; %8.3f; %8.0f" sys_time allocated_bytes
     | true, false -> Printf.sprintf "; %8.3f" sys_time
-    | false, true -> Printf.sprintf "; %8.0f" gc_stat
+    | false, true -> Printf.sprintf "; %8.0f" allocated_bytes
     | false, false -> ""
   in
 
   Printf.fprintf oc "\nAggregated table:\n----------------\n%!";
   Printf.fprintf oc "%35s; %20s; %8s; %8s%s\n%!"
     "Name" "Filename" "Calls" "Time" optional_headers;
-  let print_row ({name; filename; calls;
-                  time; gc_stat; sys_time; _}) =
+  let print_row ({name; location; calls;
+                  time; allocated_bytes; sys_time; _}) =
     let time, unit = human time in
     Printf.fprintf oc "%35s; %20s; %8d; %7.2f%1s%s\n%!"
-      name filename calls time unit (optional_columns sys_time gc_stat)
+      name location calls time unit (optional_columns sys_time allocated_bytes)
   in
   List.iter print_row normal_nodes;
   if sample_nodes <> [] then begin
@@ -357,18 +357,18 @@ end
 open JSON
 
 let json_of_node
-    {id; kind; landmark_id; name; filename;
-     calls; time; sons; sys_time; gc_stat; distrib} =
+    {id; kind; landmark_id; name; location;
+     calls; time; sons; sys_time; allocated_bytes; distrib} =
   Map [ "id", Int id;
         "kind", String (string_of_kind kind);
         "landmark_id", Int landmark_id;
         "name", String name;
-        "filename", String filename;
+        "location", String location;
         "calls", Int calls;
         "time", Float time;
         "sons", List (List.map (fun x -> Int x) sons);
         "sys_time", Float sys_time;
-        "gc_stat", Float gc_stat;
+        "allocated_bytes", Float allocated_bytes;
         "distrib", List (List.map (fun x -> Float x) (Array.to_list distrib)) ]
 
 let json_of_graphs {nodes} =

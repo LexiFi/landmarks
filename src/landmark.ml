@@ -8,7 +8,6 @@ exception LandmarkFailure of string
 
 module Graph = Landmark_graph
 
-
 module SparseArray = struct
   type 'a t = {
     mutable keys : int array;
@@ -128,7 +127,7 @@ type landmark = {
     id: int;
     kind : Graph.kind;
     name: string;
-    filename: string;
+    location: string;
 
     mutable last_parent: node;
     mutable last_son: node;
@@ -151,8 +150,8 @@ and node = {
 
 and floats = {
     mutable time: float;
-    mutable gc_stat: float;
-    mutable gc_statstamp: float;
+    mutable allocated_bytes: float;
+    mutable allocated_bytes_stamp: float;
     mutable sys_time: float;
     mutable sys_timestamp: float;
 }
@@ -163,8 +162,8 @@ and sampler = landmark
 
 let new_floats () = {
   time = 0.0;
-  gc_stat = 0.0;
-  gc_statstamp = 0.0;
+  allocated_bytes = 0.0;
+  allocated_bytes_stamp = 0.0;
   sys_time = 0.0;
   sys_timestamp = 0.0
 }
@@ -173,7 +172,7 @@ let rec landmark_root = {
     kind = Graph.Root;
     id = 0;
     name = "ROOT";
-    filename = __FILE__;
+    location = __FILE__;
     last_parent = dummy_node;
     last_son = dummy_node;
     last_self = dummy_node;
@@ -204,7 +203,7 @@ type profile_format =
 let profiling_ref = ref false
 
 let profile_with_debug = ref false
-let profile_with_gc_stat = ref false
+let profile_with_allocated_bytes = ref false
 let profile_with_sys_time = ref false
 let profile_output = ref Silent
 let profile_format = ref Textual
@@ -215,13 +214,13 @@ let profiling () = !profiling_ref
 (** REGISTERING **)
 
 let last_landmark_id = ref 1
-let new_landmark name filename kind =
+let new_landmark name location kind =
   let id = !last_landmark_id in
   incr last_landmark_id;
   {
     id;
     name;
-    filename;
+    location;
     kind;
     last_parent = dummy_node;
     last_self = dummy_node;
@@ -259,9 +258,9 @@ let landmark_of_id id =
   List.nth !registered_landmarks
     ((List.length !registered_landmarks) - (id + 1))
 
-let register_generic ?filename kind name call_stack =
-  let filename =
-    match filename with
+let register_generic ?location kind name call_stack =
+  let location =
+    match location with
     | Some name -> name
     | None ->
       let backtrace_slots = Printexc.backtrace_slots call_stack in
@@ -273,21 +272,20 @@ let register_generic ?filename kind name call_stack =
          | None -> "internal")
       | _ -> "unknown"
   in
-  let landmark = new_landmark name filename kind in
+  let landmark = new_landmark name location kind in
   if List.exists (fun landmark ->
-      name = landmark.name && filename = landmark.filename)
+      name = landmark.name && location = landmark.location)
       !registered_landmarks then
-    failwith
-      (Printf.sprintf
-         "The landmark '%s' is registered twice in '%s'." name filename);
+      (Printf.eprintf
+       "[Warning] The landmark '%s' is registered twice in '%s'." name location);
   registered_landmarks := landmark :: !registered_landmarks;
   if !profile_with_debug then
     Printf.eprintf "[Profiling] registering(%s)\n%!" name;
   landmark
 
-let register ?filename name =
+let register ?location name =
   let call_stack = Printexc.get_callstack 3 in
-  register_generic ?filename Graph.Normal name call_stack
+  register_generic ?location Graph.Normal name call_stack
 
 let register_counter name =
   let call_stack = Printexc.get_callstack 3 in
@@ -306,7 +304,7 @@ let reset () =
   (* reset dummy_node *)
   let floats = root_node.floats in
   floats.time <- 0.0;
-  floats.gc_stat <- 0.0;
+  floats.allocated_bytes <- 0.0;
   floats.sys_time <- 0.0;
   root_node.calls <- 0;
   root_node.timestamp <- clock ();
@@ -395,8 +393,8 @@ let enter landmark =
   current_node_ref := node;
   landmark.last_self <- node;
   node.timestamp <- clock ();
-  if !profile_with_gc_stat then
-    node.floats.gc_statstamp <- Gc.allocated_bytes ();
+  if !profile_with_allocated_bytes then
+    node.floats.allocated_bytes_stamp <- Gc.allocated_bytes ();
   if !profile_with_sys_time then
     node.floats.sys_timestamp <- Sys.time ()
 
@@ -405,8 +403,8 @@ let mismatch_recovering landmark current_node =
   if expected_landmark != landmark then begin
     let msg =
       Printf.sprintf "landmark failure when closing '%s' (%s), expecting '%s' (%s)."
-      landmark.name landmark.filename 
-      expected_landmark.name expected_landmark.filename
+        landmark.name landmark.location
+        expected_landmark.name expected_landmark.location
     in
     Printf.eprintf "Warning: %s\n%!" msg;
     unroll_until landmark.last_self;
@@ -420,9 +418,9 @@ let aggregate_stat_for current_node =
   let floats = current_node.floats in
   floats.time <- floats.time
                  +. Int64.(to_float (sub (clock ()) current_node.timestamp));
-  if !profile_with_gc_stat then
-    floats.gc_stat <- floats.gc_stat
-                 +. ((Gc.allocated_bytes ()) -. floats.gc_statstamp);
+  if !profile_with_allocated_bytes then
+    floats.allocated_bytes <- floats.allocated_bytes
+                 +. ((Gc.allocated_bytes ()) -. floats.allocated_bytes_stamp);
   if !profile_with_sys_time then
     floats.sys_time <- floats.sys_time
                  +. (Sys.time () -. floats.sys_timestamp)
@@ -469,7 +467,7 @@ let unsafe_wrap node f x =
 
 type profiling_options = {
   debug : bool;
-  gc_stat: bool;
+  allocated_bytes: bool;
   sys_time : bool;
   output : profile_output;
   format : profile_format
@@ -477,14 +475,14 @@ type profiling_options = {
 
 let default_options = {
   debug = false;
-  gc_stat = true;
+  allocated_bytes = true;
   sys_time = false;
   output = Channel stderr;
   format = Textual;
 }
 
-let set_profiling_options {debug; gc_stat; sys_time; output; format} =
-  profile_with_gc_stat := gc_stat;
+let set_profiling_options {debug; allocated_bytes; sys_time; output; format} =
+  profile_with_allocated_bytes := allocated_bytes;
   profile_with_sys_time := sys_time;
   profile_with_debug := debug;
   profile_output := output;
@@ -497,7 +495,7 @@ let start_profiling ?(profiling_options = default_options) () =
   set_profiling_options profiling_options;
   if !profile_with_debug then
     Printf.eprintf "[Profiling] Start profiling %s...\n%!"
-      (match !profile_with_gc_stat, !profile_with_sys_time with
+      (match !profile_with_allocated_bytes, !profile_with_sys_time with
        | true, true -> "with garbage collection statistics and system time"
        | true, false -> "with garbage collection statistics"
        | false, true -> "with system time"
@@ -526,13 +524,13 @@ let stop_profiling () =
 
 let export () =
   let export_node {landmark; id; calls; floats; sons; distrib; _} =
-    let {id = landmark_id; name; filename; kind; _} = landmark in
-    let {time; gc_stat; sys_time; _} = floats in
+    let {id = landmark_id; name; location; kind; _} = landmark in
+    let {time; allocated_bytes; sys_time; _} = floats in
     let sons =
       List.map (fun ({id;_} : node) -> id) (SparseArray.values sons)
     in
-    {Graph.landmark_id; id; name; filename; calls; time; kind;
-     gc_stat; sys_time; sons; distrib = Stack.to_array distrib}
+    {Graph.landmark_id; id; name; location; calls; time; kind;
+     allocated_bytes; sys_time; sons; distrib = Stack.to_array distrib}
   in
   if !current_node_ref != root_node then
     (let msg = Printf.sprintf
@@ -562,7 +560,7 @@ let rec merge_branch node graph (imported : Graph.node) =
   let floats = node.floats in
   floats.time <- imported.time +. floats.time;
   floats.sys_time <- imported.sys_time +. floats.sys_time;
-  floats.gc_stat <- imported.gc_stat +. floats.gc_stat;
+  floats.allocated_bytes <- imported.allocated_bytes +. floats.allocated_bytes;
   node.calls <- imported.calls + node.calls;
   Array.iter (Stack.push node.distrib) imported.distrib;
 
@@ -589,7 +587,7 @@ and new_branch parent graph ({landmark_id; _} as imported : Graph.node) =
   node.calls <- imported.calls;
   let floats = node.floats in
   floats.time <- imported.time;
-  floats.gc_stat <- imported.gc_stat;
+  floats.allocated_bytes <- imported.allocated_bytes;
   floats.sys_time <- imported.sys_time;
   Array.iter (Stack.push node.distrib) imported.distrib;
   SparseArray.set parent.sons landmark_id node;
@@ -600,13 +598,13 @@ and inconsistency_msg =
 
 and check_landmark landmark imported =
   if landmark.name <> imported.name
-  || landmark.filename <> imported.filename then
+  || landmark.location <> imported.location then
     let msg =
       Printf.sprintf
         "%sThe 'master' landmark '%s' ('%s') has the same id (%d) than the \
          'slave' landmark'%s' ('%s')"
-        inconsistency_msg landmark.name landmark.filename landmark.id
-        imported.name imported.filename
+        inconsistency_msg landmark.name landmark.location landmark.id
+        imported.name imported.location
     in
     failwith msg
 
@@ -651,22 +649,22 @@ let () = match Sys.getenv "OCAML_LANDMARKS" with
          Channel stderr
        else if String.contains str 'o' then
          Channel stdout
-       else if String.contains str 't' then 
+       else if String.contains str 't' then
          Temporary
        else if String.contains str 'n' then
          Silent
        else
          Channel stderr
     in
-    let format = 
+    let format =
       if String.contains str 'j' then
         JSON
       else
         Textual
     in
     let sys_time = String.contains str 's' in
-    let gc_stat = String.contains str 'g' in
+    let allocated_bytes = String.contains str 'g' in
     start_profiling ~profiling_options:{
-       debug; gc_stat; sys_time; output; format
+       debug; allocated_bytes; sys_time; output; format
     } ()
-         
+

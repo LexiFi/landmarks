@@ -28,7 +28,6 @@ let[@landmark] rec next_prime n =
 
 let () =
   let open Landmark in
-  start_profiling ~profiling_options:{default_options with format = JSON} ();
   let[@landmark] () =
     Printf.printf "%d\n%!" (fib 10);
     Printf.printf "%d\n%!" (next_prime 1234567890);

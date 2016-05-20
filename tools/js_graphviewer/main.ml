@@ -118,12 +118,12 @@ module Graph = struct
     kind : kind;
     landmark_id : int;
     name: string;
-    filename: string;
+    location: string;
     calls: int;
     time: float;
     sons: id list;
     sys_time: float;
-    gc_stat: float;
+    allocated_bytes: float;
     distrib: float array;
   } [@@js] [@@js.verbatim_names]
 
@@ -137,7 +137,7 @@ module Graph = struct
     Array.exists (fun {sys_time; _} -> sys_time <> 0.0) nodes
 
   let has_allocated_bytes {nodes} = 
-    Array.exists (fun {gc_stat; _} -> gc_stat <> 0.0) nodes
+    Array.exists (fun {allocated_bytes; _} -> allocated_bytes <> 0.0) nodes
 
   let aggregated_table graph =
     let graph = Landmark_graph.aggregate_landmarks graph in
@@ -155,26 +155,26 @@ module Graph = struct
     let text x = Document.create_text_node document x in
     let profile_with_sys_time =
       if has_sys_time graph then
-        [text "System Time", (fun x y -> compare x.sys_time y.sys_time),
+        [text "Time", (fun x y -> compare x.sys_time y.sys_time),
          fun {sys_time; _} -> text (Printf.sprintf "%.0f" sys_time |> Helper.format_number)]
       else []
     in
-    let profile_with_gc_stat =
+    let profile_with_allocated_bytes =
       if has_allocated_bytes graph then
-        [text "Garbage Collector", (fun x y -> compare x.gc_stat y.gc_stat),
-         fun {gc_stat; _} -> text (Printf.sprintf "%.0f" gc_stat |> Helper.format_number)]
+        [text "Allocated Bytes", (fun x y -> compare x.allocated_bytes y.allocated_bytes),
+         fun {allocated_bytes; _} -> text (Printf.sprintf "%.0f" allocated_bytes |> Helper.format_number)]
       else []
     in
     let cols = [
         (text "Name", (fun x y -> compare x.name y.name),
                       fun {name; _} -> text name);
-        (text "Filename", (fun x y -> compare x.filename y.filename),
-                         fun {filename; _} -> text filename);
+        (text "Location", (fun x y -> compare x.location y.location),
+                         fun {location; _} -> text location);
         (text "Calls", (fun x y -> compare x.calls y.calls),
                        fun {calls; _} -> text (string_of_int calls |> Helper.format_number));
-        (text "Time", (fun x y -> compare x.time y.time),
+        (text "Cycles", (fun x y -> compare x.time y.time),
                       fun {time; _} -> text (Printf.sprintf "%.0f" time |> Helper.format_number));
-      ] @ profile_with_sys_time @ profile_with_gc_stat
+      ] @ profile_with_sys_time @ profile_with_allocated_bytes
     in
     Helper.sortable_table cols all_nodes
 
@@ -335,7 +335,7 @@ let filename_onclick _ =
         Helper.removeAll source_tree_div;
         TreeView.callgraph source_tree_div graph (fun {time; _} -> time);
         TreeView.callgraph source_tree_sys_time_div graph (fun {sys_time; _} -> sys_time);
-        TreeView.callgraph source_tree_allocation_div graph (fun {gc_stat; _} -> gc_stat);
+        TreeView.callgraph source_tree_allocation_div graph (fun {allocated_bytes; _} -> allocated_bytes);
         Graph.aggregated_table graph aggregated_table_div
     in
     FileReader.read_as_text filereader file;

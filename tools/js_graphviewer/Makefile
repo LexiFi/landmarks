@@ -1,7 +1,7 @@
 BASEDIR=../..
 
 main.js: main.byte
-	js_of_ocaml --pretty --disable genprim +gen_js_api/ojs_runtime.js $< 
+	js_of_ocaml --pretty --disable genprim +gen_js_api/ojs_runtime.js extra_runtime.js $< 
 
 main.byte: main.ml bindings
 	ocamlfind ocamlc -o $@ -no-check-prims\

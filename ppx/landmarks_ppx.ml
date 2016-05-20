@@ -57,23 +57,23 @@ let rec string_of_pattern pat =
  | Ppat_unpack m -> m.txt
  | _ -> "UNKNOWN"
 
-let string_of_loc (l : Location.t) = 
+let string_of_loc (l : Location.t) =
   let file, line, _ = Location.get_pos_info l.loc_start in
   Printf.sprintf "%s:%d" (Location.show_filename file) line
 
 let begin_landmark lm = Exp.apply (var "Landmark.enter") [Nolabel, var lm]
 let end_landmark lm = Exp.apply (var "Landmark.exit") [Nolabel, var lm]
-let register_landmark name filename =
+let register_landmark name location =
   Exp.apply (var "Landmark.register")
-    [Nolabel, Const.string name |> Exp.constant;
-     Labelled "filename", Const.string filename |> Exp.constant]
+    [ Labelled "location", Const.string location |> Exp.constant;
+      Nolabel, Const.string name |> Exp.constant]
 
 let new_landmark landmark_name loc =
   incr landmark_id;
   let landmark = Printf.sprintf "__generated_landmark_%d" !landmark_id in
-  let landmark_filename = string_of_loc loc in
+  let landmark_location = string_of_loc loc in
   landmarks_to_register :=
-    (landmark, landmark_name, landmark_filename) :: !landmarks_to_register;
+    (landmark, landmark_name, landmark_location) :: !landmarks_to_register;
   landmark
 
 let rec wrap_landmark landmark_name loc expr =
@@ -81,13 +81,13 @@ let rec wrap_landmark landmark_name loc expr =
   | Pexp_ident _
   | Pexp_constant _ -> expr
   | Pexp_constraint (e, c) ->
-    { expr with 
+    { expr with
       pexp_desc = Pexp_constraint (wrap_landmark landmark_name loc e, c) }
-  | Pexp_fun (l,o,p,e) -> 
-    { expr with 
+  | Pexp_fun (l,o,p,e) ->
+    { expr with
       pexp_desc = Pexp_fun (l, o, p, wrap_landmark landmark_name loc e) }
-  | Pexp_lazy e -> 
-    { expr with 
+  | Pexp_lazy e ->
+    { expr with
       pexp_desc = Pexp_lazy (wrap_landmark landmark_name loc e) }
   | _ ->
       let landmark = new_landmark landmark_name loc in
@@ -204,9 +204,9 @@ let shallow_mapper auto =
        if !landmarks_to_register = [] then l else
        let landmarks =
          Str.value Nonrecursive
-           (List.map (fun (landmark, landmark_name, landmark_filename) ->
+           (List.map (fun (landmark, landmark_name, landmark_location) ->
              Vb.mk (Pat.var (mknoloc landmark))
-                   (register_landmark landmark_name landmark_filename)) (List.rev !landmarks_to_register))
+                   (register_landmark landmark_name landmark_location)) (List.rev !landmarks_to_register))
       in landmarks :: l }
 
 let remove_attributes =

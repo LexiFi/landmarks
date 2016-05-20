@@ -1,2 +1,3 @@
-EXTRAS=-ppx $(BASEDIR)/ppx/landmarks_ppx.opt
+ENV=OCAML_LANDMARKS=1
+EXTRAS=
 include ../../Makefile.common
