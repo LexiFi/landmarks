@@ -7,6 +7,10 @@ all:
 	@echo "make configure: download and bootstrap ocaml"
 	@echo "make world.opt: compile with landmarks"
 	@echo "make install: install locally"
+	@echo ""
+	@echo "Useful for debugging:"
+	@echo "export OCAMLPARAM=\"$(OCAMLPARAM)\" OCAML_LANDMARKS=a" 
+      
 
 configure: ocaml-ocamlparam
 	mkdir -p local
