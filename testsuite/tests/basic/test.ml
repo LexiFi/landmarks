@@ -10,5 +10,5 @@ let () =
   let open Landmark in
   start_profiling ~profiling_options:{default_options with format = JSON} ();
   enter main;
-  Printf.printf "%d\n%!" (fib 10);
+  Printf.printf "%d\n%!" (fib 7);
   exit main

@@ -30,6 +30,6 @@ let () =
   let open Landmark in
   let[@landmark] () =
     Printf.printf "%d\n%!" (fib 10);
-    Printf.printf "%d\n%!" (next_prime 1234567890);
+    Printf.printf "%d\n%!" (next_prime 123456789);
   in
   ()

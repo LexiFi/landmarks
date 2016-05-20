@@ -1,5 +1,5 @@
 ENV=OCAML_LANDMARKS=a
-EXTRAS=-dsource
+EXTRAS=
 
 include ../../Makefile.common
 

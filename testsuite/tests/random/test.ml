@@ -160,7 +160,7 @@ let random_walk max_depth max_sons length =
 
 let () = begin
     Printf.printf "Start a random walk ... \n%!";
-    let res = random_walk 5 20 100000 in
+    let res = random_walk 5 20 50000 in
     Printf.printf "done (%d nodes).\n%!" res
   end
 
