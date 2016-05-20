@@ -2,10 +2,11 @@ BASEDIR=$(shell readlink -f ../..)
 OCAMLPARAM="I=$(BASEDIR)/src,cmxa=landmarks.cmxa,ppx=$(BASEDIR)/ppx/landmarks_ppx.opt,_"
 
 all:
+	@echo "Warning: this work only with the ocamlparam branch"
+	@echo ""
 	@echo "make configure: download and bootstrap ocaml"
 	@echo "make world.opt: compile with landmarks"
 	@echo "make install: install locally"
-	@echo "export OCAMLPARAM=\"$(OCAMLPARAM)\" OCAML_LANDMARKS=a" 
 
 configure: ocaml-ocamlparam
 	mkdir -p local
