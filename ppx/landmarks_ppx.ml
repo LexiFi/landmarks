@@ -10,14 +10,27 @@ open Parsetree
 open Longident
 open Location
 
+let error loc code =
+  let open Printf in
+  let rec message = function
+  | `Too_many_attributes -> "too many attributes"
+  | `Expecting_payload l -> sprintf "expecting payload in [%s]"
+                           (String.concat "," (List.map (sprintf "\"%s\"") l))
+  | `Payload_not_a_string -> "payload is not a string"
+  in
+  raise (Location.Error (Location.error ~loc (message code)))
+
 let landmark_id = ref 0
 let landmarks_to_register = ref []
 
 let has_name key ({txt; _}, _) = txt = key
 
+let remove_attribute key =
+  List.filter (fun x -> not (has_name key x))
+
 let has_attribute ?(auto = false) key l =
   if auto || List.exists (has_name key) l then
-    Some (List.filter (fun x -> not (has_name key x)) l)
+    Some (remove_attribute key l)
   else
     None
 
@@ -25,6 +38,7 @@ let get_string_payload key = function
     {txt; _}, PStr [{pstr_desc = Pstr_eval ({
         pexp_desc = Pexp_constant (Pconst_string (x, None)); _
       }, _); _}] when txt = key -> Some x
+  | {txt; loc}, _ when txt = key -> error loc `Payload_not_a_string
   | _ -> None
 
 let has_landmark_attribute ?auto = has_attribute ?auto "landmark"
@@ -57,7 +71,8 @@ let rec string_of_pattern pat =
  | Ppat_tuple l -> String.concat "_" (List.map string_of_pattern l)
  | Ppat_variant (x, None) -> x
  | Ppat_variant (x, Some p) -> x ^ "_" ^ string_of_pattern p
- | Ppat_record (l, _) -> String.concat "_" (List.map (fun (_, x) -> string_of_pattern x) l)
+ | Ppat_record (l, _) ->
+   String.concat "_" (List.map (fun (_, x) -> string_of_pattern x) l)
  | Ppat_or (a, b) -> string_of_pattern a ^ "_" ^ string_of_pattern b
  | Ppat_type _ -> "TYPE"
  | Ppat_extension _ -> "EXTENSION"
@@ -110,16 +125,16 @@ let rec wrap_landmark landmark_name loc expr =
                 (end_landmark landmark)
                 (var "r")))
 
-let min_list l1 l2 =
-  if List.length l1 < List.length l2 then
-    l1
-  else
-    l2
-
 let rec arity {pexp_desc; _} =
   match pexp_desc with
   | Pexp_fun (a, _, _, e ) -> a :: arity e
   | Pexp_function cases ->
+    let min_list l1 l2 =
+      if List.length l1 < List.length l2 then
+        l1
+      else
+        l2
+    in
     Nolabel :: (List.fold_left
       (fun acc {pc_rhs; _} -> min_list (arity pc_rhs) acc)
       [] cases)
@@ -142,6 +157,37 @@ let eta_expand f t n =
   in
   lam vars
 
+let rec translate_value_bindings deep_mapper auto rec_flag vbs =
+  let vbs_arity_name =
+    List.map
+      (fun vb -> match vb, has_landmark_attribute ~auto vb.pvb_attributes with
+         | { pvb_expr; pvb_loc;
+             pvb_pat =
+               {ppat_desc =
+                  Ppat_var {txt = name; _}; _};
+             _}, Some attr ->
+           let arity = arity pvb_expr in
+           if arity = [] then (vb, None)
+           else (vb, Some (arity, name, pvb_loc, attr))
+         | _, _ -> (vb, None))
+      vbs
+  in
+  let vbs = List.map (function
+      | (vb, None) ->
+        default_mapper.value_binding (deep_mapper false) vb
+      | {pvb_pat; pvb_loc; pvb_expr; _}, Some (_, _, _, attrs) ->
+        (* Remove landmark attribute: *)
+        let vb = Vb.mk ~attrs ~loc:pvb_loc pvb_pat pvb_expr in
+        default_mapper.value_binding (deep_mapper false) vb) vbs_arity_name
+  in
+  let new_vbs = filter_map (function
+      | (_, Some (arity, name, loc, _)) ->
+        let ident = Exp.ident (mknoloc (Lident name)) in
+        let expr = eta_expand (wrap_landmark name loc) ident arity in
+        Some (Vb.mk (Pat.var (mknoloc name)) expr)
+      | _ -> None) vbs_arity_name
+  in
+  vbs, new_vbs
 
 let rec deep_mapper auto =
   { default_mapper with
@@ -149,47 +195,23 @@ let rec deep_mapper auto =
       let auto = ref auto in
       List.map
         (function
-          | { pstr_desc = Pstr_attribute attr; _} as pstr ->
+          | { pstr_desc = Pstr_attribute attr; pstr_loc; _} as pstr ->
             (match get_string_payload "landmark" attr with
             | Some "auto" -> auto := true; []
             | Some "auto-off" -> auto := false; []
-            | _ -> [pstr])
+            | None -> [pstr]
+            | _ -> error pstr_loc (`Expecting_payload ["auto"; "auto-off"]))
           | { pstr_desc = Pstr_value (rec_flag, vbs); pstr_loc} ->
-            let vbs_arity_name =
-              List.map
-                (fun vb -> match vb, has_landmark_attribute ~auto:!auto vb.pvb_attributes with
-                  | { pvb_expr; pvb_loc;
-                       pvb_pat =
-                         {ppat_desc =
-                            Ppat_var {txt = name; _}; _};
-                       _}, Some attr ->
-                    let arity = arity pvb_expr in
-                    if arity = [] then (vb, None)
-                    else (vb, Some (arity, name, pvb_loc, attr))
-                  | _, _ -> (vb, None))
-                vbs
-            in
-            let vbs = List.map (function
-                | (vb, None) ->
-                  mapper.value_binding (deep_mapper false) vb
-                | {pvb_pat; pvb_loc; pvb_expr; _}, Some (_, _, _, attrs) ->
-                  (* Remove landmark attribute: *)
-                  let vb = Vb.mk ~attrs ~loc:pvb_loc pvb_pat pvb_expr in
-                  default_mapper.value_binding (deep_mapper false) vb) vbs_arity_name
+            let vbs, new_vbs =
+              translate_value_bindings deep_mapper !auto rec_flag vbs
             in
             let str = Str.value ~loc:pstr_loc rec_flag vbs in
-            let arity_name = filter_map snd vbs_arity_name in
-            if arity_name = [] then [str]
+            if new_vbs = [] then [str]
             else
               let warning_off =
                 Str.attribute (mknoloc "ocaml.warning", payload_of_string "-32")
               in
-              let include_wrapper =
-                List.map (fun (arity, name, loc, _) ->
-                    let ident = Exp.ident (mknoloc (Lident name)) in
-                    let expr = eta_expand (wrap_landmark name loc) ident arity in
-                    Vb.mk (Pat.var (mknoloc name)) expr
-                  ) arity_name
+              let include_wrapper = new_vbs
                 |> Str.value Nonrecursive
                 |> fun x -> Mod.structure [warning_off; x]
                             |> Incl.mk
@@ -198,15 +220,23 @@ let rec deep_mapper auto =
               [str; include_wrapper]
           | sti -> [mapper.structure_item mapper sti])
         l |> List.flatten);
-    value_binding =
-      fun mapper ({pvb_pat; pvb_expr; pvb_attributes; _} as vb) ->
-        let pvb_expr = mapper.expr (deep_mapper false) pvb_expr in
-        match has_landmark_attribute pvb_attributes with
-        | Some pvb_attributes ->
-          let landmark_name = string_of_pattern pvb_pat in
-          {vb with pvb_expr = wrap_landmark landmark_name pvb_pat.ppat_loc pvb_expr; pvb_attributes}
-        | None ->
-          {vb with pvb_expr}
+
+    expr =
+      fun mapper -> function
+        | ({pexp_desc = Pexp_let (rec_flag, vbs, body); _} as expr) ->
+          let vbs, new_vbs =
+            translate_value_bindings deep_mapper auto rec_flag vbs
+          in
+          { expr with pexp_desc = Pexp_let (rec_flag, vbs @ new_vbs, body) }
+
+        | ({pexp_attributes; pexp_loc; _} as expr) ->
+          let expr = default_mapper.expr (deep_mapper auto) expr in
+          match filter_map (get_string_payload "landmark") pexp_attributes with
+          | [landmark_name] ->
+               {expr with pexp_attributes = remove_attribute "landmark" pexp_attributes}
+            |> wrap_landmark landmark_name pexp_loc
+          | [] -> expr
+          | _ -> error pexp_loc `Too_many_attributes
   }
 
 let shallow_mapper auto =
@@ -219,7 +249,8 @@ let shallow_mapper auto =
          Str.value Nonrecursive
            (List.map (fun (landmark, landmark_name, landmark_location) ->
              Vb.mk (Pat.var (mknoloc landmark))
-                   (register_landmark landmark_name landmark_location)) (List.rev !landmarks_to_register))
+                   (register_landmark landmark_name landmark_location))
+               (List.rev !landmarks_to_register))
       in landmarks :: l }
 
 let remove_attributes =

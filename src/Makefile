@@ -2,6 +2,7 @@ OCAMLC=ocamlc
 OCAMLOPT=ocamlopt
 OCAMLDEP=ocamldep
 OCAMLMKLIB=ocamlmklib
+OCAMLMKTOP=ocamlmktop
 
 INCLUDES=-I .
 OCAMLFLAGS=-w +A-30-42-41-48-40 -safe-string -strict-sequence
@@ -16,7 +17,10 @@ OBJS=clock.o
 CMOS=$(patsubst %,%.cmo,$(MODULES))
 CMXS=$(patsubst %,%.cmx,$(MODULES))
 
-all: $(NAME).cma $(NAME).cmxa $(NAME)-noc.cma 
+all: $(NAME).cma $(NAME).cmxa $(NAME)-noc.cma $(NAME).top
+
+$(NAME).top: $(NAME).cma
+	$(OCAMLMKTOP) -I . -custom -o $@ $^
 
 $(NAME).cma: $(OBJS) $(CMOS)
 		$(OCAMLMKLIB) -custom -o $(NAME) $^

@@ -1,0 +1,14 @@
+
+# Characters 0-29:
+  [@@@landmark "random string"];;
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+expecting payload in ["auto","auto-off"]
+#   Characters 5-13:
+  [@@@landmark "auto" "no auto"];;
+      ^^^^^^^^
+payload is not a string
+#   Characters 10-33:
+  let () = (print_endline "hello")[@landmark "too"][@landmark "many"][@landmark "landmarks"];;
+           ^^^^^^^^^^^^^^^^^^^^^^^
+too many attributes
+#   

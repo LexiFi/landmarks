@@ -28,23 +28,41 @@ let[@landmark] rec next_prime n =
 
 [@@@landmark "auto"]
 
-let auto1 () = print_endline "auto1"
-let[@landmark] auto2 () = print_endline "auto2"
-let auto3 () = print_endline "auto3"
-
+let lm1 () = print_endline "lm1"
+let[@landmark] lm2 () = print_endline "lm2"
+let lm3 () = print_endline "lm3"
 
 [@@@landmark "auto-off"]
 
 let noauto () = print_endline "no-auto"
+
+module M = struct
+  let[@landmark] mod_lm0 () = print_endline "mod_lm0"
+  [@@@landmark "auto"]
+  let mod_lm1 () = print_endline "mod_lm1"
+  let[@landmark] mod_lm2 () = print_endline "mod_lm2"
+  let mod_lm3 () = print_endline "mod_lm3"
+  [@@@landmark "auto-off"]
+  let mod_noauto () = print_endline "mod_no-auto"
+end
+
 
 let () =
   let open Landmark in
   let[@landmark] () =
     Printf.printf "%d\n%!" (fib 10);
     Printf.printf "%d\n%!" (next_prime 123456789);
-    auto1 ();
-    auto2 ();
-    auto3 ();
-    noauto ();
+
+    (lm1 ();
+     lm2 ();
+     lm3 ();
+     noauto ())[@landmark "not module"];
+
+    (let open M in
+    mod_lm0 ();
+    mod_lm1 ();
+    mod_lm2 ();
+    mod_lm3 ();
+    mod_noauto ())[@landmark "module"]
   in
   ()
