@@ -521,6 +521,13 @@ let stop_profiling () =
 
 (** EXPORTING / IMPORTING SLAVE PROFILINGS **)
 
+let array_list_map f l =
+  let size = List.length l in
+  match l with
+  | [] -> [||]
+  | hd :: tl ->
+    let res = Array.make size (f hd) in
+    List.iteri (fun k x -> res.(k+1) <- f x) tl; res
 
 let export () =
   let export_node {landmark; id; calls; floats; sons; distrib; _} =
@@ -538,13 +545,11 @@ let export () =
           exited ('%s' is still open)" !current_node_ref.landmark.name
      in
      failwith msg);
-  let clock = clock () in
-  root_node.floats.time <-
-    root_node.floats.time +.
-    (Int64.to_float (Int64.sub clock root_node.timestamp));
-  root_node.timestamp <- clock;
+  if !profiling_ref then
+    aggregate_stat_for root_node;
   let all_nodes = List.rev !allocated_nodes in
-  Graph.graph_of_nodes (List.map export_node all_nodes)
+  let nodes = array_list_map export_node all_nodes in
+  {Graph.nodes = nodes}
 
 let export_and_reset () =
   let profiling = !profiling_ref in

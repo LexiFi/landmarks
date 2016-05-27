@@ -153,9 +153,9 @@ let intensity ?(proj = fun {time;_} -> time) graph =
         (proj node) (sons graph node)
     in
     let reference = proj (sa node) in
-    if reference = 0.0 then 
-      0.0 
-    else 
+    if reference = 0.0 then
+      0.0
+    else
       not_accounted /. reference
 
 let color graph =
@@ -314,6 +314,7 @@ type json =
   | Float of float
   | Map of (string * json) list
   | List of json list
+  | ListClosure of int * (int -> json)
 
 open Format
 
@@ -349,6 +350,17 @@ let rec output oc = function
     ) l;
     fprintf oc "@;<0 -2>]"
 
+  | ListClosure (n,f) ->
+    fprintf oc "[@,";
+    for k = 0 to n - 1 do
+      let json = f k in
+      if k = 0 then
+        fprintf oc ",@,";
+      fprintf oc "@[<v 2>%a@]" output json
+    done;
+    fprintf oc "@;<0 -2>]"
+
+
 let output oc =
   fprintf (formatter_of_out_channel oc) "@[<v 2>%a@]@." output
 
@@ -372,7 +384,7 @@ let json_of_node
         "distrib", List (List.map (fun x -> Float x) (Array.to_list distrib)) ]
 
 let json_of_graphs {nodes} =
-  Map ["nodes", List (List.map json_of_node (Array.to_list nodes))]
+  Map ["nodes", ListClosure (Array.length nodes, fun k -> json_of_node nodes.(k))]
 
 let output_json oc graph = JSON.output oc (json_of_graphs graph)
 

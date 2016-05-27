@@ -130,13 +130,13 @@ module Graph = struct
   type graph = Landmark_graph.graph = {nodes: node array} [@@js]
 
   let graph_of_string s =
-   try graph_of_js (JSON.parse s) with Ojs_exn.Error _ -> error "Invalid input format."
+    try graph_of_js (JSON.parse s) with Ojs_exn.Error _ -> error "Invalid input format."
   let string_of_graph s = JSON.stringify (graph_to_js s)
 
-  let has_sys_time {nodes} = 
+  let has_sys_time {nodes} =
     Array.exists (fun {sys_time; _} -> sys_time <> 0.0) nodes
 
-  let has_allocated_bytes {nodes} = 
+  let has_allocated_bytes {nodes} =
     Array.exists (fun {allocated_bytes; _} -> allocated_bytes <> 0.0) nodes
 
   let aggregated_table graph =
@@ -306,7 +306,7 @@ module TreeView = struct
         (fun id -> children := nodes.(id) :: !children)
         sons;
       List.sort (fun node node' ->
-		      compare (proj node) (proj node')) !children
+		      compare (proj node') (proj node)) !children
     in
     append render expand children inside root
 

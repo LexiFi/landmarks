@@ -1,3 +1,3 @@
 ENV=OCAML_LANDMARKS=1
-EXTRAS=-dsource -dparsetree
+EXTRAS=
 include ../../Makefile.common
