@@ -14,11 +14,13 @@ let error loc code =
   let open Printf in
   let rec message = function
   | `Too_many_attributes -> "too many attributes"
-  | `Expecting_payload l -> sprintf "expecting payload in [%s]"
-                           (String.concat "," (List.map (sprintf "\"%s\"") l))
+  | `Expecting_payload l ->
+    sprintf "expecting payload in [%s]"
+      (String.concat "," (List.map (sprintf "\"%s\"") l))
   | `Payload_not_a_string -> "payload is not a string"
   in
-  raise (Location.Error (Location.error ~loc (message code)))
+  raise (Location.Error (Location.error ~loc
+			  (Printf.sprintf "landmark_ppx: %s" (message code))))
 
 let landmark_id = ref 0
 let landmarks_to_register = ref []
@@ -83,8 +85,8 @@ let string_of_loc (l : Location.t) =
   let file, line, _ = Location.get_pos_info l.loc_start in
   Printf.sprintf "%s:%d" (Location.show_filename file) line
 
-let begin_landmark lm = Exp.apply (var "Landmark.enter") [Nolabel, var lm]
-let end_landmark lm = Exp.apply (var "Landmark.exit") [Nolabel, var lm]
+let enter_landmark lm = Exp.apply (var "Landmark.enter") [Nolabel, var lm]
+let exit_landmark lm = Exp.apply (var "Landmark.exit") [Nolabel, var lm]
 let register_landmark name location =
   Exp.apply (var "Landmark.register")
     [ Labelled "location", Const.string location |> Exp.constant;
@@ -113,16 +115,16 @@ let rec wrap_landmark landmark_name loc expr =
       pexp_desc = Pexp_lazy (wrap_landmark landmark_name loc e) }
   | _ ->
       let landmark = new_landmark landmark_name loc in
-      Exp.sequence (begin_landmark landmark)
+      Exp.sequence (enter_landmark landmark)
        (Exp.let_ Nonrecursive
           [Vb.mk (Pat.var (mknoloc "r"))
              (Exp.try_ expr
                 [Exp.case (Pat.var (mknoloc "e"))
                    (Exp.sequence
-                      (end_landmark landmark)
+                      (exit_landmark landmark)
                       (Exp.apply (var "Pervasives.raise") [Nolabel, var "e"]))])]
              (Exp.sequence
-                (end_landmark landmark)
+                (exit_landmark landmark)
                 (var "r")))
 
 let rec arity {pexp_desc; _} =
@@ -242,8 +244,12 @@ let rec deep_mapper auto =
 let shallow_mapper auto =
   let mapper = deep_mapper auto in
   { mapper with
-     structure = fun _ l ->
+     structure = fun _ -> function [] -> []
+       | l -> 
+       let first_loc = (List.hd l).pstr_loc in
        let l = (deep_mapper auto).structure (deep_mapper auto) l in
+       let landmark_name = Printf.sprintf "load(%s)" !Location.input_name in
+       let lm = if auto then Some (new_landmark landmark_name first_loc) else None in
        if !landmarks_to_register = [] then l else
        let landmarks =
          Str.value Nonrecursive
@@ -251,7 +257,21 @@ let shallow_mapper auto =
              Vb.mk (Pat.var (mknoloc landmark))
                    (register_landmark landmark_name landmark_location))
                (List.rev !landmarks_to_register))
-      in landmarks :: l }
+       in 
+       match lm with
+       | Some lm ->
+         let begin_load = 
+           Str.value Nonrecursive 
+            [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None) (enter_landmark lm)]
+         in
+         let exit_load = 
+           Str.value Nonrecursive 
+             [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None) (exit_landmark lm)]
+         in
+         landmarks :: (begin_load :: l @ [exit_load])
+       | None ->
+         landmarks :: l }
+
 
 let remove_attributes =
   { default_mapper with
