@@ -1,6 +1,6 @@
 BASEDIR=../../..
 
-PPX=$(BASEDIR)/ppx/landmarks_ppx.opt 
+PPX=$(BASEDIR)/ppx/ppx_landmarks
 
 .PHONY: clean native batch
 
@@ -13,10 +13,10 @@ batch: test.batch
                                            || printf "%10s : \033[31mKO\033[0m\n" $$(basename $$PWD)
 
 test: test.ml $(BASEDIR)/src/landmarks.cmxa $(PPX)
-	@$(ENV) ocamlopt -I $(BASEDIR)/src -o test -ppx $(PPX) $(EXTRAS) landmarks.cmxa $(EXTRA_NATIVE)  test.ml
+	@$(ENV) ocamlfind ocamlopt -I $(BASEDIR)/src -o test -ppx $(PPX) $(EXTRAS) landmarks.cmxa $(EXTRA_NATIVE)  test.ml
 
 test.batch: test.ml $(BASEDIR)/src/landmarks.cma $(PPX)
-	@$(ENV) ocamlc -I $(BASEDIR)/src -o test.batch -ppx $(PPX) $(EXTRAS) landmarks.cma $(EXTRA_BATCH) test.ml
+	@$(ENV) ocamlfind ocamlc -I $(BASEDIR)/src -o test.batch -ppx $(PPX) $(EXTRAS) landmarks.cma $(EXTRA_BATCH) test.ml
 
 $(BASEDIR)/src/landmarks.cma:
 	make -C $(BASEDIR)/src/ landmarks.cma
@@ -25,7 +25,7 @@ $(BASEDIR)/src/landmarks.cmxa:
 	make -C $(BASEDIR)/src/ landmarks.cmxa
 
 $(PPX):
-	make -C $(BASEDIR)/ppx/ landmarks_ppx.opt
+	make -C $(BASEDIR)/ppx/ ppx_landmarks
 
 clean::
 	rm -f test test.batch *.cm[xoi] *.o log.err log.out

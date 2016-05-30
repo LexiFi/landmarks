@@ -1,11 +1,11 @@
-OCAMLC=ocamlc
-OCAMLOPT=ocamlopt
-OCAMLDEP=ocamldep
-OCAMLMKLIB=ocamlmklib
-OCAMLMKTOP=ocamlmktop
+OCAMLC=ocamlfind ocamlc
+OCAMLOPT=ocamlfind ocamlopt
+OCAMLDEP=ocamlfind ocamldep
+OCAMLMKLIB=ocamlfind ocamlmklib
+OCAMLMKTOP=ocamlfind ocamlmktop
 
 INCLUDES=-I .
-OCAMLFLAGS=-w +A-30-42-41-48-40 -safe-string -strict-sequence
+OCAMLFLAGS=-w +A-30-42-41-48-40 -safe-string -strict-sequence -bin-annot
 OCAMLCFLAGS=$(INCLUDES) $(OCAMLFLAGS)
 OCAMLOPTFLAGS=$(INCLUDES) $(OCAMLFLAGS)
 
@@ -49,6 +49,6 @@ $(NAME).cmxa: $(OBJS) $(CMXS)
 	        $(OCAMLDEP) $(INCLUDES) *.mli *.ml > .depend
 
 clean:
-	rm -f *.cm* *.o *.so *.a .depend
+	rm -f *.cm* *.o *.so *.a .depend landmarks.top
 
 -include .depend

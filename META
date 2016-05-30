@@ -1,0 +1,10 @@
+version = "1.0"
+description = "A simple profiling library"
+archive(byte) = "landmarks.cma"
+archive(native) = "landmarks.cmxa"
+
+package "ppx" (
+  version = "1.0"
+  description = "A ppx extension for landmarks"
+  ppx = "./ppx_landmarks"
+)

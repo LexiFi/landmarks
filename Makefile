@@ -1,15 +1,26 @@
-.PHONY: landmarks tests clean ppx all tools
+PACKAGE=landmarks
+VERSION=1.0
 
-all: landmarks ppx
+.PHONY: landmarks tests clean ppx all tools check_ocamlfind
 
-landmarks:
-	@$(MAKE) -C src
+all: landmarks ppx META tools
 
-ppx:
-	@$(MAKE) -C ppx
+check_ocamlfind:
+	@ocamlfind printconf > /dev/null 2>&1 || echo "Findlib is required to build this package."
 
-tools:
-	@$(MAKE) -C tools/js_graphviewer
+META: Makefile
+	@sed -i "s/version = \"[^\"]*\"/version = \"$(VERSION)\"/" $@
+
+landmarks: check_ocamlfind
+	@$(MAKE) --no-print-directory -C src
+
+ppx: check_ocamlfind
+	@$(MAKE) --no-print-directory -C ppx
+
+tools: check_ocamlfind
+	@ocamlfind query gen_js_api > /dev/null \
+	&& $(MAKE) --no-print-directory -C tools/landmarks_viewer \
+	|| echo '[WARNING] The package `gen_js_api` is required to build the landmarks viewer.' 
 
 tests: landmarks
 	@echo ""
@@ -23,3 +34,27 @@ clean:
 	@$(MAKE) -C src clean
 	@$(MAKE) -C ppx clean
 	@$(MAKE) -C testsuite clean
+
+.PHONY: install uninstall
+
+INSTALL=META $(wildcard src/*.cmo) \
+             $(wildcard src/*.cma) \
+             $(wildcard src/*.cmi) \
+             $(wildcard src/*.cmt) \
+             $(wildcard src/*.cmti) \
+             $(wildcard src/*.mli) \
+             $(wildcard src/*.cmx) \
+             $(wildcard src/*.cmxa) \
+             $(wildcard src/*.cmxs) \
+             $(wildcard src/*.a) \
+             $(wildcard src/*.o) \
+             $(wildcard src/*.so) \
+             $(wildcard ppx/ppx_landmarks) \
+             $(wildcard tools/landmarks_viewer/landmarks_viewer.html) \
+             $(wildcard tools/landmarks_viewer/landmarks_viewer.js)
+
+install: check_ocamlfind
+	ocamlfind install $(PACKAGE) $(INSTALL)
+
+uninstall: check_ocamlfind
+	ocamlfind remove $(PACKAGE)

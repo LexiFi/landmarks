@@ -1,6 +1,6 @@
 BASEDIR=../../..
 
-PPX=$(BASEDIR)/ppx/landmarks_ppx.opt 
+PPX=$(BASEDIR)/ppx/ppx_landmarks 
 
 .PHONY: clean native batch
 
@@ -10,16 +10,14 @@ batch: test.ml $(BASEDIR)/src/landmarks.top $(PPX)
                   && printf "%10s : \033[32mOK\033[0m\n" $$(basename $$PWD) \
                   || printf "%10s : \033[31mKO\033[0m\n" $$(basename $$PWD)
 
-	
-
 native:
 	@printf "%10s : SKIPPED\n" $$(basename $$PWD)
   
-$(BASEDIR)/src/landmarks.cma:
-	make -C $(BASEDIR)/src/ landmarks.cma
+$(BASEDIR)/src/landmarks.top:
+	make -C $(BASEDIR)/src/ landmarks.top
 
 $(PPX):
-	make -C $(BASEDIR)/ppx/ landmarks_ppx.opt
+	make -C $(BASEDIR)/ppx/ ppx_landmarks
 
 clean::
 	rm -f test test.batch *.cm[xoi] *.o log.err log.out

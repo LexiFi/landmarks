@@ -1,9 +1,9 @@
 BASEDIR=../..
 
-main.js: main.byte
+landmarks_viewer.js: landmarks_viewer.byte
 	js_of_ocaml --pretty --disable genprim +gen_js_api/ojs_runtime.js extra_runtime.js $< 
 
-main.byte: main.ml bindings
+landmarks_viewer.byte: landmarks_viewer.ml bindings
 	ocamlfind ocamlc -o $@ -no-check-prims\
 		-I $(BASEDIR)/src/            \
 		-I bindings                   \
@@ -18,8 +18,7 @@ main.byte: main.ml bindings
 bindings:
 	make -C bindings
 
-
 clean:
 	make -C bindings clean
-	rm -f main.byte main.js main.cm*
+	rm -f landmarks_viewer.byte landmarks_viewer.js landmarks_viewer.cm*
 
