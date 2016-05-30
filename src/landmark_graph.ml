@@ -354,7 +354,7 @@ let rec output oc = function
     fprintf oc "[@,";
     for k = 0 to n - 1 do
       let json = f k in
-      if k = 0 then
+      if k > 0 then
         fprintf oc ",@,";
       fprintf oc "@[<v 2>%a@]" output json
     done;
