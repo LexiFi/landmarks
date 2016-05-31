@@ -61,24 +61,10 @@ let rec string_of_pattern pat =
  match pat.ppat_desc with
  | Ppat_any -> "_"
  | Ppat_var {txt; _} -> txt
- | Ppat_lazy p
  | Ppat_constraint (p, _)
  | Ppat_exception p
  | Ppat_construct (_, Some p)
  | Ppat_alias (p, _) -> string_of_pattern p
- | Ppat_construct (c, None) -> String.concat "." (Longident.flatten c.txt)
- | Ppat_constant _ -> "CONSTANT"
- | Ppat_interval _ -> "INTERVAL"
- | Ppat_array l
- | Ppat_tuple l -> String.concat "_" (List.map string_of_pattern l)
- | Ppat_variant (x, None) -> x
- | Ppat_variant (x, Some p) -> x ^ "_" ^ string_of_pattern p
- | Ppat_record (l, _) ->
-   String.concat "_" (List.map (fun (_, x) -> string_of_pattern x) l)
- | Ppat_or (a, b) -> string_of_pattern a ^ "_" ^ string_of_pattern b
- | Ppat_type _ -> "TYPE"
- | Ppat_extension _ -> "EXTENSION"
- | Ppat_unpack m -> m.txt
  | _ -> "UNKNOWN"
 
 let string_of_loc (l : Location.t) =
@@ -101,44 +87,31 @@ let new_landmark landmark_name loc =
   landmark
 
 let rec wrap_landmark landmark_name loc expr =
-  match expr.pexp_desc with
-  | Pexp_ident _
-  | Pexp_constant _ -> expr
-  | Pexp_constraint (e, c) ->
-    { expr with
-      pexp_desc = Pexp_constraint (wrap_landmark landmark_name loc e, c) }
-  | Pexp_fun (l,o,p,e) ->
-    { expr with
-      pexp_desc = Pexp_fun (l, o, p, wrap_landmark landmark_name loc e) }
-  | Pexp_lazy e ->
-    { expr with
-      pexp_desc = Pexp_lazy (wrap_landmark landmark_name loc e) }
-  | _ ->
-      let landmark = new_landmark landmark_name loc in
-      Exp.sequence (enter_landmark landmark)
-       (Exp.let_ Nonrecursive
-          [Vb.mk (Pat.var (mknoloc "r"))
-             (Exp.try_ expr
-                [Exp.case (Pat.var (mknoloc "e"))
-                   (Exp.sequence
-                      (exit_landmark landmark)
-                      (Exp.apply (var "Pervasives.raise") [Nolabel, var "e"]))])]
+  let landmark = new_landmark landmark_name loc in
+  Exp.sequence (enter_landmark landmark)
+  (Exp.let_ Nonrecursive
+    [Vb.mk (Pat.var (mknoloc "r"))
+       (Exp.try_ expr
+          [Exp.case (Pat.var (mknoloc "e"))
              (Exp.sequence
                 (exit_landmark landmark)
-                (var "r")))
+                   (Exp.apply (var "Pervasives.raise") [Nolabel, var "e"]))])]
+                   (Exp.sequence
+       (exit_landmark landmark)
+          (var "r")))
 
 let rec arity {pexp_desc; _} =
   match pexp_desc with
   | Pexp_fun (a, _, _, e ) -> a :: arity e
   | Pexp_function cases ->
-    let min_list l1 l2 =
+    let max_list l1 l2 =
       if List.length l1 < List.length l2 then
         l1
       else
         l2
     in
     Nolabel :: (List.fold_left
-      (fun acc {pc_rhs; _} -> min_list (arity pc_rhs) acc)
+      (fun acc {pc_rhs; _} -> max_list (arity pc_rhs) acc)
       [] cases)
   | _ -> []
 
@@ -245,7 +218,7 @@ let shallow_mapper auto =
   let mapper = deep_mapper auto in
   { mapper with
      structure = fun _ -> function [] -> []
-       | l -> 
+       | l ->
        let first_loc = (List.hd l).pstr_loc in
        let l = (deep_mapper auto).structure (deep_mapper auto) l in
        let landmark_name = Printf.sprintf "load(%s)" !Location.input_name in
@@ -257,21 +230,20 @@ let shallow_mapper auto =
              Vb.mk (Pat.var (mknoloc landmark))
                    (register_landmark landmark_name landmark_location))
                (List.rev !landmarks_to_register))
-       in 
+       in
        match lm with
        | Some lm ->
-         let begin_load = 
-           Str.value Nonrecursive 
+         let begin_load =
+           Str.value Nonrecursive
             [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None) (enter_landmark lm)]
          in
-         let exit_load = 
-           Str.value Nonrecursive 
+         let exit_load =
+           Str.value Nonrecursive
              [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None) (exit_landmark lm)]
          in
          landmarks :: (begin_load :: l @ [exit_load])
        | None ->
          landmarks :: l }
-
 
 let remove_attributes =
   { default_mapper with
@@ -283,6 +255,11 @@ let remove_attributes =
 let () = register "landmarks" (fun _ ->
     match Sys.getenv "OCAML_LANDMARKS" with
     | exception Not_found -> shallow_mapper false
-    | "0" -> remove_attributes
-    | str when String.contains str 'a' -> shallow_mapper true
-    | _ -> shallow_mapper false)
+    | env ->
+    let opts = Landmark_misc.split ',' env in
+      if List.mem "remove" opts then
+        remove_attributes
+      else if List.mem "auto" opts then
+        shallow_mapper true
+      else
+        shallow_mapper false)

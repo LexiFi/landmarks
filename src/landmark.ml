@@ -644,32 +644,61 @@ let exit_hook () =
 
 let () = Pervasives.at_exit exit_hook
 
+
+let parse_env_options s =
+  let open Printf in
+  let debug = ref false in
+  let format = ref Textual in
+  let output = ref (Channel stderr) in
+  let sys_time = ref false in
+  let allocated_bytes = ref false in
+  let split_trim c s =
+    List.map String.trim (Landmark_misc.split c s)
+  in
+  let warning s =
+    eprintf "[LANDMARKS] %s.\n%!" s
+  in
+  let parse_option s =
+    let invalid_for opt given =
+      warning (sprintf
+                 "The argument '%s' in not valid for the option '%s'" given opt)
+    in
+    let expect_no_argument opt =
+      warning (sprintf "The option '%s' expects no argument" opt)
+    in
+    match split_trim '=' s with
+    | [] -> ()
+    | [ "format"; "textual" ] -> format := Textual;
+    | [ "format"; "json" ] -> format := JSON;
+    | [ "format"; unknown ] -> invalid_for "format" unknown
+    | [ "output"; "stderr" ] -> output := Channel stderr
+    | [ "output"; "stdout" ] -> output := Channel stdout
+    | [ "output"; "temporary" ] -> output := Temporary
+    | [ "output"; file_spec ] ->
+      (match split_trim '"' file_spec with
+       | [""; file; ""] ->
+         (try
+            output := Channel (open_out_gen [Open_append; Open_text] 0o640 file)
+          with _ -> warning (sprintf "Unable to open '%s'\n%!" file))
+       | _ -> invalid_for "output" file_spec)
+    | ["time"] -> sys_time := true
+    | "time" :: _  -> expect_no_argument "time"
+    | ["allocation"] -> allocated_bytes := true
+    | "allocation" :: _ -> expect_no_argument "allocation"
+    | ["auto"] | ["remove"] -> () (* read by the ppx extension *)
+    | ["off"] -> raise Exit
+    | "off" :: _ -> expect_no_argument "off"
+    | "auto" :: _ | "remove" :: _ -> expect_no_argument "auto"
+    | opt :: _ :: _ -> warning (Printf.sprintf "To many '=' after '%s'" opt)
+    | unknown :: _ -> warning (sprintf "Unknown option '%s'\n%!" unknown)
+ in
+ List.iter parse_option (split_trim ',' s);
+ {debug = !debug; allocated_bytes = !allocated_bytes; sys_time = !sys_time;
+  output = !output; format = !format}
+
 let () = match Sys.getenv "OCAML_LANDMARKS" with
   | exception Not_found -> ()
-  | "0" -> ()
   | str ->
-    let debug = String.contains str 'd' in
-    let output =
-       if String.contains str 'e' then
-         Channel stderr
-       else if String.contains str 'o' then
-         Channel stdout
-       else if String.contains str 't' then
-         Temporary
-       else if String.contains str 'n' then
-         Silent
-       else
-         Channel stderr
-    in
-    let format =
-      if String.contains str 'j' then
-        JSON
-      else
-        Textual
-    in
-    let sys_time = String.contains str 's' in
-    let allocated_bytes = String.contains str 'g' in
-    start_profiling ~profiling_options:{
-       debug; allocated_bytes; sys_time; output; format
-    } ()
+    try start_profiling ~profiling_options:(parse_env_options str) ()
+    with Exit -> ()
 

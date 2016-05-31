@@ -360,7 +360,6 @@ let rec output oc = function
     done;
     fprintf oc "@;<0 -2>]"
 
-
 let output oc =
   fprintf (formatter_of_out_channel oc) "@[<v 2>%a@]@." output
 
@@ -387,4 +386,3 @@ let json_of_graphs {nodes} =
   Map ["nodes", ListClosure (Array.length nodes, fun k -> json_of_node nodes.(k))]
 
 let output_json oc graph = JSON.output oc (json_of_graphs graph)
-

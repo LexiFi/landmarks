@@ -23,6 +23,7 @@ tools: check_ocamlfind
 	|| echo '[WARNING] The package `gen_js_api` is required to build the landmarks viewer.' 
 
 tests: landmarks
+	@ocamlfind query ppx_tools > /dev/null || (echo '[ERROR] The package `ppx_tools` is required to run the testsuite.' && exit 1)
 	@echo ""
 	@echo "\033[1;4mNATIVE TESTS\033[0m"
 	@$(MAKE) --no-print-directory -C testsuite native

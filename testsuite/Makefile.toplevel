@@ -1,18 +1,18 @@
 BASEDIR=../../..
 
-PPX=$(BASEDIR)/ppx/ppx_landmarks 
+PPX=$(BASEDIR)/ppx/ppx_landmarks
 
 .PHONY: clean native batch
 
 batch: test.ml $(BASEDIR)/src/landmarks.top $(PPX)
-	@$(ENV) TERM=dumb $(BASEDIR)/src/landmarks.top -ppx $(PPX) $(EXTRAS) < test.ml 2> log.err \
+	@$(ENV) TERM=dumb $(BASEDIR)/src/landmarks.top -ppx $(PPX) $(EXTRAS) -I $(BASEDIR)/src < test.ml 2> log.err \
                    | tail -n +2 > log.out && diff -q log.expected log.out \
                   && printf "%10s : \033[32mOK\033[0m\n" $$(basename $$PWD) \
                   || printf "%10s : \033[31mKO\033[0m\n" $$(basename $$PWD)
 
 native:
 	@printf "%10s : SKIPPED\n" $$(basename $$PWD)
-  
+
 $(BASEDIR)/src/landmarks.top:
 	make -C $(BASEDIR)/src/ landmarks.top
 

@@ -54,3 +54,20 @@ let duplicated_elements ?proj l =
   | Some proj -> duplicated_elements proj l
   | None -> duplicated_elements (fun x -> x) l
 
+let split c s =
+  let open String in
+  let res = ref [] in
+  let pos = ref 0 in
+  let len = length s in
+  while
+    match index_from s !pos c with
+    | exception Not_found ->
+      res := sub s !pos (len - !pos) :: !res;
+      false
+    | k ->
+      res := sub s !pos (k - !pos) :: !res;
+      pos := k + 1;
+      !pos < len || (res := "" :: !res; false)
+  do () done;
+  List.rev !res
+

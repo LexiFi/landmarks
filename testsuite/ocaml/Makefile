@@ -9,8 +9,8 @@ all:
 	@echo "make install: install locally"
 	@echo ""
 	@echo "Useful for debugging:"
-	@echo "export OCAMLPARAM=\"$(OCAMLPARAM)\" OCAML_LANDMARKS=a" 
-      
+	@echo "export OCAMLPARAM=\"$(OCAMLPARAM)\" OCAML_LANDMARKS=auto"
+
 
 configure: ocaml-ocamlparam
 	mkdir -p local
@@ -18,7 +18,7 @@ configure: ocaml-ocamlparam
 
 world.opt:
 	cp arch.mli ocaml-ocamlparam/asmcomp
-	cd ocaml-ocamlparam; unset OCAMLPARAM; unset OCAML_LANDMARKS; make depend world checkstack runtime core ocaml opt-core; OCAMLPARAM=$(OCAMLPARAM) OCAML_LANDMARKS="a" make ocamlc.opt otherlibraries ocamlopt.opt otherlibrariesopt ocamllex.opt ocamltoolsopt ocamltoolsopt.opt 
+	cd ocaml-ocamlparam; unset OCAMLPARAM; unset OCAML_LANDMARKS; make depend world checkstack runtime core ocaml opt-core; OCAMLPARAM=$(OCAMLPARAM) OCAML_LANDMARKS="auto" make ocamlc.opt otherlibraries ocamlopt.opt otherlibrariesopt ocamllex.opt ocamltoolsopt ocamltoolsopt.opt
 
 install: world.opt
 	cd ocaml-ocamlparam; make install

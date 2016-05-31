@@ -14,7 +14,7 @@ build: [
 install: [make "install"]
 remove: ["ocamlfind" "remove" "landmarks"]
 
-depopts: [ 
+depopts: [
   "gen_js_api"
   "js_of_ocaml"
 ]
