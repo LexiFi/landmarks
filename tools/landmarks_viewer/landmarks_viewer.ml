@@ -35,10 +35,10 @@ module Helper = struct
   let show element =
     Element.remove_attribute element "style"
 
-  let tabs_logic l =
+  let tabs_logic l = if l = [] then () else
     let tabs, contents = List.split l in
-    let tabs = List.map element_of_id tabs |> Array.of_list in
-    let contents = List.map element_of_id contents |> Array.of_list in
+    let tabs = Array.of_list tabs in
+    let contents = Array.of_list contents in
     let size = Array.length contents in
     let activate k =
       Element.set_class_name tabs.(k) "active";
@@ -312,12 +312,7 @@ module TreeView = struct
 
 end
 
-
 let filename_onclick _ =
-  let source_tree_div = Helper.element_of_id "sourceTree" in
-  let source_tree_sys_time_div = Helper.element_of_id "sourceTreeTime" in
-  let source_tree_allocation_div = Helper.element_of_id "sourceTreeAllocation" in
-  let aggregated_table_div = Helper.element_of_id "aggregatedTable" in
   let filename = Helper.input_of_id "filename" in
   let file = FileList.item (Html.Input.files filename) 0 in
   let filereader = FileReader.new_file_reader () in
@@ -331,12 +326,32 @@ let filename_onclick _ =
       | Some text ->
         let open Graph in
         let graph = graph_of_string text in
-        Helper.show (Helper.element_of_id "main");
-        Helper.removeAll source_tree_div;
-        TreeView.callgraph source_tree_div graph (fun {time; _} -> time);
-        TreeView.callgraph source_tree_sys_time_div graph (fun {sys_time; _} -> sys_time);
-        TreeView.callgraph source_tree_allocation_div graph (fun {allocated_bytes; _} -> allocated_bytes);
-        Graph.aggregated_table graph aggregated_table_div
+        let main = Helper.element_of_id "main" in
+        Helper.removeAll main; print_endline "removed";
+        Helper.show main;
+        let tabs = create "ul" ~class_name:"tabs" in
+        Node.append_child main tabs;
+        let tab (present, title, fill) =
+           if not present then [] else
+             let div = create "div" in
+             let title = create ~text:title "li" in
+             Node.append_child tabs title;
+             Node.append_child main div;
+             fill div;
+             [title, div]
+        in
+        let fill_graph proj div =
+          TreeView.callgraph div graph proj;
+        in
+        let l = List.flatten (List.map tab [
+           true, "Source Tree Cycles", fill_graph (fun {time; _} -> time);
+           has_sys_time graph, "Source Tree Time",
+             fill_graph (fun {sys_time; _} -> sys_time);
+           has_allocated_bytes graph, "Source Tree Allocation",
+             fill_graph (fun {allocated_bytes; _} -> allocated_bytes);
+           true, "Aggregated Table", Graph.aggregated_table graph ])
+        in
+        Helper.tabs_logic l
     in
     FileReader.read_as_text filereader file;
     FileReader.set_onload filereader onload
@@ -344,7 +359,6 @@ let filename_onclick _ =
 let onload _ = begin
   let filename_button = Helper.element_of_id "filenameButton" in
   Element.set_onclick filename_button filename_onclick;
-  Helper.hide (Helper.element_of_id "main");
-  Helper.tabs_logic ["sourceTreeTab", "sourceTree"; "sourceTreeTimeTab", "sourceTreeTime"; "sourceTreeAllocationTab", "sourceTreeAllocation"; "tableTab", "aggregatedTable"]
+  Helper.hide (Helper.element_of_id "main")
 end
 let () = Window.set_onload window onload

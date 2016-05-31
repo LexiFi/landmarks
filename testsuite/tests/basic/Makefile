@@ -1,2 +1,2 @@
 include ../../Makefile.common
-EXTRAS=-dsource
+EXTRAS=

@@ -216,7 +216,7 @@ I=$(ocamlfind query landmarks),cma=landmarks.cma,cmxa=landmarks.cmxa,ppx=$(ocaml
 ```
 However, the current implementation of OCAMLPARAM does not allow to easily
 benchmark projects that build archives, shared libraries and packages. This
-pull-request[https://github.com/ocaml/ocaml/pull/591] propose some improvments
+[pull-request](https://github.com/ocaml/ocaml/pull/591) propose some improvments
 of OCAMLPARAM to circumvent these problems.
 
 

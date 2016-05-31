@@ -18,6 +18,7 @@ let error loc code =
     sprintf "expecting payload in [%s]"
       (String.concat "," (List.map (sprintf "\"%s\"") l))
   | `Payload_not_a_string -> "payload is not a string"
+  | `Provide_a_name -> "this landmark annotation requires a name argument"
   in
   raise (Location.Error (Location.error ~loc
 			  (Printf.sprintf "landmark_ppx: %s" (message code))))
@@ -39,7 +40,8 @@ let has_attribute ?(auto = false) key l =
 let get_string_payload key = function
     {txt; _}, PStr [{pstr_desc = Pstr_eval ({
         pexp_desc = Pexp_constant (Pconst_string (x, None)); _
-      }, _); _}] when txt = key -> Some x
+      }, _); _}] when txt = key -> Some (Some x)
+  | {txt; loc}, PStr [] when txt = key -> Some None
   | {txt; loc}, _ when txt = key -> error loc `Payload_not_a_string
   | _ -> None
 
@@ -133,8 +135,8 @@ let rec translate_value_bindings deep_mapper auto rec_flag vbs =
              _}, Some attr ->
            let name =
              match filter_map (get_string_payload "landmark") vb.pvb_attributes with
-             | [] -> name
-             | [name] -> name
+             | [Some name] -> name
+             | [] | [ None ] -> name
              | _ -> error pvb_loc `Too_many_attributes
            in
            let arity = arity pvb_expr in
@@ -168,8 +170,8 @@ let rec deep_mapper auto =
         (function
           | { pstr_desc = Pstr_attribute attr; pstr_loc; _} as pstr ->
             (match get_string_payload "landmark" attr with
-            | Some "auto" -> auto := true; []
-            | Some "auto-off" -> auto := false; []
+            | Some (Some "auto") -> auto := true; []
+            | Some (Some "auto-off") -> auto := false; []
             | None -> [pstr]
             | _ -> error pstr_loc (`Expecting_payload ["auto"; "auto-off"]))
           | { pstr_desc = Pstr_value (rec_flag, vbs); pstr_loc} ->
@@ -203,9 +205,10 @@ let rec deep_mapper auto =
         | ({pexp_attributes; pexp_loc; _} as expr) ->
           let expr = default_mapper.expr (deep_mapper auto) expr in
           match filter_map (get_string_payload "landmark") pexp_attributes with
-          | [landmark_name] ->
+          | [Some landmark_name] ->
                {expr with pexp_attributes = remove_attribute "landmark" pexp_attributes}
             |> wrap_landmark landmark_name pexp_loc
+          | [ None ] -> error pexp_loc `Provide_a_name
           | [] -> expr
           | _ -> error pexp_loc `Too_many_attributes
   }
