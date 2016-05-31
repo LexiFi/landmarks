@@ -57,16 +57,6 @@ let rec filter_map f = function
      | Some x -> x :: (filter_map f tl)
      | None -> filter_map f tl
 
-let rec string_of_pattern pat =
- match pat.ppat_desc with
- | Ppat_any -> "_"
- | Ppat_var {txt; _} -> txt
- | Ppat_constraint (p, _)
- | Ppat_exception p
- | Ppat_construct (_, Some p)
- | Ppat_alias (p, _) -> string_of_pattern p
- | _ -> "UNKNOWN"
-
 let string_of_loc (l : Location.t) =
   let file, line, _ = Location.get_pos_info l.loc_start in
   Printf.sprintf "%s:%d" (Location.show_filename file) line
@@ -141,6 +131,12 @@ let rec translate_value_bindings deep_mapper auto rec_flag vbs =
                {ppat_desc =
                   Ppat_var {txt = name; _}; _};
              _}, Some attr ->
+           let name =
+             match filter_map (get_string_payload "landmark") vb.pvb_attributes with
+             | [] -> name
+             | [name] -> name
+             | _ -> error pvb_loc `Too_many_attributes
+           in
            let arity = arity pvb_expr in
            if arity = [] then (vb, None)
            else (vb, Some (arity, name, pvb_loc, attr))
