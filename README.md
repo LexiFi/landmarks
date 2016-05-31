@@ -132,7 +132,7 @@ automatically instrument top-level functions.
 
 ### Annotations
 
-If `expr [@landmark "name"]` is expanded into
+The value `expr [@landmark "name"]` is expanded into
 ```ocaml
   Landmark.enter __generated_landmark_1;
   let r =
