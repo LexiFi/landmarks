@@ -28,30 +28,38 @@ let[@landmark] rec next_prime n =
 
 [@@@landmark "auto"]
 
-let lm1 () = print_endline "lm1"
-let[@landmark] lm2 () = print_endline "lm2"
-let lm3 () = print_endline "lm3"
+let print s =
+  Printf.printf "in: %s\n%!" s
+
+let lm1 () = print "lm1"
+let[@landmark] lm2 () = print "lm2"
+let lm3 () = print "lm3"
 
 [@@@landmark "auto-off"]
 
-let noauto () = print_endline "no-auto"
+let noauto () = print "no-auto"
 
 module M = struct
-  let[@landmark] mod_lm0 () = print_endline "mod_lm0"
+  let[@landmark] mod_lm0 () = print "mod_lm0"
   [@@@landmark "auto"]
-  let mod_lm1 () = print_endline "mod_lm1"
-  let[@landmark] mod_lm2 () = print_endline "mod_lm2"
-  let mod_lm3 () = print_endline "mod_lm3"
+  let mod_lm1 () = print "mod_lm1"
+  let[@landmark] mod_lm2 () = print "mod_lm2"
+  let mod_lm3 () = print "mod_lm3"
   [@@@landmark "auto-off"]
-  let mod_noauto () = print_endline "mod_no-auto"
+  let mod_noauto () = print "mod_no-auto"
 end
 
 
 let () =
   let open Landmark in
-  let[@landmark] () =
-    Printf.printf "%d\n%!" (fib 10);
-    Printf.printf "%d\n%!" (next_prime 123456789);
+
+  let[@landmark] main () =
+    let compute () =
+      ignore (fib 10);
+      ignore (next_prime 12345678)
+    in
+
+    compute ();
 
     (lm1 ();
      lm2 ();
@@ -65,4 +73,15 @@ let () =
     mod_lm3 ();
     mod_noauto ())[@landmark "module"]
   in
-  ()
+  main ();
+  if profiling () then begin
+    let open Landmark_graph in
+    let cg = export () in
+    let agg = aggregate_landmarks cg in
+    let all_nodes = nodes agg in
+    print_endline "\nLandmark reached:";
+    all_nodes
+      |> List.map (fun {name; _} -> name)
+      |> List.sort compare
+      |> List.iter print_endline
+  end

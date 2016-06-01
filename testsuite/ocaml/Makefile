@@ -1,5 +1,5 @@
-BASEDIR=$(shell readlink -f ../..)
-OCAMLPARAM="I=$(BASEDIR)/src,cmxa=landmarks.cmxa,ppx=$(BASEDIR)/ppx/landmarks_ppx.opt,_"
+BASEDIR:=$(shell ocamlfind query landmarks)
+OCAMLPARAM="I=$(BASEDIR),cmxa=landmarks.cmxa,ppx=$(BASEDIR)/ppx_landmarks,_"
 
 all:
 	@echo "Warning: this work only with the ocamlparam branch"

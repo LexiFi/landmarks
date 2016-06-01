@@ -265,8 +265,8 @@ let register_generic ?location kind name call_stack =
     | None ->
       let backtrace_slots = Printexc.backtrace_slots call_stack in
       match backtrace_slots with
-      | Some slots when Array.length slots >= 2 ->
-        let loc = Printexc.Slot.location slots.(1) in
+      | Some slots when Array.length slots >= 3 ->
+        let loc = Printexc.Slot.location slots.(2) in
         (match loc with
          | Some loc -> loc.Printexc.filename
          | None -> "internal")
@@ -298,6 +298,13 @@ let register_sampler name =
 let current_node_ref = ref root_node
 let cache_miss_ref = ref 0
 
+let stamp_root () =
+  root_node.timestamp <- clock ();
+  if !profile_with_allocated_bytes then
+    root_node.floats.allocated_bytes <- Gc.allocated_bytes ();
+  if !profile_with_sys_time then
+    root_node.floats.sys_time <- Sys.time ()
+
 let reset () =
   if !profile_with_debug then
     Printf.eprintf "[Profiling] resetting ...\n%!";
@@ -307,7 +314,7 @@ let reset () =
   floats.allocated_bytes <- 0.0;
   floats.sys_time <- 0.0;
   root_node.calls <- 0;
-  root_node.timestamp <- clock ();
+  stamp_root ();
   SparseArray.reset root_node.sons;
   allocated_nodes := [root_node];
   current_node_ref := root_node;
@@ -319,6 +326,8 @@ let reset () =
   in
   List.iter reset_landmark !registered_landmarks;
   node_id_ref := 1
+
+let () = reset ()
 
 let unroll_until node =
   while
@@ -500,8 +509,7 @@ let start_profiling ?(profiling_options = default_options) () =
        | true, false -> "with garbage collection statistics"
        | false, true -> "with system time"
        | false, false -> "");
-  profiling_ref := true;
-  reset ()
+  profiling_ref := true
 
 
 let stop_profiling () =
@@ -539,14 +547,10 @@ let export () =
     {Graph.landmark_id; id; name; location; calls; time; kind;
      allocated_bytes; sys_time; sons; distrib = Stack.to_array distrib}
   in
-  if !current_node_ref != root_node then
-    (let msg = Printf.sprintf
-         "Export of call graph is only allowed when all landmarks have been \
-          exited ('%s' is still open)" !current_node_ref.landmark.name
-     in
-     failwith msg);
-  if !profiling_ref then
+  if !profiling_ref then begin
     aggregate_stat_for root_node;
+    stamp_root ()
+  end;
   let all_nodes = List.rev !allocated_nodes in
   let nodes = array_list_map export_node all_nodes in
   {Graph.nodes = nodes}
@@ -685,12 +689,13 @@ let parse_env_options s =
     | "time" :: _  -> expect_no_argument "time"
     | ["allocation"] -> allocated_bytes := true
     | "allocation" :: _ -> expect_no_argument "allocation"
-    | ["auto"] | ["remove"] -> () (* read by the ppx extension *)
     | ["off"] -> raise Exit
     | "off" :: _ -> expect_no_argument "off"
+    | ["auto"] | ["remove"] -> () (* read by the ppx extension *)
     | "auto" :: _ | "remove" :: _ -> expect_no_argument "auto"
+    | [""] -> ()
     | opt :: _ :: _ -> warning (Printf.sprintf "To many '=' after '%s'" opt)
-    | unknown :: _ -> warning (sprintf "Unknown option '%s'\n%!" unknown)
+    | unknown :: _ -> warning (sprintf "Unknown option '%s'" unknown)
  in
  List.iter parse_option (split_trim ',' s);
  {debug = !debug; allocated_bytes = !allocated_bytes; sys_time = !sys_time;

@@ -1,3 +1,3 @@
-ENV=OCAML_LANDMARKS=format=JSON,ouput=stderr
+ENV=OCAML_LANDMARKS=format=json,output=stderr
 EXTRAS=
 include ../../Makefile.common

@@ -35,6 +35,7 @@ clean:
 	@$(MAKE) -C src clean
 	@$(MAKE) -C ppx clean
 	@$(MAKE) -C testsuite clean
+	@$(MAKE) -C tools/landmarks_viewer clean
 
 .PHONY: install uninstall
 

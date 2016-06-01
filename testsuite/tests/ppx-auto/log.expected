@@ -1,0 +1,23 @@
+in: lm1
+in: lm2
+in: lm3
+in: no-auto
+in: mod_lm0
+in: mod_lm1
+in: mod_lm2
+in: mod_lm3
+in: mod_no-auto
+
+Landmark reached:
+ROOT
+fib
+lm1
+lm2
+lm3
+mod_lm1
+mod_lm2
+mod_lm3
+next_prime
+odd
+prime
+print

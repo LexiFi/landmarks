@@ -10,9 +10,16 @@ open Parsetree
 open Longident
 open Location
 
+let warning loc code =
+  let open Format in
+  let message = function
+  | `Let_expect_function -> "let annotation expect explicit eta-long function (the body should start with a 'fun ...' or 'function ...')"
+  in
+  printf "%a, ppx_landmark: %s\n%!" print_loc loc (message code)
+
 let error loc code =
   let open Printf in
-  let rec message = function
+  let message = function
   | `Too_many_attributes -> "too many attributes"
   | `Expecting_payload l ->
     sprintf "expecting payload in [%s]"
@@ -21,7 +28,7 @@ let error loc code =
   | `Provide_a_name -> "this landmark annotation requires a name argument"
   in
   raise (Location.Error (Location.error ~loc
-			  (Printf.sprintf "landmark_ppx: %s" (message code))))
+			  (Printf.sprintf "ppx_landmark: %s" (message code))))
 
 let landmark_id = ref 0
 let landmarks_to_register = ref []
@@ -142,6 +149,7 @@ let rec translate_value_bindings deep_mapper auto rec_flag vbs =
            let arity = arity pvb_expr in
            if arity = [] then (vb, None)
            else (vb, Some (arity, name, pvb_loc, attr))
+         | { pvb_loc; _}, Some _ when not auto -> warning pvb_loc `Let_expect_function; (vb, None)
          | _, _ -> (vb, None))
       vbs
   in
@@ -162,10 +170,11 @@ let rec translate_value_bindings deep_mapper auto rec_flag vbs =
   in
   vbs, new_vbs
 
-let rec deep_mapper auto =
+let auto = ref false
+
+let rec deep_mapper shallow =
   { default_mapper with
     structure = (fun mapper l ->
-      let auto = ref auto in
       List.map
         (function
           | { pstr_desc = Pstr_attribute attr; pstr_loc; _} as pstr ->
@@ -176,7 +185,7 @@ let rec deep_mapper auto =
             | _ -> error pstr_loc (`Expecting_payload ["auto"; "auto-off"]))
           | { pstr_desc = Pstr_value (rec_flag, vbs); pstr_loc} ->
             let vbs, new_vbs =
-              translate_value_bindings deep_mapper !auto rec_flag vbs
+              translate_value_bindings deep_mapper (shallow && !auto) rec_flag vbs
             in
             let str = Str.value ~loc:pstr_loc rec_flag vbs in
             if new_vbs = [] then [str]
@@ -198,12 +207,18 @@ let rec deep_mapper auto =
       fun mapper -> function
         | ({pexp_desc = Pexp_let (rec_flag, vbs, body); _} as expr) ->
           let vbs, new_vbs =
-            translate_value_bindings deep_mapper auto rec_flag vbs
+            translate_value_bindings deep_mapper (shallow && !auto) rec_flag vbs
           in
-          { expr with pexp_desc = Pexp_let (rec_flag, vbs @ new_vbs, body) }
+          let body =
+            if new_vbs = [] then
+              body
+            else
+              Exp.let_ Nonrecursive new_vbs body
+          in
+          { expr with pexp_desc = Pexp_let (rec_flag, vbs, body) }
 
         | ({pexp_attributes; pexp_loc; _} as expr) ->
-          let expr = default_mapper.expr (deep_mapper auto) expr in
+          let expr = default_mapper.expr (deep_mapper shallow) expr in
           match filter_map (get_string_payload "landmark") pexp_attributes with
           | [Some landmark_name] ->
                {expr with pexp_attributes = remove_attribute "landmark" pexp_attributes}
@@ -213,15 +228,15 @@ let rec deep_mapper auto =
           | _ -> error pexp_loc `Too_many_attributes
   }
 
-let shallow_mapper auto =
-  let mapper = deep_mapper auto in
+let shallow_mapper =
+  let mapper = deep_mapper true in
   { mapper with
      structure = fun _ -> function [] -> []
        | l ->
        let first_loc = (List.hd l).pstr_loc in
-       let l = (deep_mapper auto).structure (deep_mapper auto) l in
+       let l = mapper.structure mapper l in
        let landmark_name = Printf.sprintf "load(%s)" !Location.input_name in
-       let lm = if auto then Some (new_landmark landmark_name first_loc) else None in
+       let lm = if !auto then Some (new_landmark landmark_name first_loc) else None in
        if !landmarks_to_register = [] then l else
        let landmarks =
          Str.value Nonrecursive
@@ -253,12 +268,12 @@ let remove_attributes =
 
 let () = register "landmarks" (fun _ ->
     match Sys.getenv "OCAML_LANDMARKS" with
-    | exception Not_found -> shallow_mapper false
+    | exception Not_found -> shallow_mapper
     | env ->
-    let opts = Landmark_misc.split ',' env in
+      let opts = Landmark_misc.split ',' env in
       if List.mem "remove" opts then
         remove_attributes
-      else if List.mem "auto" opts then
-        shallow_mapper true
-      else
-        shallow_mapper false)
+      else begin
+        auto := List.mem "auto" opts;
+        shallow_mapper
+      end)
