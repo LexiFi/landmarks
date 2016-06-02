@@ -72,6 +72,7 @@ type profiling_options = {
   debug : bool;
   allocated_bytes: bool;
   sys_time : bool;
+  recursive : bool;
   output : profile_output;
   format : profile_format
 }

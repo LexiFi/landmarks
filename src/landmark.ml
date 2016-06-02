@@ -143,6 +143,7 @@ and node = {
   fathers: node Stack.t;
 
   mutable calls: int;
+  mutable recursive_calls: int;
   mutable timestamp: Int64.t;
   distrib: float Stack.t;
   floats : floats;
@@ -185,6 +186,7 @@ and dummy_node = {
     fathers = Stack.dummy ();
     floats = new_floats ();
     calls = 0;
+    recursive_calls = 0;
     distrib = Stack.dummy ();
     timestamp = Int64.zero
 }
@@ -207,6 +209,7 @@ let profile_with_allocated_bytes = ref false
 let profile_with_sys_time = ref false
 let profile_output = ref Silent
 let profile_format = ref Textual
+let profile_recursive = ref false
 
 let profiling () = !profiling_ref
 
@@ -244,6 +247,7 @@ let new_node landmark =
     sons = SparseArray.make dummy_node 7;
 
     calls = 0;
+    recursive_calls = 0;
     timestamp = Int64.zero;
     floats = new_floats ();
   } in
@@ -314,6 +318,7 @@ let reset () =
   floats.allocated_bytes <- 0.0;
   floats.sys_time <- 0.0;
   root_node.calls <- 0;
+  root_node.recursive_calls <- 0;
   stamp_root ();
   SparseArray.reset root_node.sons;
   allocated_nodes := [root_node];
@@ -342,7 +347,7 @@ let landmark_failure msg =
   if !current_node_ref != root_node then
     reset ();
   if !profile_with_debug then
-    (Printf.eprintf "%s\n%!" msg; Pervasives.exit 2)
+    (Printf.eprintf "Landmark error: %s\n%!" msg; Pervasives.exit 2)
   else
     raise (LandmarkFailure msg)
 
@@ -393,19 +398,24 @@ let sample sampler x =
 
 let enter landmark =
   if !profile_with_debug then
-    Printf.eprintf "[Profiling] enter(%s)\n%!" landmark.name;
+    Printf.eprintf "[Profiling] enter%s(%s)\n%!" (if landmark.last_self != dummy_node then " recursive " else "") landmark.name;
 
-  let node = get_entering_node landmark in
-
-  node.calls <- node.calls + 1;
-  Stack.push node.fathers !current_node_ref;
-  current_node_ref := node;
-  landmark.last_self <- node;
-  node.timestamp <- clock ();
-  if !profile_with_allocated_bytes then
-    node.floats.allocated_bytes_stamp <- Gc.allocated_bytes ();
-  if !profile_with_sys_time then
-    node.floats.sys_timestamp <- Sys.time ()
+  if landmark.last_self == dummy_node || !profile_recursive then begin
+    let node = get_entering_node landmark in
+    node.calls <- node.calls + 1;
+    Stack.push node.fathers !current_node_ref;
+    current_node_ref := node;
+    landmark.last_self <- node;
+    node.timestamp <- clock ();
+    if !profile_with_allocated_bytes then
+      node.floats.allocated_bytes_stamp <- Gc.allocated_bytes ();
+    if !profile_with_sys_time then
+      node.floats.sys_timestamp <- Sys.time ()
+  end else begin
+    let last_self = landmark.last_self in
+    last_self.recursive_calls <- last_self.recursive_calls + 1;
+    last_self.calls <- last_self.calls + 1
+  end
 
 let mismatch_recovering landmark current_node =
   let expected_landmark = current_node.landmark in
@@ -436,15 +446,19 @@ let aggregate_stat_for current_node =
 
 let exit landmark =
   if !profile_with_debug then
-    Printf.eprintf "[Profiling] exit(%s)\n%!" landmark.name;
+    Printf.eprintf "[Profiling] exit%s(%s)\n%!" (if landmark.last_self != !current_node_ref then " recursive " else "") landmark.name;
   let current_node = !current_node_ref in
-
-  mismatch_recovering landmark current_node;
-  if Stack.size current_node.fathers = 1 then begin
-    landmark.last_self <- dummy_node;
-    aggregate_stat_for current_node;
-  end;
-  current_node_ref := get_exiting_node current_node
+  let last_self = landmark.last_self in
+  if last_self.recursive_calls = 0 || !profile_recursive then begin
+    mismatch_recovering landmark current_node;
+    if Stack.size current_node.fathers = 1 then begin
+      landmark.last_self <- dummy_node;
+      aggregate_stat_for current_node;
+    end;
+    current_node_ref := get_exiting_node current_node
+  end
+  else if not !profile_recursive then
+    last_self.recursive_calls <- last_self.recursive_calls - 1
 
 
 (* These two functions should be inlined. *)
@@ -479,6 +493,7 @@ type profiling_options = {
   debug : bool;
   allocated_bytes: bool;
   sys_time : bool;
+  recursive : bool;
   output : profile_output;
   format : profile_format
 }
@@ -487,16 +502,18 @@ let default_options = {
   debug = false;
   allocated_bytes = true;
   sys_time = false;
+  recursive = false;
   output = Channel stderr;
   format = Textual;
 }
 
-let set_profiling_options {debug; allocated_bytes; sys_time; output; format} =
+let set_profiling_options {debug; allocated_bytes; sys_time; output; format; recursive} =
   profile_with_allocated_bytes := allocated_bytes;
   profile_with_sys_time := sys_time;
   profile_with_debug := debug;
   profile_output := output;
-  profile_format := format
+  profile_format := format;
+  profile_recursive := recursive
 
 
 let start_profiling ?(profiling_options = default_options) () =
@@ -659,6 +676,7 @@ let parse_env_options s =
   let format = ref Textual in
   let output = ref (Channel stderr) in
   let sys_time = ref false in
+  let recursive = ref false in
   let allocated_bytes = ref false in
   let split_trim c s =
     List.map String.trim (Landmark_misc.split c s)
@@ -691,6 +709,8 @@ let parse_env_options s =
        | _ -> invalid_for "output" file_spec)
     | ["time"] -> sys_time := true
     | "time" :: _  -> expect_no_argument "time"
+    | ["recursive"] -> recursive := true
+    | "recursive" :: _  -> expect_no_argument "recursive"
     | ["allocation"] -> allocated_bytes := true
     | "allocation" :: _ -> expect_no_argument "allocation"
     | ["off"] -> raise Exit
@@ -703,7 +723,7 @@ let parse_env_options s =
  in
  List.iter parse_option (split_trim ',' s);
  {debug = !debug; allocated_bytes = !allocated_bytes; sys_time = !sys_time;
-  output = !output; format = !format}
+  output = !output; format = !format; recursive = !recursive}
 
 let () = match Sys.getenv "OCAML_LANDMARKS" with
   | exception Not_found -> ()
