@@ -207,7 +207,7 @@ let rec deep_mapper shallow =
       fun mapper -> function
         | ({pexp_desc = Pexp_let (rec_flag, vbs, body); _} as expr) ->
           let vbs, new_vbs =
-            translate_value_bindings deep_mapper (shallow && !auto) rec_flag vbs
+            translate_value_bindings deep_mapper false rec_flag vbs
           in
           let body =
             if new_vbs = [] then
@@ -218,7 +218,7 @@ let rec deep_mapper shallow =
           { expr with pexp_desc = Pexp_let (rec_flag, vbs, body) }
 
         | ({pexp_attributes; pexp_loc; _} as expr) ->
-          let expr = default_mapper.expr (deep_mapper shallow) expr in
+          let expr = default_mapper.expr (deep_mapper false) expr in
           match filter_map (get_string_payload "landmark") pexp_attributes with
           | [Some landmark_name] ->
                {expr with pexp_attributes = remove_attribute "landmark" pexp_attributes}

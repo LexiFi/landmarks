@@ -25,11 +25,12 @@ tools: check_ocamlfind
 tests: landmarks
 	@ocamlfind query ppx_tools > /dev/null || (echo '[ERROR] The package `ppx_tools` is required to run the testsuite.' && exit 1)
 	@echo ""
-	@echo "\033[1;4mNATIVE TESTS\033[0m"
-	@$(MAKE) --no-print-directory -C testsuite native
-	@echo ""
 	@echo "\033[1;4mBATCH TESTS\033[0m"
 	@$(MAKE) --no-print-directory -C testsuite batch
+	@echo ""
+	@echo "\033[1;4mNATIVE TESTS\033[0m"
+	@$(MAKE) --no-print-directory -C testsuite native
+	@$(MAKE) --no-print-directory -C testsuite check_failure
 
 clean:
 	@$(MAKE) -C src clean

@@ -1,2 +1,2 @@
-include ../../Makefile.common
 EXTRAS=
+include ../../Makefile.common

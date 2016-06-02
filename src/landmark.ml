@@ -446,6 +446,7 @@ let exit landmark =
   end;
   current_node_ref := get_exiting_node current_node
 
+
 (* These two functions should be inlined. *)
 let enter landmark =
   if !profiling_ref then
@@ -511,16 +512,19 @@ let start_profiling ?(profiling_options = default_options) () =
        | false, false -> "");
   profiling_ref := true
 
+let rec exit_until_root () =
+  if !current_node_ref != root_node then begin
+    let landmark = !current_node_ref.landmark in
+    exit landmark;
+    exit_until_root ();
+  end
 
 let stop_profiling () =
   if not !profiling_ref then
     failwith "In profiling: cannot stop since profiling is not on-going";
+  exit_until_root ();
   let current_node = !current_node_ref in
-  if current_node != root_node then
-    landmark_failure
-      (Printf.sprintf
-         "The landmark '%s' is still opened at the end of profiling."
-         current_node.landmark.name);
+  assert (current_node == root_node);
   aggregate_stat_for current_node;
   if !profile_with_debug then
     Printf.eprintf "[Profiling] Stop profiling.\n%!";
@@ -682,8 +686,8 @@ let parse_env_options s =
       (match split_trim '"' file_spec with
        | [""; file; ""] ->
          (try
-            output := Channel (open_out_gen [Open_append; Open_text] 0o640 file)
-          with _ -> warning (sprintf "Unable to open '%s'\n%!" file))
+            output := Channel (open_out_gen [Open_append; Open_creat; Open_text] 0o640 file)
+          with _ -> warning (sprintf "Unable to open '%s'" file))
        | _ -> invalid_for "output" file_spec)
     | ["time"] -> sys_time := true
     | "time" :: _  -> expect_no_argument "time"

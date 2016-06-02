@@ -13,6 +13,7 @@ build: [
 ]
 install: [make "install"]
 remove: ["ocamlfind" "remove" "landmarks"]
+build-test: [make "tests"]
 
 depopts: [
   "gen_js_api"
