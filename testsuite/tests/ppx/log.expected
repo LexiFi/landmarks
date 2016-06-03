@@ -7,13 +7,28 @@ in: mod_lm1
 in: mod_lm2
 in: mod_lm3
 in: mod_no-auto
+in: incl_lm0
+in: incl_lm1
+in: incl_lm2
+in: incl_lm3
+in: incl_no-auto1
+in: incl_no-auto2
+in: local1
+in: local2
+in: local_noauto
 
 Landmark reached:
 ROOT
 fib
+incl_lm0
+incl_lm1
+incl_lm2
+incl_lm3
 lm1
 lm2
 lm3
+local1
+local2
 main
 mod_lm0
 mod_lm1

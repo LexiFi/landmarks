@@ -47,8 +47,35 @@ module M = struct
   let mod_lm3 () = print "mod_lm3"
   [@@@landmark "auto-off"]
   let mod_noauto () = print "mod_no-auto"
+  [@@@landmark "auto"] (* Should be useless *)
 end
 
+include struct
+  let incl_noauto1 () = print "incl_no-auto1"
+  let[@landmark] incl_lm0 () = print "incl_lm0"
+  [@@@landmark "auto"]
+  let incl_lm1 () = print "incl_lm1"
+  let[@landmark] incl_lm2 () = print "incl_lm2"
+  let incl_lm3 () = print "incl_lm3"
+  [@@@landmark "auto-off"]
+  let incl_noauto2 () = print "incl_no-auto2"
+end
+
+let local_module () =
+  let module M =
+    struct
+      [@@@landmark "auto"]
+      let local1 () = print "local1"
+      [@@@landmark "auto-off"]
+      let[@landmark] local2 () =
+        print "local2"
+      let local_noauto () =
+        print "local_noauto"
+    end
+  in
+  M.local1 ();
+  M.local2 ();
+  M.local_noauto ()
 
 let () =
   let open Landmark in
@@ -71,7 +98,17 @@ let () =
     mod_lm1 ();
     mod_lm2 ();
     mod_lm3 ();
-    mod_noauto ())[@landmark "module"]
+    mod_noauto ())[@landmark "module"];
+
+    (incl_lm0 ();
+    incl_lm1 ();
+    incl_lm2 ();
+    incl_lm3 ();
+    incl_noauto1 ();
+    incl_noauto2 ())[@landmark "module"];
+
+
+    local_module ()
   in
   main ();
   if profiling () then begin
