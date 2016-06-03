@@ -212,7 +212,7 @@ Instrumenting with OCAML_PARAM
 The best way to blindly instrument a project is to use ocaml's OCAMLPARAM
 experimental feature, by setting the environment variable OCAMLPARAM with
 ```
-I=$(ocamlfind query landmarks),cma=landmarks.cma,cmxa=landmarks.cmxa,ppx=$(ocamlfind query landmarks)/landmarks_ppx,_"
+I=$(ocamlfind query landmarks),cma=landmarks.cma,cmxa=landmarks.cmxa,ppx=$(ocamlfind query landmarks)/ppx_landmarks,_"
 ```
 However, the current implementation of OCAMLPARAM does not allow to easily
 benchmark projects that build archives, shared libraries and packages. This

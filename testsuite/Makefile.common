@@ -11,7 +11,7 @@ native: test
 
 batch: test.batch
 	@rm -f failed
-	@$(ENV) ./test.batch 2> log.err > log.out && (test ! -f log.expected || diff -q log.expected log.out) && printf "%10s : \033[32mOK\033[0m\n" $$(basename $$PWD) \
+	@LD_LIBRARY_PATH=$(BASEDIR)/src:$(LD_LIBRARY_PATH) $(ENV) ./test.batch 2> log.err > log.out && (test ! -f log.expected || diff -q log.expected log.out) && printf "%10s : \033[32mOK\033[0m\n" $$(basename $$PWD) \
                                            || (printf "%10s : \033[31mKO\033[0m\n" $$(basename $$PWD) && touch failed)
 
 test: test.ml $(BASEDIR)/src/landmarks.cmxa $(PPX)

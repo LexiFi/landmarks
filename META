@@ -1,7 +1,9 @@
 version = "1.0"
 description = "A simple profiling library"
 archive(byte) = "landmarks.cma"
+plugin(byte) = "landmarks.cma"
 archive(native) = "landmarks.cmxa"
+plugin(native) = "landmarks.cmxs"
 
 package "ppx" (
   version = "1.0"

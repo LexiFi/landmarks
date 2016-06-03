@@ -10,4 +10,4 @@ typecore.graph:
 	cd ../ocaml-ocamlparam && OCAML_LANDMARKS='output="../tests/typecore.graph",format=json' ../local/bin/ocamlc.opt -g -nostdlib -I stdlib -I otherlibs/dynlink -strict-sequence -principal -absname -w +a-4-9-41-42-44-45-48 -warn-error A -bin-annot -safe-string -strict-formats -I utils -I parsing -I typing -I bytecomp -I middle_end -I middle_end/base_types -I asmcomp -I driver -I toplevel -c typing/typecore.ml
 
 clean:
-	rm -f pattern.cmo pattern.ml *.o *.cm*
+	rm -f pattern.cmo pattern.ml *.o *.cm* *.graph
