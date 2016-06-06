@@ -2,6 +2,10 @@
 # Characters 0-29:
   [@@@landmark "random string"];;
   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ppx_landmark: expecting payload in ["auto","auto-off","disable"]
+#       Characters 19-48:
+  [@@@landmark "random string"];;
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ppx_landmark: expecting payload in ["auto","auto-off"]
 #   Characters 5-13:
   [@@@landmark "auto" "no auto"];;

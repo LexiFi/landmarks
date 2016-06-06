@@ -232,39 +232,6 @@ let rec mapper auto =
           | [] -> expr
           | _ -> error pexp_loc `Too_many_attributes }
 
-
-let toplevel_mapper auto =
-  { default_mapper with
-     signature = (fun _ -> default_mapper.signature default_mapper);
-     structure = fun _ -> function [] -> []
-       | l ->
-       let first_loc = (List.hd l).pstr_loc in
-       let mapper = mapper auto in
-       let l = mapper.structure mapper l in
-       let landmark_name = Printf.sprintf "load(%s)" !Location.input_name in
-       let lm = if auto then Some (new_landmark landmark_name first_loc) else None in
-       if !landmarks_to_register = [] then l else
-       let landmarks =
-         Str.value Nonrecursive
-           (List.map (fun (landmark, landmark_name, landmark_location) ->
-             Vb.mk (Pat.var (mknoloc landmark))
-                   (register_landmark landmark_name landmark_location))
-               (List.rev !landmarks_to_register))
-       in
-       match lm with
-       | Some lm ->
-         let begin_load =
-           Str.value Nonrecursive
-            [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None) (enter_landmark lm)]
-         in
-         let exit_load =
-           Str.value Nonrecursive
-             [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None) (exit_landmark lm)]
-         in
-         landmarks :: (begin_load :: l @ [exit_load])
-       | None ->
-         landmarks :: l }
-
 let remove_attributes =
   { default_mapper with
      structure = (fun mapper l ->
@@ -277,6 +244,54 @@ let remove_attributes =
           attrs
 	| None ->
           attributes) }
+
+let has_disable l =
+   let disable = ref false in
+   let f = function
+     | { pstr_desc = Pstr_attribute attr; pstr_loc; _} as pstr ->
+       (match get_string_payload "landmark" attr with
+       | Some (Some "disable") -> disable := true; None
+       | Some (Some "auto-off") | Some (Some "auto") | None -> Some pstr
+       | _ -> error pstr_loc
+               (`Expecting_payload ["auto"; "auto-off"; "disable"]))
+     | i -> Some i
+   in
+   let res = filter_map f l in
+   !disable, res
+
+let toplevel_mapper auto =
+  { default_mapper with
+     signature = (fun _ -> default_mapper.signature default_mapper);
+     structure = fun _ -> function [] -> [] | l ->
+       let disable, l = has_disable l in
+       if disable then l else begin
+         let first_loc = (List.hd l).pstr_loc in
+         let mapper = mapper auto in
+         let l = mapper.structure mapper l in
+         let landmark_name = Printf.sprintf "load(%s)" !Location.input_name in
+         let lm = if auto then Some (new_landmark landmark_name first_loc) else None in
+         if !landmarks_to_register = [] then l else
+         let landmarks =
+           Str.value Nonrecursive
+             (List.map (fun (landmark, landmark_name, landmark_location) ->
+               Vb.mk (Pat.var (mknoloc landmark))
+                     (register_landmark landmark_name landmark_location))
+                 (List.rev !landmarks_to_register))
+         in
+         match lm with
+         | Some lm ->
+           let begin_load =
+             Str.value Nonrecursive
+              [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None) (enter_landmark lm)]
+           in
+           let exit_load =
+             Str.value Nonrecursive
+               [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None) (exit_landmark lm)]
+           in
+           landmarks :: (begin_load :: l @ [exit_load])
+         | None ->
+           landmarks :: l
+     end}
 
 let () = register "landmarks" (fun _ ->
     match Sys.getenv "OCAML_LANDMARKS" with
