@@ -80,7 +80,7 @@ type profiling_options = {
 val default_options: profiling_options
 val set_profiling_options: profiling_options -> unit
 
-val start_profiling: ?profiling_options:profiling_options ->  unit -> unit
+val start_profiling: ?profiling_options:profiling_options -> unit -> unit
 
 val stop_profiling: unit -> unit
 

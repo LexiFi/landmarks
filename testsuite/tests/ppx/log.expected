@@ -34,7 +34,10 @@ mod_lm0
 mod_lm1
 mod_lm2
 mod_lm3
+module
+module
 next_prime
+not module
 odd
 prime
 print

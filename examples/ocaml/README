@@ -1,0 +1,10 @@
+WARNING: This works only 4.03, you need to have the 
+landmarks module avaiable with ocamlfind.
+
+- "make configure": download and configure ocaml locally
+- "make build": compile with landmarks"
+- "make install": install locally"
+- "make tests": launch some compilation tests"
+- "make everything": all the above rules"
+- "make distclean": clean-up everything"
+

@@ -14,11 +14,14 @@ batch: test.batch
 	@LD_LIBRARY_PATH=$(BASEDIR)/src:$(LD_LIBRARY_PATH) $(ENV) ./test.batch 2> log.err > log.out && (test ! -f log.expected || diff -q log.expected log.out) && printf "%10s : \033[32mOK\033[0m\n" $$(basename $$PWD) \
                                            || (printf "%10s : \033[31mKO\033[0m\n" $$(basename $$PWD) && touch failed)
 
+LANDMARK_NATIVE=landmarks.cmxa
+LANDMARK_BATCH=landmarks.cma
+
 test: test.ml $(BASEDIR)/src/landmarks.cmxa $(PPX)
-	@$(ENV) ocamlfind ocamlopt -I $(BASEDIR)/src -o test -ppx $(PPX) $(EXTRAS) landmarks.cmxa $(EXTRA_NATIVE) test.ml
+	@$(ENV) ocamlfind ocamlopt -I $(BASEDIR)/src -o test -ppx $(PPX) $(EXTRAS) $(LANDMARK_NATIVE) test.ml
 
 test.batch: test.ml $(BASEDIR)/src/landmarks.cma $(PPX)
-	@$(ENV) ocamlfind ocamlc -I $(BASEDIR)/src -o test.batch -ppx $(PPX) $(EXTRAS) landmarks.cma $(EXTRA_BATCH) test.ml
+	@$(ENV) ocamlfind ocamlc -I $(BASEDIR)/src -o test.batch -ppx $(PPX) $(EXTRAS) $(LANDMARK_BATCH) test.ml
 
 $(BASEDIR)/src/landmarks.cma:
 	make -C $(BASEDIR)/src/ landmarks.cma

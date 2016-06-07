@@ -10,6 +10,8 @@ open Parsetree
 open Longident
 open Location
 
+let with_thread = ref false
+
 let warning loc code =
   let open Format in
   let message = function
@@ -72,8 +74,16 @@ let string_of_loc (l : Location.t) =
   let file, line, _ = Location.get_pos_info l.loc_start in
   Printf.sprintf "%s:%d" (Location.show_filename file) line
 
-let enter_landmark lm = Exp.apply (var "Landmark.enter") [Nolabel, var lm]
-let exit_landmark lm = Exp.apply (var "Landmark.exit") [Nolabel, var lm]
+let enter_landmark lm =
+  let landmark_enter =
+    if !with_thread then "Landmark_threads.enter" else "Landmark.enter"
+  in
+  Exp.apply (var landmark_enter) [Nolabel, var lm]
+let exit_landmark lm =
+  let landmark_exit =
+    if !with_thread then "Landmark_threads.exit" else "Landmark.exit"
+  in
+  Exp.apply (var landmark_exit) [Nolabel, var lm]
 let register_landmark name location =
   Exp.apply (var "Landmark.register")
     [ Labelled "location", Const.string location |> Exp.constant;
@@ -209,34 +219,40 @@ let rec mapper auto =
      l |> List.flatten);
 
     expr =
-      fun deep_mapper -> function
-        | ({pexp_desc = Pexp_let (rec_flag, vbs, body); _} as expr) ->
-          let vbs, new_vbs =
-            translate_value_bindings deep_mapper false rec_flag vbs
-          in
-          let body =
-            if new_vbs = [] then
-              body
-            else
-              Exp.let_ Nonrecursive new_vbs body
-          in
-          { expr with pexp_desc = Pexp_let (rec_flag, vbs, body) }
-
-        | ({pexp_attributes; pexp_loc; _} as expr) ->
-          let expr = default_mapper.expr deep_mapper expr in
-          match filter_map (get_string_payload "landmark") pexp_attributes with
-          | [Some landmark_name] ->
-            {expr with pexp_attributes = remove_attribute "landmark" pexp_attributes}
-              |> wrap_landmark landmark_name pexp_loc
-          | [ None ] -> error pexp_loc `Provide_a_name
-          | [] -> expr
-          | _ -> error pexp_loc `Too_many_attributes }
+      fun deep_mapper expr ->
+        let expr = match expr with
+          | ({pexp_desc = Pexp_let (rec_flag, vbs, body); _} as expr) ->
+            let vbs, new_vbs =
+              translate_value_bindings deep_mapper false rec_flag vbs
+            in
+            let body = default_mapper.expr deep_mapper body in
+            let body =
+              if new_vbs = [] then
+                body
+              else
+                Exp.let_ Nonrecursive new_vbs body
+            in
+            { expr with pexp_desc = Pexp_let (rec_flag, vbs, body) }
+         | expr -> default_mapper.expr deep_mapper expr
+       in
+       let {pexp_attributes; pexp_loc; _} = expr in
+       match filter_map (get_string_payload "landmark") pexp_attributes with
+       | [Some landmark_name] ->
+         { expr with pexp_attributes =
+             remove_attribute "landmark" pexp_attributes }
+           |> wrap_landmark landmark_name pexp_loc
+       | [ None ] -> error pexp_loc `Provide_a_name
+       | [] -> expr
+       | _ -> error pexp_loc `Too_many_attributes }
 
 let remove_attributes =
   { default_mapper with
      structure = (fun mapper l ->
-	     let l = List.filter (function {pstr_desc = Pstr_attribute attr; _ } when has_landmark_attribute [attr] <> None -> false | _ -> true) l in
-             default_mapper.structure mapper l);
+      let l =
+        List.filter (function {pstr_desc = Pstr_attribute attr; _ }
+            when has_landmark_attribute [attr] <> None -> false | _ -> true) l
+      in
+      default_mapper.structure mapper l);
      attributes = fun mapper attributes ->
        default_mapper.attributes mapper
        (match has_landmark_attribute attributes with
@@ -269,7 +285,12 @@ let toplevel_mapper auto =
          let mapper = mapper auto in
          let l = mapper.structure mapper l in
          let landmark_name = Printf.sprintf "load(%s)" !Location.input_name in
-         let lm = if auto then Some (new_landmark landmark_name first_loc) else None in
+         let lm =
+           if auto then
+             Some (new_landmark landmark_name first_loc)
+           else
+             None
+         in
          if !landmarks_to_register = [] then l else
          let landmarks =
            Str.value Nonrecursive
@@ -282,22 +303,25 @@ let toplevel_mapper auto =
          | Some lm ->
            let begin_load =
              Str.value Nonrecursive
-              [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None) (enter_landmark lm)]
+              [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None)
+                 (enter_landmark lm)]
            in
            let exit_load =
              Str.value Nonrecursive
-               [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None) (exit_landmark lm)]
+               [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None)
+                (exit_landmark lm)]
            in
            landmarks :: (begin_load :: l @ [exit_load])
          | None ->
            landmarks :: l
-     end}
+     end }
 
 let () = register "landmarks" (fun _ ->
     match Sys.getenv "OCAML_LANDMARKS" with
     | exception Not_found -> toplevel_mapper false
     | env ->
       let opts = Landmark_misc.split ',' env in
+      with_thread := List.mem "threads" opts;
       if List.mem "remove" opts then
         remove_attributes
       else begin

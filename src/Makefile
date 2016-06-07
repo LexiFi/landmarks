@@ -17,10 +17,13 @@ OBJS=clock.o
 CMOS=$(patsubst %,%.cmo,$(MODULES))
 CMXS=$(patsubst %,%.cmx,$(MODULES))
 
-all: $(NAME).cma $(NAME).cmxa $(NAME)-noc.cma $(NAME).cmxs $(NAME).top
+all: $(NAME).cma $(NAME).cmxa $(NAME)-noc.cma $(NAME)-threads.cmxa $(NAME)-threads.cma $(NAME).cmxs $(NAME).top
 
 $(NAME).cma: $(OBJS) $(CMOS)
 		$(OCAMLMKLIB) -o $(NAME) $^
+
+$(NAME)-threads.cma: $(OBJS) $(CMOS) landmark_threads.cmo
+		$(OCAMLMKLIB) -o $(NAME)-threads $^
 
 $(NAME)-noc.cma: $(CMOS)
 		$(OCAMLC) -a -o $@ $^
@@ -28,8 +31,11 @@ $(NAME)-noc.cma: $(CMOS)
 $(NAME).cmxa: $(OBJS) $(CMXS)
 		$(OCAMLMKLIB) -o $(NAME) $^
 
+$(NAME)-threads.cmxa: $(OBJS) $(CMXS) landmark_threads.cmx
+		$(OCAMLMKLIB) -o $(NAME)-threads $^
+
 $(NAME).cmxs: $(OBJS) $(CMXS)
-		$(OCAMLOPT) -shared -o $(NAME).cmxs $^
+		$(OCAMLOPT) -shared -o $@ $^
 
 
 $(NAME).top: $(OBJS) $(CMOS)
@@ -39,6 +45,13 @@ $(NAME).top: $(OBJS) $(CMOS)
 
 .c.o:
 	        $(OCAMLOPT) -ccopt -fPIC -c $<
+
+
+landmark_threads.cmo: landmark_threads.ml
+	        $(OCAMLC) $(OCAMLFLAGS) -thread -c $<
+
+landmark_threads.cmx: landmark_threads.ml
+	        $(OCAMLOPT) $(OCAMLFLAGS) -thread -c $<
 
 .ml.cmo:
 	        $(OCAMLC) $(OCAMLFLAGS) -c $<

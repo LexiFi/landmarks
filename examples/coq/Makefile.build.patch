@@ -1,0 +1,38 @@
+27a28,36
+> LANDMARKS_MOD=
+> LANDMARKS_FLAGS=
+> ifdef OCAML_LANDMARKS
+> LANDMARKS_SRC=$(shell ocamlfind query landmarks)
+> LANDMARKS_MOD=landmarks-threads
+> USERFLAGS+=-I $(LANDMARKS_SRC)
+> LANDMARKS_FLAGS=-ppx $(LANDMARKS_SRC)/ppx_landmarks
+> endif
+> 
+98c107
+< OCAMLOPT := $(OCAMLOPT) $(CAMLFLAGS)
+---
+> OCAMLOPT := $(OCAMLOPT) $(CAMLFLAGS) $(LANDMARKS_FLAGS)
+115,117c124,126
+<   $(OCAMLOPT) $(MLINCLUDES) $(OPTFLAGS) -o $@ $(1) $(addsuffix .cmxa,$(2)) $^ && $(STRIP) $@,\
+<   $(OCAMLOPT) $(MLINCLUDES) $(OPTFLAGS) $(LINKMETADATA) -o $@ $(1) $(addsuffix .cmxa,$(2)) $^ && $(STRIP) $@ && $(CODESIGN) $@),\
+< $(OCAMLC) $(MLINCLUDES) $(BYTEFLAGS) $(CUSTOM) -o $@ $(1) $(addsuffix .cma,$(2)) $^)
+---
+>   $(OCAMLOPT) $(MLINCLUDES) $(LANDMARKS_FLAGS) $(OPTFLAGS) -o $@ $(1) $(addsuffix .cmxa,$(2)) $^ && $(STRIP) $@,\
+>   $(OCAMLOPT) $(MLINCLUDES) $(LANDMARKS_FLAGS) $(OPTFLAGS) $(LINKMETADATA) -o $@ $(1) $(addsuffix .cmxa,$(2)) $^ && $(STRIP) $@ && $(CODESIGN) $@),\
+> $(OCAMLC) $(MLINCLUDES) $(LANDMARKS_FLAGS) $(BYTEFLAGS) $(CUSTOM) -o $@ $(1) $(addsuffix .cma,$(2)) $^)
+131c140
+< SYSMOD:=str unix dynlink threads
+---
+> SYSMOD:=str unix dynlink threads $(LANDMARKS_MOD)
+301c310
+< 	$(HIDE)$(call bestocaml,,nums unix clib)
+---
+> 	$(HIDE)$(call bestocaml,,nums unix threads $(LANDMARKS_MOD) clib)
+620c629
+< 	$(HIDE)$(call bestocaml, -I tools, unix)
+---
+> 	$(HIDE)$(call bestocaml, -I tools, unix threads $(LANDMARKS_MOD))
+658c667
+< 	$(HIDE)$(call bestocaml,-I ide,str unix threads)
+---
+> 	$(HIDE)$(call bestocaml,-I ide,str unix threads $(LANDMARKS_MOD))
