@@ -1,37 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="en-us">
   <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+    <meta charset="UTF-8">
     <title>Landmarks by mlasson</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
   </head>
-
   <body>
-    <div id="container">
-      <div class="inner">
+    <section class="page-header">
+      <h1 class="project-name">Landmarks</h1>
+      <h2 class="project-tagline"></h2>
+      <a href="https://github.com/mlasson/landmarks" class="btn">View on GitHub</a>
+      <a href="https://github.com/mlasson/landmarks/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/mlasson/landmarks/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
 
-        <header>
-          <h1>Landmarks</h1>
-          <h2></h2>
-        </header>
-
-        <section id="downloads" class="clearfix">
-          <a href="https://github.com/mlasson/landmarks/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
-          <a href="https://github.com/mlasson/landmarks/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
-          <a href="https://github.com/mlasson/landmarks" id="view-on-github" class="button"><span>View on GitHub</span></a>
-        </section>
-
-        <hr>
-
-        <section id="main_content">
-          <h1>
+    <section class="main-content">
+      <h1>
 <a id="landmarks-a-simple-profiling-library" class="anchor" href="#landmarks-a-simple-profiling-library" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Landmarks: A Simple Profiling Library</h1>
 
 <p><em>Landmarks</em> is a simple profiling library for OCaml. It provides primitives to
@@ -53,10 +41,11 @@ build locally or access online).</p>
 </ul>
 </li>
 <li>
-<p>Optional requirements:</p>
+<p>Optional requirements (only for building the viewer):</p>
 
 <ul>
 <li>gen_js_api</li>
+<li>js_of_ocaml</li>
 </ul>
 </li>
 <li><p>With opam (<em>not yet available</em>):</p></li>
@@ -127,11 +116,11 @@ to support javascript.</p>
   <span class="pl-k">val</span> <span class="pl-en">exit</span>: <span class="pl-k">landmark</span> -&gt; <span class="pl-k">unit</span></pre></div>
 
 <p>The <code>register</code> function declares new landmarks and should be used at the
-toplevel and the functions <code>enter</code> and <code>exit</code> are used to delimit the portion
+toplevel. The functions <code>enter</code> and <code>exit</code> are used to delimit the portion
 of code attached to a landmark. At the end of the profiling, we retrieve for
 each landmark the aggregated time information spent executing the corresponding
 piece of code. During the execution, a trace of each visited landmark is also
-recorded which allows to build a "callgraph".</p>
+recorded in order to build a "callgraph".</p>
 
 <p>For example:</p>
 
@@ -179,6 +168,16 @@ recorded which allows to build a "callgraph".</p>
 <li>10% of time spent inside the main landmark is spent in the sleep landmark,</li>
 <li>100% of the time spent in loop is spent in the sleep landmark.</li>
 </ul>
+
+<p>For more information, you may browse the <a href="http://mlasson.github.io/landmarks/api/">API</a>.</p>
+
+<h2>
+<a id="the-clock-function" class="anchor" href="#the-clock-function" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The <code>clock()</code> function</h2>
+
+<p>The library provied a binding to the <a href="https://en.wikipedia.org/wiki/Time_Stamp_Counter">high-performance cycles counter</a>
+for x86 32 and 64 bits architectures (note that you may use the
+<code>landmarks-noc.cm(x)a</code> archive to provide your own implementation). It is
+used to measure the time spent inside instrumented code.</p>
 
 <h2>
 <a id="the-ppx-extension-point" class="anchor" href="#the-ppx-extension-point" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The PPX extension point</h2>
@@ -248,23 +247,42 @@ is called. This variable is parsed as a comma-separated list of items of the for
 the output format of the profiling which is either a console friendly
 representation or json encoding of the callgraph.</p></li>
 <li><p><code>output</code> with possible argument: <code>stderr</code> (default), <code>stdout</code>, <code>temporary</code>,
-<code>"&lt;file&gt;"</code> (where  is path a file). It tells where to output the results
-of the profiling. With <code>temporary</code> it will print it in a temporary file (the
-name of this file will be printed on the console).</p></li>
+<code>"&lt;file&gt;"</code> (where <code>&lt;file&gt;</code> is the path a file). It tells where to output the
+results of the profiling. With <code>temporary</code> it will print it in a temporary
+file (the name of this file will be printed on the console).</p></li>
 <li><p><code>auto</code> with no argument. This option is only read by the ppx extension. It
 turns on the automatic instrumentation by default (behaves as if all modules
 starts with the annotation <code>[@@@landmark "auto"]</code>).</p></li>
 <li><p><code>debug</code> with no argument. Activates a verbose mode that outputs traces on
 stderr each time the landmarks primitives are called.</p></li>
-<li><p><code>time</code> with no argument. Also collect "Sys.time" timestamps during profiling.</p></li>
+<li><p><code>time</code> with no argument. Also collect <code>Sys.time</code> timestamps during profiling.</p></li>
 <li><p><code>off</code> with no argument. Disable profiling.</p></li>
-<li><p><code>allocation</code> with no argument. Also collect "Gc.allocated_byte" data.</p></li>
+<li><p><code>allocation</code> with no argument. Also collect <code>Gc.allocated_byte</code> data.</p></li>
+<li><p><code>threads</code> with no argument. Tells the ppx extension to use the
+<code>Landmark_threads</code> module instead of the module <code>Landmark</code>.</p></li>
 </ul>
 
 <h2>
-<a id="instrumenting-with-ocaml_param" class="anchor" href="#instrumenting-with-ocaml_param" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Instrumenting with OCAML_PARAM</h2>
+<a id="browsing-the-json-export-using-the-web-viewer" class="anchor" href="#browsing-the-json-export-using-the-web-viewer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Browsing the JSON export using the Web Viewer</h2>
 
-<p>The best way to blindly instrument a project is to use ocaml's OCAMLPARAM
+<p>You can either compile the web viewer on your computer or
+<a href="http://mlasson.github.io/landmarks/viewer.html">browse it online</a>.
+You need to load the JSON files using the filepicker and then you can click
+around to browse the callgraph.</p>
+
+<h2>
+<a id="examples" class="anchor" href="#examples" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Examples</h2>
+
+<p>The example directory contains instructions to instrument some caml projects:
+the ocaml compiler, the coq proof system and omake. These scripts are very
+fragile (as they need to patch the build systems to add the ppx-extension
+and to link with the right archives). You will to adapt them if you want
+to benchmark other versions.</p>
+
+<h2>
+<a id="instrumenting-with-ocamlparam" class="anchor" href="#instrumenting-with-ocamlparam" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Instrumenting with OCAMLPARAM</h2>
+
+<p>A way to blindly instrument a project is to use ocaml's OCAMLPARAM
 experimental feature, by setting the environment variable OCAMLPARAM with</p>
 
 <pre><code>I=$(ocamlfind query landmarks),cma=landmarks.cma,cmxa=landmarks.cmxa,ppx=$(ocamlfind query landmarks)/ppx_landmarks,_"
@@ -279,12 +297,13 @@ of OCAMLPARAM to circumvent these problems.</p>
 <a id="remarks" class="anchor" href="#remarks" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Remarks</h2>
 
 <ol>
-<li><p>This library is not thread-safe. If you have multiple threads, 
+<li><p>This library is not thread-safe. If you have multiple threads,
 you have to make sure that at most one thread is executing instrumented
-code. </p></li>
+code. For that you may the <code>Landmark_threads</code> module (that is included
+in the landmarks-threads.cm(x)a archive).</p></li>
 <li><p>You should avoid to instrument small functions (and the automatic
-mode as no heuristic to avoid them). The instrumentation may 
-significantly degrade performance. </p></li>
+mode as no heuristic to avoid them). The instrumentation may
+significantly degrade performance.</p></li>
 <li><p>The annotation on expression and not the one on (local) declaration may
 temper with polymorphism. For instance, the following piece of code will fail to
 compile:</p></li>
@@ -300,15 +319,15 @@ compile:</p></li>
 MIT license.</p>
 
 <p>Contact: <a href="mailto:marc.lasson@lexifi.com">marc.lasson@lexifi.com</a></p>
-        </section>
 
-        <footer>
-          Landmarks is maintained by <a href="https://github.com/mlasson">mlasson</a><br>
-          This page was generated by <a href="https://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
-        </footer>
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/mlasson/landmarks">Landmarks</a> is maintained by <a href="https://github.com/mlasson">mlasson</a>.</span>
 
-        
-      </div>
-    </div>
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
   </body>
 </html>
