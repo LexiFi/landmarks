@@ -1,35 +1,297 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Landmarks by mlasson</title>
-
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/github-light.css">
-    <meta name="viewport" content="width=device-width">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+    <title>Landmarks by mlasson</title>
   </head>
+
   <body>
-    <div class="wrapper">
-      <header>
-        <h1>Landmarks</h1>
-        <p></p>
+    <div id="container">
+      <div class="inner">
 
-        <p class="view"><a href="https://github.com/mlasson/landmarks">View the Project on GitHub <small>mlasson/landmarks</small></a></p>
+        <header>
+          <h1>Landmarks</h1>
+          <h2></h2>
+        </header>
 
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/mlasson/landmarks/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/mlasson/landmarks/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/mlasson/landmarks" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
 
-        <ul>
-          <li><a href="https://github.com/mlasson/landmarks/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/mlasson/landmarks/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/mlasson/landmarks">View On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
-      <section>
-        <h1>
+        <hr>
+
+        <section id="main_content">
+          <h1>
 <a id="landmarks-a-simple-profiling-library" class="anchor" href="#landmarks-a-simple-profiling-library" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Landmarks: A Simple Profiling Library</h1>
+
+<p><em>Landmarks</em> is a simple profiling library for OCaml. It provides primitives to
+measure time spent in portion of instrumented code. The instrumentation of the
+code may either done by hand, automatically or semi-automatically using a PPX
+extension. The result of the benchmark may be browsed either directly on the
+console, by exporting results to a simple web-application (that you can either
+build locally or access online).</p>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h2>
+
+<ul>
+<li>
+<p>Requirements:</p>
+
+<ul>
+<li>findlib (aka ocamlfind)</li>
+</ul>
+</li>
+<li>
+<p>Optional requirements:</p>
+
+<ul>
+<li>gen_js_api</li>
+</ul>
+</li>
+<li><p>With opam (<em>not yet available</em>):</p></li>
+</ul>
+
+<pre><code>opam install landmarks
+</code></pre>
+
+<ul>
+<li>With opam (development version):</li>
+</ul>
+
+<pre><code>opam pin add landmarks https://github.com/mlasson/landmarks.git
+</code></pre>
+
+<ul>
+<li>Manually:</li>
+</ul>
+
+<pre><code>git clone https://github.com/mlasson/landmarks.git
+cd landmarks
+make
+make install
+</code></pre>
+
+<p>and <code>make uninstall</code> to remove installed files.</p>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
+
+<ul>
+<li>Compiling and linking:</li>
+</ul>
+
+<pre><code>  ocamlfind ocamlopt -c -package landmarks prog.ml
+  ocamlfind ocamlopt -o prog -package landmarks landmarks.cmxa prog.cmx
+</code></pre>
+
+<p>You can replace "ocamlopt" by "ocamlc" to compile the program in
+bytecode.</p>
+
+<ul>
+<li>With the PPX extension:</li>
+</ul>
+
+<pre><code>  ocamlfind ocamlopt -c -package landmarks.ppx prog.ml
+  ocamlfind ocamlopt -o prog -package landmarks.ppx landmarks.cmxa prog.cmx
+</code></pre>
+
+<ul>
+<li>Launching the viewer (when available):</li>
+</ul>
+
+<pre><code>x-www-browser $(ocamlfind query landmarks)/landmarks_viewer.html
+</code></pre>
+
+<p>You may want to replace "x-www-browser" with your system's way to
+invoke your favorite web-browser from the command line. It has
+to support javascript.</p>
+
+<h2>
+<a id="benchmarking-manually" class="anchor" href="#benchmarking-manually" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Benchmarking manually</h2>
+
+<p>There are three main primitives:</p>
+
+<div class="highlight highlight-source-ocaml"><pre>  <span class="pl-k">val</span> <span class="pl-en">register</span>: <span class="pl-k">string</span> -&gt; <span class="pl-k">landmark</span>
+  <span class="pl-k">val</span> <span class="pl-en">enter</span>: <span class="pl-k">landmark</span> -&gt; <span class="pl-k">unit</span>
+  <span class="pl-k">val</span> <span class="pl-en">exit</span>: <span class="pl-k">landmark</span> -&gt; <span class="pl-k">unit</span></pre></div>
+
+<p>The <code>register</code> function declares new landmarks and should be used at the
+toplevel and the functions <code>enter</code> and <code>exit</code> are used to delimit the portion
+of code attached to a landmark. At the end of the profiling, we retrieve for
+each landmark the aggregated time information spent executing the corresponding
+piece of code. During the execution, a trace of each visited landmark is also
+recorded which allows to build a "callgraph".</p>
+
+<p>For example:</p>
+
+<div class="highlight highlight-source-ocaml"><pre><span class="pl-k">open</span> <span class="pl-c1">Landmark</span>
+
+<span class="pl-k">let</span> loop <span class="pl-k">=</span> register <span class="pl-s"><span class="pl-pds">"</span>loop<span class="pl-pds">"</span></span>
+<span class="pl-k">let</span> sleep <span class="pl-k">=</span> register <span class="pl-s"><span class="pl-pds">"</span>sleep<span class="pl-pds">"</span></span>
+<span class="pl-k">let</span> main <span class="pl-k">=</span> register <span class="pl-s"><span class="pl-pds">"</span>main<span class="pl-pds">"</span></span>
+
+<span class="pl-k">let</span> <span class="pl-en">zzz</span> <span class="pl-v">()</span> <span class="pl-k">=</span>
+  enter sleep;
+    <span class="pl-c1">Unix.</span>sleep <span class="pl-c1">1</span>;
+  exit sleep
+
+<span class="pl-k">let</span> <span class="pl-c1">()</span> <span class="pl-k">=</span>
+  <span class="pl-k">begin</span>
+    start_profiling <span class="pl-c1">()</span>;
+    enter main;
+      enter loop;
+        <span class="pl-k">for</span> _ <span class="pl-k">=</span> <span class="pl-c1">1</span> <span class="pl-k">to</span> <span class="pl-c1">9</span> <span class="pl-k">do</span>
+          zzz <span class="pl-c1">()</span>
+        <span class="pl-k">done</span>;
+      exit loop;
+      zzz <span class="pl-c1">()</span>;
+    exit main;
+  <span class="pl-k">end</span></pre></div>
+
+<p>(This file can be compiled with
+  <code>ocamlfind ocamlc -o prog -package landmarks landmarks.cma unix.cma prog.ml</code>)</p>
+
+<p>The induced callgraph is:</p>
+
+<pre><code>- 100.00% : main
+|   - 90.00% : loop
+|   |   - 100.00% : sleep
+|   - 10.00% : sleep
+
+</code></pre>
+
+<p>which can be paraphrased as:</p>
+
+<ul>
+<li>100% of time is spent inside the main landmark,</li>
+<li>90% of time spent inside the main landmark is spent in the loop landmark,</li>
+<li>10% of time spent inside the main landmark is spent in the sleep landmark,</li>
+<li>100% of the time spent in loop is spent in the sleep landmark.</li>
+</ul>
+
+<h2>
+<a id="the-ppx-extension-point" class="anchor" href="#the-ppx-extension-point" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The PPX extension point</h2>
+
+<p>To avoid writing boilerplate code, you may use the ppx extension distributed with
+this package. It allows to instrument expressions using annotation and to
+automatically instrument top-level functions.</p>
+
+<h3>
+<a id="annotations" class="anchor" href="#annotations" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Annotations</h3>
+
+<p>The value <code>expr [@landmark "name"]</code> is expanded into</p>
+
+<div class="highlight highlight-source-ocaml"><pre>  <span class="pl-c1">Landmark.</span>enter __generated_landmark_1;
+  <span class="pl-k">let</span> r <span class="pl-k">=</span>
+    <span class="pl-k">try</span> expr <span class="pl-k">with</span><span class="pl-k"> <span class="pl-v">e</span> -&gt;</span> <span class="pl-c1">Landmark.</span>exit __generated_landmark_1; raise e
+  <span class="pl-k">in</span>
+  <span class="pl-c1">Landmark.</span>exit __generated_landmark_1;
+  r</pre></div>
+
+<p>and the declaration</p>
+
+<div class="highlight highlight-source-ocaml"><pre>  <span class="pl-k">let</span> __generated_landmark_1 <span class="pl-k">=</span> <span class="pl-c1">Landmark.</span>register <span class="pl-s"><span class="pl-pds">"</span>name<span class="pl-pds">"</span></span></pre></div>
+
+<p>is appended at the top-level.</p>
+
+<p>It should be pointed out that this transformation does not preserve
+tail-recursive calls (and also prevents some polymorphism generalization).
+To get around these problems, it is recommended to use the other provided
+extension around <code>let ... in</code> and <code>let rec ... in</code>:</p>
+
+<div class="highlight highlight-source-ocaml"><pre><span class="pl-k">let</span>[<span class="pl-k">@</span>landmark] f <span class="pl-k">=</span> body</pre></div>
+
+<p>which is expanded in :</p>
+
+<div class="highlight highlight-source-ocaml"><pre><span class="pl-k">let</span> __generated_landmark_2 <span class="pl-k">=</span> <span class="pl-c1">Landmark.</span>register <span class="pl-s"><span class="pl-pds">"</span>f<span class="pl-pds">"</span></span>
+<span class="pl-k">let</span> f <span class="pl-k">=</span> body
+<span class="pl-k">let</span> <span class="pl-en">f</span> <span class="pl-v">x1</span> ... <span class="pl-v">xn</span> <span class="pl-k">=</span>
+  <span class="pl-c1">Landmark.</span>enter __generated_landmark_2;
+  <span class="pl-k">let</span> r <span class="pl-k">=</span>
+    <span class="pl-k">try</span> f x1 ... xn <span class="pl-k">with</span><span class="pl-k"> <span class="pl-v">e</span> -&gt;</span> <span class="pl-c1">Landmark.</span>exit __generated_landmark_2; raise e
+  <span class="pl-k">in</span>
+  <span class="pl-c1">Landmark.</span>exit __generated_landmark_2;
+  r</pre></div>
+
+<p>when the arity <code>n</code> of <code>f</code> is obtained by counting the shallow occurrences
+of <code>fun ... -&gt;</code> and <code>function ... -&gt;</code> in <code>body</code>.</p>
+
+<h3>
+<a id="automatic-instrumentation" class="anchor" href="#automatic-instrumentation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Automatic instrumentation</h3>
+
+<p>The global annotations <code>[@@@landmark "auto"]</code> and <code>[@@@landmark "auto-off"]</code>
+activates or deactivates the automatic instrumentation of top-level functions.
+In automatic mode, all top-level function declarations are implicitly
+annotated.</p>
+
+<h2>
+<a id="the-ocaml_landmarks-environment-variable" class="anchor" href="#the-ocaml_landmarks-environment-variable" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The OCAML_LANDMARKS environment variable</h2>
+
+<p>When the landmarks module is loaded by an instrumented program, the environment
+variable <code>OCAML_LANDMARKS</code> is read. If it exists the function <code>start_profiling</code>
+is called. This variable is parsed as a comma-separated list of items of the form
+<code>option=argument</code> or <code>option</code> where <code>option</code> is:</p>
+
+<ul>
+<li><p><code>format</code> with possible arguments: <code>textual</code> (default) or <code>json</code>. It controls
+the output format of the profiling which is either a console friendly
+representation or json encoding of the callgraph.</p></li>
+<li><p><code>output</code> with possible argument: <code>stderr</code> (default), <code>stdout</code>, <code>temporary</code>,
+<code>"&lt;file&gt;"</code> (where  is path a file). It tells where to output the results
+of the profiling. With <code>temporary</code> it will print it in a temporary file (the
+name of this file will be printed on the console).</p></li>
+<li><p><code>auto</code> with no argument. This option is only read by the ppx extension. It
+turns on the automatic instrumentation by default (behaves as if all modules
+starts with the annotation <code>[@@@landmark "auto"]</code>).</p></li>
+<li><p><code>debug</code> with no argument. Activates a verbose mode that outputs traces on
+stderr each time the landmarks primitives are called.</p></li>
+<li><p><code>time</code> with no argument. Also collect "Sys.time" timestamps during profiling.</p></li>
+<li><p><code>off</code> with no argument. Disable profiling.</p></li>
+<li><p><code>allocation</code> with no argument. Also collect "Gc.allocated_byte" data.</p></li>
+</ul>
+
+<h2>
+<a id="instrumenting-with-ocaml_param" class="anchor" href="#instrumenting-with-ocaml_param" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Instrumenting with OCAML_PARAM</h2>
+
+<p>The best way to blindly instrument a project is to use ocaml's OCAMLPARAM
+experimental feature, by setting the environment variable OCAMLPARAM with</p>
+
+<pre><code>I=$(ocamlfind query landmarks),cma=landmarks.cma,cmxa=landmarks.cmxa,ppx=$(ocamlfind query landmarks)/ppx_landmarks,_"
+</code></pre>
+
+<p>However, the current implementation of OCAMLPARAM does not allow to easily
+benchmark projects that build archives, shared libraries and packages. This
+<a href="https://github.com/ocaml/ocaml/pull/591">pull-request</a> propose some improvments
+of OCAMLPARAM to circumvent these problems.</p>
+
+<h2>
+<a id="remarks" class="anchor" href="#remarks" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Remarks</h2>
+
+<ol>
+<li><p>This library is not thread-safe. If you have multiple threads, 
+you have to make sure that at most one thread is executing instrumented
+code. </p></li>
+<li><p>You should avoid to instrument small functions (and the automatic
+mode as no heuristic to avoid them). The instrumentation may 
+significantly degrade performance. </p></li>
+<li><p>The annotation on expression and not the one on (local) declaration may
+temper with polymorphism. For instance, the following piece of code will fail to
+compile:</p></li>
+</ol>
+
+<div class="highlight highlight-source-ocaml"><pre>  <span class="pl-k">let</span> test <span class="pl-k">=</span> (<span class="pl-k">fun</span> <span class="pl-v">x</span> -&gt; x)[<span class="pl-k">@</span>landmark <span class="pl-s"><span class="pl-pds">"</span>test<span class="pl-pds">"</span></span>]
+  <span class="pl-k">in</span> test <span class="pl-s"><span class="pl-pds">"</span>string<span class="pl-pds">"</span></span>, test <span class="pl-c1">1</span></pre></div>
 
 <h2>
 <a id="about" class="anchor" href="#about" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>About</h2>
@@ -38,13 +300,15 @@
 MIT license.</p>
 
 <p>Contact: <a href="mailto:marc.lasson@lexifi.com">marc.lasson@lexifi.com</a></p>
-      </section>
-      <footer>
-        <p>This project is maintained by <a href="https://github.com/mlasson">mlasson</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
-      </footer>
+        </section>
+
+        <footer>
+          Landmarks is maintained by <a href="https://github.com/mlasson">mlasson</a><br>
+          This page was generated by <a href="https://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
     </div>
-    <script src="javascripts/scale.fix.js"></script>
-    
   </body>
 </html>
