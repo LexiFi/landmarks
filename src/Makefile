@@ -3,6 +3,7 @@ OCAMLOPT=ocamlfind ocamlopt
 OCAMLDEP=ocamlfind ocamldep
 OCAMLMKLIB=ocamlfind ocamlmklib
 OCAMLMKTOP=ocamlfind ocamlmktop
+OCAMLDOC=ocamlfind ocamldoc
 
 INCLUDES=-I .
 OCAMLFLAGS=-w +A-30-42-41-48-40 -safe-string -strict-sequence -bin-annot
@@ -16,6 +17,8 @@ OBJS=clock.o
 
 CMOS=$(patsubst %,%.cmo,$(MODULES))
 CMXS=$(patsubst %,%.cmx,$(MODULES))
+
+DOCDIR=../doc
 
 all: $(NAME).cma $(NAME).cmxa $(NAME)-noc.cma $(NAME)-threads.cmxa $(NAME)-threads.cma $(NAME).cmxs $(NAME).top
 
@@ -65,7 +68,16 @@ landmark_threads.cmx: landmark_threads.ml
 .depend: $(wildcard *.ml) $(wildcard *.mli)
 	        $(OCAMLDEP) $(INCLUDES) *.mli *.ml > .depend
 
+$(DOCDIR):$(wildcard *.mli)
+	mkdir -p $(DOCDIR)
+	ocamldoc -d $(DOCDIR) -html -I +threads *.mli
+
+.PHONY: clean doc
+
+doc: $(DOCDIR)
+
 clean:
 	rm -f *.cm* *.o *.so *.a .depend *.top
+	rm -rf $(DOCDIR)
 
 -include .depend

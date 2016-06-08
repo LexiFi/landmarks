@@ -1,7 +1,7 @@
 PACKAGE=landmarks
 VERSION=1.0
 
-.PHONY: landmarks tests clean ppx all tools check_ocamlfind
+.PHONY: landmarks tests clean ppx all tools check_ocamlfind doc
 
 all: landmarks ppx META tools
 
@@ -10,6 +10,9 @@ check_ocamlfind:
 
 META: Makefile
 	@sed -i "s/version = \"[^\"]*\"/version = \"$(VERSION)\"/" $@
+
+doc: landmarks
+	@$(MAKE) --no-print-directory doc -C src
 
 landmarks: check_ocamlfind
 	@$(MAKE) --no-print-directory -C src
