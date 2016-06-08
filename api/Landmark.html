@@ -1,0 +1,286 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="next" href="Landmark_graph.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Landmark" rel="Chapter" href="Landmark.html">
+<link title="Landmark_graph" rel="Chapter" href="Landmark_graph.html">
+<link title="Landmark_threads" rel="Chapter" href="Landmark_threads.html"><link title="Landmarks" rel="Section" href="#3_Landmarks">
+<link title="Counter and samplers" rel="Section" href="#3_Counterandsamplers">
+<link title="Manage profiling " rel="Section" href="#3_Manageprofiling">
+<title>Landmark</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Landmark_graph.html" title="Landmark_graph">Next</a>
+</div>
+<h1>Module <a href="type_Landmark.html">Landmark</a></h1>
+
+<pre><span class="keyword">module</span> Landmark: <code class="code">sig</code> <a href="Landmark.html">..</a> <code class="code">end</code></pre><div class="info module top">
+The main module<br>
+</div>
+<hr width="100%">
+
+<pre><span id="VALclock"><span class="keyword">val</span> clock</span> : <code class="type">unit -> Int64.t</code></pre><div class="info ">
+This function is used by the landmark infrastructure to
+    measure the number of cycles inside landmarks.<br>
+</div>
+
+<pre><span id="EXCEPTIONLandmarkFailure"><span class="keyword">exception</span> LandmarkFailure</span> <span class="keyword">of</span> <code class="type">string</code></pre>
+<br>
+<h3 id="3_Landmarks">Landmarks</h3><br>
+<br>
+<i>Landmarks</i> identifiy portions of code, they are registered
+with the function <a href="Landmark.html#VALregister"><code class="code">Landmark.register</code></a> and delimited by <a href="Landmark.html#VALenter"><code class="code">Landmark.enter</code></a> and <a href="Landmark.html#VALexit"><code class="code">Landmark.exit</code></a>.<br>
+
+<pre><span id="TYPElandmark"><span class="keyword">type</span> <code class="type"></code>landmark</span> </pre>
+<div class="info ">
+The type of landmarks.<br>
+</div>
+
+
+<pre><span id="VALregister"><span class="keyword">val</span> register</span> : <code class="type">?location:string -> string -> <a href="Landmark.html#TYPElandmark">landmark</a></code></pre><div class="info ">
+<code class="code">register name</code> registers a new landmark.
+    Should always be called at top-level.<br>
+</div>
+
+<pre><span id="VALenter"><span class="keyword">val</span> enter</span> : <code class="type"><a href="Landmark.html#TYPElandmark">landmark</a> -> unit</code></pre><div class="info ">
+Begins a landmark block.
+    /!\ Landmark blocks should be well-nested, otherwise a failure will be
+        raised during profiling.<br>
+</div>
+
+<pre><span id="VALexit"><span class="keyword">val</span> exit</span> : <code class="type"><a href="Landmark.html#TYPElandmark">landmark</a> -> unit</code></pre><div class="info ">
+Ends a landmark block.<br>
+</div>
+
+<pre><span id="VALwrap"><span class="keyword">val</span> wrap</span> : <code class="type"><a href="Landmark.html#TYPElandmark">landmark</a> -> ('a -> 'b) -> 'a -> 'b</code></pre><div class="info ">
+Puts landmark blocks around a function (and close the block and re-raise
+    in case of uncaught exception).<br>
+</div>
+
+<pre><span id="VALunsafe_wrap"><span class="keyword">val</span> unsafe_wrap</span> : <code class="type"><a href="Landmark.html#TYPElandmark">landmark</a> -> ('a -> 'b) -> 'a -> 'b</code></pre><div class="info ">
+Puts landmark blocks around a function without catching exceptions.<br>
+</div>
+<br>
+<h3 id="3_Counterandsamplers">Counter and samplers</h3><br>
+<br>
+<i>Counters</i> are similar to landmarks except they represent
+    empty pieces of code. Their only primitive is <a href="Landmark.html#VALincrement"><code class="code">Landmark.increment</code></a> which
+    adds a constant to the field <code class="code">calls</code>. <i>Samplers</i> are used to
+    collect floats.<br>
+
+<pre><span id="TYPEcounter"><span class="keyword">type</span> <code class="type"></code>counter</span> </pre>
+<div class="info ">
+The type of counters.<br>
+</div>
+
+
+<pre><span id="VALregister_counter"><span class="keyword">val</span> register_counter</span> : <code class="type">string -> <a href="Landmark.html#TYPEcounter">counter</a></code></pre><div class="info ">
+<code class="code">register_counter name</code> registers a new counter.
+    Should always be called at top-level.<br>
+</div>
+
+<pre><span id="VALincrement"><span class="keyword">val</span> increment</span> : <code class="type">?times:int -> <a href="Landmark.html#TYPEcounter">counter</a> -> unit</code></pre><div class="info ">
+Increments the number of calls attached to the counter.<br>
+</div>
+
+<pre><span id="TYPEsampler"><span class="keyword">type</span> <code class="type"></code>sampler</span> </pre>
+<div class="info ">
+The type of samplers.<br>
+</div>
+
+
+<pre><span id="VALregister_sampler"><span class="keyword">val</span> register_sampler</span> : <code class="type">string -> <a href="Landmark.html#TYPEsampler">sampler</a></code></pre><div class="info ">
+<code class="code">register_counter name</code> registers a new sampler.<br>
+</div>
+
+<pre><span id="VALsample"><span class="keyword">val</span> sample</span> : <code class="type"><a href="Landmark.html#TYPEsampler">sampler</a> -> float -> unit</code></pre><div class="info ">
+Collects a float.<br>
+</div>
+<br>
+<h3 id="3_Manageprofiling">Manage profiling </h3><br>
+
+<pre><span id="VALprofiling"><span class="keyword">val</span> profiling</span> : <code class="type">unit -> bool</code></pre><div class="info ">
+Checks if the profiling is ongoing.<br>
+</div>
+
+<pre><code><span id="TYPEprofile_output"><span class="keyword">type</span> <code class="type"></code>profile_output</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprofile_output.Silent"><span class="constructor">Silent</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+disables the automatic output of profiling results
+    when the program ends.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprofile_output.Temporary"><span class="constructor">Temporary</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+writes the results in a tempory files and prints its
+    path on stdout.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprofile_output.Channel"><span class="constructor">Channel</span></span> <span class="keyword">of</span> <code class="type">Pervasives.out_channel</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+writes in the results in out_channel.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+
+<div class="info ">
+Where to output results.<br>
+</div>
+
+
+<pre><code><span id="TYPEprofile_format"><span class="keyword">type</span> <code class="type"></code>profile_format</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprofile_format.JSON"><span class="constructor">JSON</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+Easily parsable export format.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprofile_format.Textual"><span class="constructor">Textual</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+Console friendly output.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+
+<div class="info ">
+The output format for the results.<br>
+</div>
+
+
+<pre><code><span id="TYPEprofiling_options"><span class="keyword">type</span> <code class="type"></code>profiling_options</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprofiling_options.debug">debug</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+Activates a verbose mode that outputs traces on stderr each time
+        the landmarks primitives are called. Default: false.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprofiling_options.allocated_bytes">allocated_bytes</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+Also collect <code class="code">Gc.allocated_bytes</code> during profiling.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprofiling_options.sys_time">sys_time</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+Also collect <code class="code">Sys.time</code> timestamps during profiling.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprofiling_options.recursive">recursive</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+When false, the recursive instances of landmarks (entering
+        a landmark that has already been entered) are ignored (the number of
+        calls is updated but it does not generate a new node in the callgraph).<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprofiling_options.output">output</span>&nbsp;: <code class="type"><a href="Landmark.html#TYPEprofile_output">profile_output</a></code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+Specify where to output the results.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprofiling_options.format">format</span>&nbsp;: <code class="type"><a href="Landmark.html#TYPEprofile_format">profile_format</a></code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+Specify the output format.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+}
+
+<div class="info ">
+The profiling options control the behavior of the landmark infrastructure.<br>
+</div>
+
+
+<pre><span id="VALdefault_options"><span class="keyword">val</span> default_options</span> : <code class="type"><a href="Landmark.html#TYPEprofiling_options">profiling_options</a></code></pre><div class="info ">
+The default <a href="Landmark.html#TYPEprofiling_options"><code class="code">Landmark.profiling_options</code></a>.<br>
+</div>
+
+<pre><span id="VALset_profiling_options"><span class="keyword">val</span> set_profiling_options</span> : <code class="type"><a href="Landmark.html#TYPEprofiling_options">profiling_options</a> -> unit</code></pre><div class="info ">
+Sets the options.<br>
+</div>
+
+<pre><span id="VALstart_profiling"><span class="keyword">val</span> start_profiling</span> : <code class="type">?profiling_options:<a href="Landmark.html#TYPEprofiling_options">profiling_options</a> -> unit -> unit</code></pre><div class="info ">
+Starts the profiling.<br>
+</div>
+
+<pre><span id="VALstop_profiling"><span class="keyword">val</span> stop_profiling</span> : <code class="type">unit -> unit</code></pre><div class="info ">
+Stops the profiling.<br>
+</div>
+
+<pre><span id="VALreset"><span class="keyword">val</span> reset</span> : <code class="type">unit -> unit</code></pre><div class="info ">
+Reset the profiling information gathered by the current process.<br>
+</div>
+
+<pre><span id="VALexport"><span class="keyword">val</span> export</span> : <code class="type">unit -> <a href="Landmark_graph.html#TYPEgraph">Landmark_graph.graph</a></code></pre><div class="info ">
+Export the profiling information of the current process.<br>
+</div>
+
+<pre><span id="VALexport_and_reset"><span class="keyword">val</span> export_and_reset</span> : <code class="type">unit -> <a href="Landmark_graph.html#TYPEgraph">Landmark_graph.graph</a></code></pre><div class="info ">
+Export the profiling information of the current process; then reset
+    internal state.<br>
+</div>
+
+<pre><span id="VALmerge"><span class="keyword">val</span> merge</span> : <code class="type"><a href="Landmark_graph.html#TYPEgraph">Landmark_graph.graph</a> -> unit</code></pre><div class="info ">
+Aggregate the profiling information (exported by another process) to the
+    current one. This should is used by the master process to merge exported
+    profiles of slaves.<br>
+</div>
+</body></html>

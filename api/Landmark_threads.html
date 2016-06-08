@@ -1,0 +1,47 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Landmark_graph.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Landmark" rel="Chapter" href="Landmark.html">
+<link title="Landmark_graph" rel="Chapter" href="Landmark_graph.html">
+<link title="Landmark_threads" rel="Chapter" href="Landmark_threads.html"><title>Landmark_threads</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Landmark_graph.html" title="Landmark_graph">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;</div>
+<h1>Module <a href="type_Landmark_threads.html">Landmark_threads</a></h1>
+
+<pre><span class="keyword">module</span> Landmark_threads: <code class="code">sig</code> <a href="Landmark_threads.html">..</a> <code class="code">end</code></pre><div class="info module top">
+Protects landmarks against concurrency.<br>
+</div>
+<hr width="100%">
+<br>
+This module implements of wrapper around some of the primitives
+    of the Landmark module in order to prevent concurrent thread to
+    enter landmarks. Only one thread may be benchmarked at a time,
+    the one which started the profiling. Other calls to the
+    primitives outside this thread behaves as ignore.<br>
+<br>
+It requires the Thread module (and only available in
+    'landmarks-threads' archive.<br>
+
+<pre><span id="VALenter"><span class="keyword">val</span> enter</span> : <code class="type"><a href="Landmark.html#TYPElandmark">Landmark.landmark</a> -> unit</code></pre>
+<pre><span id="VALexit"><span class="keyword">val</span> exit</span> : <code class="type"><a href="Landmark.html#TYPElandmark">Landmark.landmark</a> -> unit</code></pre>
+<pre><span id="VALincrement"><span class="keyword">val</span> increment</span> : <code class="type">?times:int -> <a href="Landmark.html#TYPEcounter">Landmark.counter</a> -> unit</code></pre>
+<pre><span id="VALsample"><span class="keyword">val</span> sample</span> : <code class="type"><a href="Landmark.html#TYPEsampler">Landmark.sampler</a> -> float -> unit</code></pre>
+<pre><span id="VALwrap"><span class="keyword">val</span> wrap</span> : <code class="type"><a href="Landmark.html#TYPElandmark">Landmark.landmark</a> -> ('a -> 'b) -> 'a -> 'b</code></pre>
+<pre><span id="VALunsafe_wrap"><span class="keyword">val</span> unsafe_wrap</span> : <code class="type"><a href="Landmark.html#TYPElandmark">Landmark.landmark</a> -> ('a -> 'b) -> 'a -> 'b</code></pre>
+<pre><span id="VALreset"><span class="keyword">val</span> reset</span> : <code class="type">unit -> unit</code></pre>
+<pre><span id="VALexport"><span class="keyword">val</span> export</span> : <code class="type">unit -> <a href="Landmark_graph.html#TYPEgraph">Landmark_graph.graph</a></code></pre>
+<pre><span id="VALexport_and_reset"><span class="keyword">val</span> export_and_reset</span> : <code class="type">unit -> <a href="Landmark_graph.html#TYPEgraph">Landmark_graph.graph</a></code></pre>
+<pre><span id="VALstart_profiling"><span class="keyword">val</span> start_profiling</span> : <code class="type">?profiling_options:<a href="Landmark.html#TYPEprofiling_options">Landmark.profiling_options</a> -> unit -> unit</code></pre>
+<pre><span id="VALstop_profiling"><span class="keyword">val</span> stop_profiling</span> : <code class="type">unit -> unit</code></pre></body></html>
