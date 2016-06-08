@@ -100,6 +100,32 @@ module Helper = struct
         Buffer.add_char b ' '
     done;
     Buffer.contents b
+
+  let create ?text ?class_name ?style name =
+    let element = Document.create_element document name in
+    (match text with
+      | Some text -> Node.set_text_content element text
+      | _ -> ());
+    (match style with
+      | Some style -> Element.set_attribute element "style" style
+      | _ -> ());
+    (match class_name with
+      | Some class_name -> Element.set_class_name element class_name
+      | _ -> ());
+    element
+
+  let record_table l =
+    let table = create ~class_name:"vertical" "table" in
+    List.iter (fun (name, value) ->
+      let tr = create "tr" in
+      let th = create ~text:name "th" in
+      let td = create ~text:value "td" in
+      Node.append_child table tr;
+      Node.append_child tr th;
+      Node.append_child tr td)
+      l;
+   table
+
 end
 
 module Graph = struct
@@ -180,20 +206,8 @@ module Graph = struct
 
 end
 
-let create ?text ?class_name ?style name =
-  let element = Document.create_element document name in
-  (match text with
-    | Some text -> Node.set_text_content element text
-    | _ -> ());
-  (match style with
-    | Some style -> Element.set_attribute element "style" style
-    | _ -> ());
-  (match class_name with
-    | Some class_name -> Element.set_class_name element class_name
-    | _ -> ());
-  element
-
 module TreeView = struct
+  open Helper
 
   let open_button = "[+]"
   let close_button = "[-]"
@@ -201,7 +215,7 @@ module TreeView = struct
   let rec generate render expand children inside parent x =
      let li = create "li" in
      let div = create "div" in
-     let content = render parent x in
+     let content = render parent div x in
      Node.append_child div content;
      Node.append_child li div;
      let sons = children x in
@@ -267,9 +281,21 @@ module TreeView = struct
       | Counter -> rgb 0 125 200
       | Sampler -> rgb 0 200 125
     in
-    let render (parent : Graph.node option) ({Graph.name; time = node_time; kind; calls; distrib; _} as node) =
+    let previous_info = ref None in
+    let render (parent : Graph.node option) container ({Graph.name; time = node_time; kind; calls; distrib; allocated_bytes; sys_time; location; _} as node) =
       let node_value = proj node in
-      let span = create "span" ~class_name:"conten" ~text:name ~style:(Printf.sprintf "color:%s" (color node)) in
+      let span = create "span" ~class_name:"content" ~text:name ~style:(Printf.sprintf "color:%s" (color node)) in
+      Element.set_onmouseover span (fun () ->
+       (match !previous_info with Some dispose -> dispose () | None -> ());
+       let table =
+         Helper.record_table
+          ( ["Name", name; "Cycles", Printf.sprintf "%.0f" node_time |> Helper.format_number; "Calls", Printf.sprintf "%d" calls |> Helper.format_number ]
+          @ (if location <> "" then ["Location", location] else [])
+          @ (if sys_time <> 0.0 then ["Time", Printf.sprintf "%.0f" sys_time |> Helper.format_number ] else [])
+          @ (if allocated_bytes <> 0.0 then ["Allocated bytes", Printf.sprintf "%.0f" allocated_bytes |> Helper.format_number ] else []))
+       in
+       Node.append_child container table;
+       previous_info := Some (fun () -> Node.remove_child container table));
       (match parent, kind with
        | Some parent, Graph.Normal ->
          let parent_value = proj parent in
@@ -329,12 +355,12 @@ let filename_onclick _ =
         let main = Helper.element_of_id "main" in
         Helper.removeAll main; print_endline "removed";
         Helper.show main;
-        let tabs = create "ul" ~class_name:"tabs" in
+        let tabs = Helper.create "ul" ~class_name:"tabs" in
         Node.append_child main tabs;
         let tab (present, title, fill) =
            if not present then [] else
-             let div = create "div" in
-             let title = create ~text:title "li" in
+             let div = Helper.create "div" in
+             let title = Helper.create ~text:title "li" in
              Node.append_child tabs title;
              Node.append_child main div;
              fill div;

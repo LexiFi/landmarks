@@ -113,6 +113,7 @@ module Element : sig
   val outer_HTML: 'a t -> string
 
   val set_onclick: 'a t -> (unit -> unit) -> unit
+  val set_onmouseover: 'a t -> (unit -> unit) -> unit
 
   val unsafe_cast: 'a t -> 'b t
   val tag_name: 'a t -> string
@@ -138,6 +139,7 @@ end = struct
       val outer_HTML: untyped -> string
 
       val set_onclick: untyped -> (unit -> unit) -> unit
+      val set_onmouseover: untyped -> (unit -> unit) -> unit
       val tag_name: untyped -> string
     end)
   type 'a t = untyped

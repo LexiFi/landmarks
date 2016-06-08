@@ -5,8 +5,8 @@ Landmarks: A Simple Profiling Library
 measure time spent in portion of instrumented code. The instrumentation of the
 code may either done by hand, automatically or semi-automatically using a PPX
 extension. The result of the benchmark may be browsed either directly on the
-console, by exporting results to a simple web-application (that you can either
-build locally or access online).
+console, or by exporting results to a simple web-application (that you can either
+build locally or [access online](http://mlasson.github.io/landmarks/viewer.html)).
 
 Installation
 ------------
@@ -235,7 +235,7 @@ Examples
 The example directory contains instructions to instrument some caml projects:
 the ocaml compiler, the coq proof system and omake. These scripts are very
 fragile (as they need to patch the build systems to add the ppx-extension
-and to link with the right archives). You will to adapt them if you want
+and to link with the right archives). You will need to adapt them if you want
 to benchmark other versions.
 
 Instrumenting with OCAMLPARAM
@@ -257,7 +257,7 @@ Remarks
 
 1. This library is not thread-safe. If you have multiple threads,
 you have to make sure that at most one thread is executing instrumented
-code. For that you may the `Landmark_threads` module (that is included
+code. For that you may use the `Landmark_threads` module (that is included
 in the landmarks-threads.cm(x)a archive).
 
 2. You should avoid to instrument small functions (and the automatic

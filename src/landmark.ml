@@ -704,7 +704,7 @@ let parse_env_options s =
       (match split_trim '"' file_spec with
        | [""; file; ""] ->
          (try
-            output := Channel (open_out_gen [Open_append; Open_creat; Open_text] 0o640 file)
+            output := Channel (open_out file)
           with _ -> warning (sprintf "Unable to open '%s'" file))
        | _ -> invalid_for "output" file_spec)
     | ["time"] -> sys_time := true
@@ -715,8 +715,10 @@ let parse_env_options s =
     | "allocation" :: _ -> expect_no_argument "allocation"
     | ["off"] -> raise Exit
     | "off" :: _ -> expect_no_argument "off"
-    | ["auto"] | ["remove"] -> () (* read by the ppx extension *)
-    | "auto" :: _ | "remove" :: _ -> expect_no_argument "auto"
+    | ["auto"] | ["remove"] | ["threads"] -> () (* read by the ppx extension *)
+    | "auto" :: _  -> expect_no_argument "auto"
+    | "remove" :: _ -> expect_no_argument "remove"
+    | "threads" :: _  -> expect_no_argument "threads"
     | [""] -> ()
     | opt :: _ :: _ -> warning (Printf.sprintf "To many '=' after '%s'" opt)
     | unknown :: _ -> warning (sprintf "Unknown option '%s'" unknown)
