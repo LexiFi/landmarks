@@ -14,8 +14,9 @@ Installation
 - Requirements:
    * findlib (aka ocamlfind)
 
-- Optional requirements:
+- Optional requirements (only for building the viewer):
    * gen_js_api
+   * js_of_ocaml
 
 - With opam (*not yet available*):
 ```
@@ -73,11 +74,11 @@ There are three main primitives:
 ```
 
 The `register` function declares new landmarks and should be used at the
-toplevel and the functions `enter` and `exit` are used to delimit the portion
+toplevel. The functions `enter` and `exit` are used to delimit the portion
 of code attached to a landmark. At the end of the profiling, we retrieve for
 each landmark the aggregated time information spent executing the corresponding
 piece of code. During the execution, a trace of each visited landmark is also
-recorded which allows to build a "callgraph".
+recorded in order to build a "callgraph".
 
 For example:
 ```ocaml
@@ -121,6 +122,16 @@ which can be paraphrased as:
 - 90% of time spent inside the main landmark is spent in the loop landmark,
 - 10% of time spent inside the main landmark is spent in the sleep landmark,
 - 100% of the time spent in loop is spent in the sleep landmark.
+
+For more information, you may browse the [API](http://mlasson.github.io/landmarks/api/).
+
+The `clock()` function
+----------------------
+
+The library provied a binding to the [high-performance cycles counter](https://en.wikipedia.org/wiki/Time_Stamp_Counter)
+for x86 32 and 64 bits architectures (note that you may use the
+`landmarks-noc.cm(x)a` archive to provide your own implementation). It is
+used to measure the time spent inside instrumented code.
 
 
 The PPX extension point
@@ -189,27 +200,48 @@ is called. This variable is parsed as a comma-separated list of items of the for
     representation or json encoding of the callgraph.
 
  * `output` with possible argument: `stderr` (default), `stdout`, `temporary`,
-   `"<file>"` (where <file> is path a file). It tells where to output the results
-    of the profiling. With `temporary` it will print it in a temporary file (the
-    name of this file will be printed on the console).
+   `"<file>"` (where `<file>` is the path a file). It tells where to output the
+    results of the profiling. With `temporary` it will print it in a temporary
+    file (the name of this file will be printed on the console).
 
  * `auto` with no argument. This option is only read by the ppx extension. It
-   turns on the automatic instrumentation by default (behaves as if all modules
-   starts with the annotation `[@@@landmark "auto"]`).
+    turns on the automatic instrumentation by default (behaves as if all modules
+    starts with the annotation `[@@@landmark "auto"]`).
 
  * `debug` with no argument. Activates a verbose mode that outputs traces on
    stderr each time the landmarks primitives are called.
 
- * `time` with no argument. Also collect "Sys.time" timestamps during profiling.
+ * `time` with no argument. Also collect `Sys.time` timestamps during profiling.
 
  * `off` with no argument. Disable profiling.
 
- * `allocation` with no argument. Also collect "Gc.allocated_byte" data.
+ * `allocation` with no argument. Also collect `Gc.allocated_byte` data.
 
-Instrumenting with OCAML_PARAM
-------------------------------
+ * `threads` with no argument. Tells the ppx extension to use the
+   `Landmark_threads` module instead of the module `Landmark`.
 
-The best way to blindly instrument a project is to use ocaml's OCAMLPARAM
+
+Browsing the JSON export using the Web Viewer
+---------------------------------------------
+
+You can either compile the web viewer on your computer or
+[browse it online](http://mlasson.github.io/landmarks/viewer.html).
+You need to load the JSON files using the filepicker and then you can click
+around to browse the callgraph.
+
+Examples
+--------
+
+The example directory contains instructions to instrument some caml projects:
+the ocaml compiler, the coq proof system and omake. These scripts are very
+fragile (as they need to patch the build systems to add the ppx-extension
+and to link with the right archives). You will to adapt them if you want
+to benchmark other versions.
+
+Instrumenting with OCAMLPARAM
+-----------------------------
+
+A way to blindly instrument a project is to use ocaml's OCAMLPARAM
 experimental feature, by setting the environment variable OCAMLPARAM with
 ```
 I=$(ocamlfind query landmarks),cma=landmarks.cma,cmxa=landmarks.cmxa,ppx=$(ocamlfind query landmarks)/ppx_landmarks,_"
@@ -223,13 +255,14 @@ of OCAMLPARAM to circumvent these problems.
 Remarks
 -------
 
-1. This library is not thread-safe. If you have multiple threads, 
+1. This library is not thread-safe. If you have multiple threads,
 you have to make sure that at most one thread is executing instrumented
-code. 
+code. For that you may the `Landmark_threads` module (that is included
+in the landmarks-threads.cm(x)a archive).
 
 2. You should avoid to instrument small functions (and the automatic
-mode as no heuristic to avoid them). The instrumentation may 
-significantly degrade performance. 
+mode as no heuristic to avoid them). The instrumentation may
+significantly degrade performance.
 
 3. The annotation on expression and not the one on (local) declaration may
 temper with polymorphism. For instance, the following piece of code will fail to
