@@ -5,27 +5,25 @@ VERSION=1.0
 
 all: landmarks ppx META tools
 
-check_ocamlfind:
-	@ocamlfind printconf > /dev/null 2>&1 || echo "Findlib is required to build this package."
-
 META: Makefile
 	@sed -i "s/version = \"[^\"]*\"/version = \"$(VERSION)\"/" $@
 
 doc: landmarks
 	@$(MAKE) --no-print-directory doc -C src
 
-landmarks: check_ocamlfind
+landmarks:
 	@$(MAKE) --no-print-directory -C src
 
-ppx: check_ocamlfind
+ppx:
 	@$(MAKE) --no-print-directory -C ppx
 
-tools: check_ocamlfind
+tools:
 	@ocamlfind query gen_js_api > /dev/null \
 	&& $(MAKE) --no-print-directory -C tools/landmarks_viewer \
 	|| echo '[WARNING] The package `gen_js_api` is required to build the landmarks viewer.' 
 
 tests: landmarks
+	@ocamlfind printconf > /dev/null 2>&1 || echo "Findlib is required to run tests."
 	@ocamlfind query ppx_tools > /dev/null || (echo '[ERROR] The package `ppx_tools` is required to run the testsuite.' && exit 1)
 	@echo ""
 	@echo "\033[1;4mBATCH TESTS\033[0m"

@@ -1,9 +1,9 @@
-OCAMLC=ocamlfind ocamlc
-OCAMLOPT=ocamlfind ocamlopt
-OCAMLDEP=ocamlfind ocamldep
-OCAMLMKLIB=ocamlfind ocamlmklib
-OCAMLMKTOP=ocamlfind ocamlmktop
-OCAMLDOC=ocamlfind ocamldoc
+OCAMLC=ocamlc
+OCAMLOPT=ocamlopt
+OCAMLDEP=ocamldep
+OCAMLMKLIB=ocamlmklib
+OCAMLMKTOP=ocamlmktop
+OCAMLDOC=ocamldoc
 
 INCLUDES=-I .
 OCAMLFLAGS=-w +A-30-42-41-48-40 -safe-string -strict-sequence -bin-annot
@@ -13,7 +13,16 @@ OCAMLOPTFLAGS=$(INCLUDES) $(OCAMLFLAGS)
 NAME=landmarks
 MODULES=landmark_misc landmark_graph landmark
 
-OBJS=clock.o
+OS=$(shell echo "print_endline Sys.os_type;;" | ocaml "")
+
+
+ifeq ($(OS), Win32)
+OBJ_EXT=.obj
+else
+OBJ_EXT=.o
+endif
+
+OBJS=clock$(OBJ_EXT)
 
 CMOS=$(patsubst %,%.cmo,$(MODULES))
 CMXS=$(patsubst %,%.cmx,$(MODULES))
@@ -46,8 +55,8 @@ $(NAME).top: $(OBJS) $(CMOS)
 
 .SUFFIXES: .ml .mli .cmo .cmi .cmx
 
-.c.o:
-	        $(OCAMLOPT) -ccopt -fPIC -c $<
+.c$(OBJ_EXT):
+	        $(OCAMLOPT) -c $<
 
 
 landmark_threads.cmo: landmark_threads.ml

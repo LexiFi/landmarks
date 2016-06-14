@@ -4,7 +4,10 @@
 
 #include <caml/mlvalues.h>
 #include <caml/alloc.h>
+
+#ifndef _MSC_VER
 #include <stdint.h>
+#endif
 
 CAMLprim value caml_highres_clock(value unit)
 {
