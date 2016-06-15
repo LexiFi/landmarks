@@ -1,8 +1,10 @@
+OCAMLFLAGS=-w +A-4-30-42-41-48-40 -safe-string -strict-sequence -bin-annot
+
 ppx_landmarks: ppx_landmarks.cmx
-	ocamlopt -I +compiler-libs ocamlcommon.cmxa -o $@ $^ 
+	ocamlopt $(OCAMLFLAGS) -I +compiler-libs ocamlcommon.cmxa -o $@ $^ 
 
 ppx_landmarks.cmx: ppx_landmarks.ml
-	ocamlopt -I +compiler-libs -c $<
+	ocamlopt $(OCAMLFLAGS) -I +compiler-libs -c $<
 
 clean:
 	rm -f *.cm* *.o ppx_landmarks

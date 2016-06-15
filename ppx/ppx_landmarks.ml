@@ -68,7 +68,7 @@ let get_string_payload key = function
     {txt; _}, PStr [{pstr_desc = Pstr_eval ({
         pexp_desc = Pexp_constant (Pconst_string (x, None)); _
       }, _); _}] when txt = key -> Some (Some x)
-  | {txt; loc}, PStr [] when txt = key -> Some None
+  | {txt; _}, PStr [] when txt = key -> Some None
   | {txt; loc}, _ when txt = key -> error loc `Payload_not_a_string
   | _ -> None
 
@@ -113,7 +113,7 @@ let new_landmark landmark_name loc =
     (landmark, landmark_name, landmark_location) :: !landmarks_to_register;
   landmark
 
-let rec wrap_landmark landmark_name loc expr =
+let wrap_landmark landmark_name loc expr =
   let landmark = new_landmark landmark_name loc in
   Exp.sequence (enter_landmark landmark)
   (Exp.let_ Nonrecursive
@@ -159,7 +159,7 @@ let eta_expand f t n =
   in
   lam vars
 
-let rec translate_value_bindings mapper auto rec_flag vbs =
+let translate_value_bindings mapper auto vbs =
   let vbs_arity_name =
     List.map
       (fun vb -> match vb, has_landmark_attribute ~auto vb.pvb_attributes with
@@ -214,7 +214,7 @@ let rec mapper auto =
        | { pstr_desc = Pstr_value (rec_flag, vbs); pstr_loc} ->
          let mapper = mapper !auto in
          let vbs, new_vbs =
-           translate_value_bindings mapper !auto rec_flag vbs
+           translate_value_bindings mapper !auto vbs
          in
          let str = Str.value ~loc:pstr_loc rec_flag vbs in
          if new_vbs = [] then [str]
@@ -239,7 +239,7 @@ let rec mapper auto =
         let expr = match expr with
           | ({pexp_desc = Pexp_let (rec_flag, vbs, body); _} as expr) ->
             let vbs, new_vbs =
-              translate_value_bindings deep_mapper false rec_flag vbs
+              translate_value_bindings deep_mapper false vbs
             in
             let body = default_mapper.expr deep_mapper body in
             let body =
