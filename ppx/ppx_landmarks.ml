@@ -2,6 +2,22 @@
 (* See the attached LICENSE file.                                    *)
 (* Copyright 2016 by LexiFi.                                         *)
 
+let split c s =
+  let open String in
+  let res = ref [] in
+  let pos = ref 0 in
+  let len = length s in
+  while
+    match index_from s !pos c with
+    | exception Not_found ->
+      res := sub s !pos (len - !pos) :: !res;
+      false
+    | k ->
+      res := sub s !pos (k - !pos) :: !res;
+      pos := k + 1;
+      !pos < len || (res := "" :: !res; false)
+  do () done;
+  List.rev !res
 
 open Ast_mapper
 open Ast_helper
@@ -320,7 +336,7 @@ let () = register "landmarks" (fun _ ->
     match Sys.getenv "OCAML_LANDMARKS" with
     | exception Not_found -> toplevel_mapper false
     | env ->
-      let opts = Landmark_misc.split ',' env in
+      let opts = split ',' env in
       with_thread := List.mem "threads" opts;
       if List.mem "remove" opts then
         remove_attributes
