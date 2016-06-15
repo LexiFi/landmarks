@@ -111,6 +111,9 @@ val default_options: profiling_options
 val set_profiling_options: profiling_options -> unit
 (** Sets the options. *)
 
+val profiling_options: unit -> profiling_options
+(** Get the options. *)
+
 val start_profiling: ?profiling_options:profiling_options -> unit -> unit
 (** Starts the profiling. *)
 

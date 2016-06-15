@@ -515,6 +515,14 @@ let set_profiling_options {debug; allocated_bytes; sys_time; output; format; rec
   profile_format := format;
   profile_recursive := recursive
 
+let profiling_options () = {
+  debug = !profile_with_debug;
+  allocated_bytes = !profile_with_allocated_bytes;
+  sys_time = !profile_with_sys_time;
+  recursive = !profile_recursive;
+  output = !profile_output;
+  format = !profile_format
+}
 
 let start_profiling ?(profiling_options = default_options) () =
   if !profiling_ref then
