@@ -277,11 +277,6 @@ let register_generic ?location kind name call_stack =
       | _ -> "unknown"
   in
   let landmark = new_landmark name location kind in
-  if List.exists (fun landmark ->
-      name = landmark.name && location = landmark.location)
-      !registered_landmarks then
-      (Printf.eprintf
-       "[Warning] The landmark '%s' is registered twice in '%s'." name location);
   registered_landmarks := landmark :: !registered_landmarks;
   if !profile_with_debug then
     Printf.eprintf "[Profiling] registering(%s)\n%!" name;
