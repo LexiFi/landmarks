@@ -574,7 +574,7 @@ let export () =
   end;
   let all_nodes = List.rev !allocated_nodes in
   let nodes = array_list_map export_node all_nodes in
-  {Graph.nodes = nodes}
+  {Graph.nodes}
 
 let export_and_reset () =
   let profiling = !profiling_ref in
