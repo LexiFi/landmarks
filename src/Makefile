@@ -13,13 +13,16 @@ OCAMLOPTFLAGS=$(INCLUDES) $(OCAMLFLAGS)
 NAME=landmarks
 MODULES=landmark_misc landmark_graph landmark
 
+config=$(shell ocamlopt -config | grep $(1) | sed "s/[^:]*: //")
+
 OS=$(shell echo "print_endline Sys.os_type;;" | ocaml "")
+ARCH=$(call config, architecture)
+OBJ_EXT=$(call config, ext_obj)
+SYSTEM=$(call config, system)
+NATIVE_C_COMPILER=$(firstword $(call config, native_c_compiler))
 
-
-ifeq ($(OS), Win32)
-OBJ_EXT=.obj
-else
-OBJ_EXT=.o
+ifeq ($(NATIVE_C_COMPILER), gcc)
+CCOPT=-ccopt -fPIC
 endif
 
 OBJS=clock$(OBJ_EXT)
@@ -56,7 +59,7 @@ $(NAME).top: $(OBJS) $(CMOS)
 .SUFFIXES: .ml .mli .cmo .cmi .cmx
 
 .c$(OBJ_EXT):
-	        $(OCAMLOPT) -c $<
+	        $(OCAMLOPT) $(CCOPT) -c $<
 
 
 landmark_threads.cmo: landmark_threads.ml
