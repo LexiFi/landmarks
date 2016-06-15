@@ -18,9 +18,9 @@ ppx:
 	@$(MAKE) --no-print-directory -C ppx
 
 tools:
-	@ocamlfind query gen_js_api > /dev/null \
+	@ocamlfind query gen_js_api > /dev/null 2>&1 \
 	&& $(MAKE) --no-print-directory -C tools/landmarks_viewer \
-	|| echo '[WARNING] The package `gen_js_api` is required to build the landmarks viewer.' 
+	|| echo '[WARNING] Findlib and the package `gen_js_api` are required to build the landmarks viewer.' 
 
 tests: landmarks
 	@ocamlfind printconf > /dev/null 2>&1 || echo "Findlib is required to run tests."
