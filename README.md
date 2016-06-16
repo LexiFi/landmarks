@@ -2,7 +2,7 @@ Landmarks: A Simple Profiling Library
 =====================================
 
 *Landmarks* is a simple profiling library for OCaml. It provides primitives to
-measure time spent in portion of instrumented code. The instrumentation of the
+measure time spent in portions of instrumented code. The instrumentation of the
 code may either done by hand, automatically or semi-automatically using a PPX
 extension. The result of the benchmark may be browsed either directly on the
 console, or by exporting results to a simple web-application (that you can either

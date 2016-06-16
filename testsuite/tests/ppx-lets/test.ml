@@ -8,6 +8,10 @@ let () =
     ()
   end)[@landmark "main"]
 
+let[@landmark "unit"] () =
+   let[@landmark] main () = () in
+   main ()
+
 let () =
   let open Landmark in
   if profiling () then begin
