@@ -7,7 +7,7 @@ let[@landmark] rec even = function
 and[@landmark] odd = function
   | 0 -> odd0
   | n -> even (n - 1)
-and[@landmark] even0 = true
+and even0 = true
 and[@landmark] odd0 = false
 
 let[@landmark] prime n =
@@ -88,17 +88,18 @@ let () =
 
     compute ();
 
-    (lm1 ();
+    let[@landmark "unit"] () = (lm1 ();
      lm2 ();
      lm3 ();
-     noauto ())[@landmark "not module"];
+     noauto ())[@landmark "not module"]
+    in
 
     (let open M in
-    mod_lm0 ();
-    mod_lm1 ();
-    mod_lm2 ();
-    mod_lm3 ();
-    mod_noauto ())[@landmark "module"];
+     mod_lm0 ();
+     mod_lm1 ();
+     mod_lm2 ();
+     mod_lm3 ();
+     mod_noauto ())[@landmark "module"];
 
     (incl_lm0 ();
     incl_lm1 ();

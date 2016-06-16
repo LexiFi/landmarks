@@ -15,6 +15,12 @@ ppx_landmark: payload is not a string
   let () = (print_endline "hello")[@landmark "too"][@landmark "many"][@landmark "landmarks"];;
            ^^^^^^^^^^^^^^^^^^^^^^^
 ppx_landmark: too many attributes
-#     val two : int = 2
-#     Characters 13-33, ppx_landmark: let annotation expect explicit eta-long function (the body should start with a 'fun ...' or 'function ...')
+#   Characters 1-23:
+  let[@landmark] () = ();;
+  ^^^^^^^^^^^^^^^^^^^^^^
+ppx_landmark: this landmark annotation requires a name argument
+#     Characters 13-33:
+     let[@landmark] _ = 3 in ();;
+     ^^^^^^^^^^^^^^^^^^^^
+ppx_landmark: this landmark annotation requires a name argument
 #   

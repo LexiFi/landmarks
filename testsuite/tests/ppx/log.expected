@@ -39,5 +39,8 @@ module
 next_prime
 not module
 odd
+odd0
 prime
 print
+result
+unit

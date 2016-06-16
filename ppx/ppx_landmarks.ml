@@ -28,15 +28,6 @@ open Location
 
 let with_thread = ref false
 
-let warning loc code =
-  let open Format in
-  let message = function
-  | `Let_expect_function ->
-   "let annotation expect explicit eta-long function \
-    (the body should start with a 'fun ...' or 'function ...')"
-  in
-  printf "%a, ppx_landmark: %s\n%!" print_loc loc (message code)
-
 let error loc code =
   let open Printf in
   let message = function
@@ -164,34 +155,36 @@ let translate_value_bindings mapper auto vbs =
     List.map
       (fun vb -> match vb, has_landmark_attribute ~auto vb.pvb_attributes with
          | { pvb_expr; pvb_loc;
-             pvb_pat =
-               {ppat_desc =
-                  Ppat_var {txt = name; _}; _};
+             pvb_pat = {ppat_desc; _};
              _}, Some attr ->
-           let name =
-             match filter_map (get_string_payload "landmark") vb.pvb_attributes with
-             | [Some name] -> name
-             | [] | [ None ] -> name
-             | _ -> error pvb_loc `Too_many_attributes
-           in
-           let arity = arity pvb_expr in
-           if arity = [] then (vb, None)
-           else (vb, Some (arity, name, pvb_loc, attr))
-         | { pvb_loc; _}, Some _ when not auto ->
-           warning pvb_loc `Let_expect_function; (vb, None)
+           (match ppat_desc, filter_map (get_string_payload "landmark") vb.pvb_attributes with
+           | _, [Some name]
+           | Ppat_var {txt = name; _}, []
+           | Ppat_var {txt = name; _}, [ None ] ->
+             let arity = arity pvb_expr in
+             (vb, Some (arity, name, pvb_loc, attr))
+           | _, [] | _, [ _ ] ->
+             if auto then (vb, None) else error pvb_loc `Provide_a_name
+           | _ -> error pvb_loc `Too_many_attributes)
          | _, _ -> (vb, None))
       vbs
   in
   let vbs = List.map (function
       | (vb, None) ->
         default_mapper.value_binding mapper vb
-      | {pvb_pat; pvb_loc; pvb_expr; _}, Some (_, _, _, attrs) ->
+      | {pvb_pat; pvb_loc; pvb_expr; _}, Some (arity, name, loc, attrs) ->
         (* Remove landmark attribute: *)
-        let vb = Vb.mk ~attrs ~loc:pvb_loc pvb_pat pvb_expr in
-        default_mapper.value_binding mapper vb) vbs_arity_name
+        let vb =
+         Vb.mk ~attrs ~loc:pvb_loc pvb_pat pvb_expr
+         |> default_mapper.value_binding mapper
+        in
+        if arity = [] then
+          { vb with pvb_expr = wrap_landmark name loc vb.pvb_expr}
+        else
+          vb) vbs_arity_name
   in
   let new_vbs = filter_map (function
-      | (_, Some (arity, name, loc, _)) ->
+      | (_, Some (_ :: _ as arity, name, loc, _)) ->
         let ident = Exp.ident (mknoloc (Lident name)) in
         let expr = eta_expand (wrap_landmark name loc) ident arity in
         Some (Vb.mk (Pat.var (mknoloc name)) expr)
