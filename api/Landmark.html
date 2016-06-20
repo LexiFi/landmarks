@@ -37,7 +37,7 @@ This function is used by the landmark infrastructure to
 <br>
 <h3 id="3_Landmarks">Landmarks</h3><br>
 <br>
-<i>Landmarks</i> identifiy portions of code, they are registered
+<i>Landmarks</i> identify portions of code, they are registered
 with the function <a href="Landmark.html#VALregister"><code class="code">Landmark.register</code></a> and delimited by <a href="Landmark.html#VALenter"><code class="code">Landmark.enter</code></a> and <a href="Landmark.html#VALexit"><code class="code">Landmark.exit</code></a>.<br>
 
 <pre><span id="TYPElandmark"><span class="keyword">type</span> <code class="type"></code>landmark</span> </pre>
@@ -130,7 +130,7 @@ disables the automatic output of profiling results
 <td align="left" valign="top" >
 <code><span id="TYPEELTprofile_output.Temporary"><span class="constructor">Temporary</span></span></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-writes the results in a tempory files and prints its
+writes the results in a temporary files and prints its
     path on stdout.<br>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
@@ -250,11 +250,15 @@ The profiling options control the behavior of the landmark infrastructure.<br>
 
 
 <pre><span id="VALdefault_options"><span class="keyword">val</span> default_options</span> : <code class="type"><a href="Landmark.html#TYPEprofiling_options">profiling_options</a></code></pre><div class="info ">
-The default <a href="Landmark.html#TYPEprofiling_options"><code class="code">Landmark.profiling_options</code></a>.<br>
+The default <a href="Landmark.html#VALprofiling_options"><code class="code">Landmark.profiling_options</code></a>.<br>
 </div>
 
 <pre><span id="VALset_profiling_options"><span class="keyword">val</span> set_profiling_options</span> : <code class="type"><a href="Landmark.html#TYPEprofiling_options">profiling_options</a> -> unit</code></pre><div class="info ">
 Sets the options.<br>
+</div>
+
+<pre><span id="VALprofiling_options"><span class="keyword">val</span> profiling_options</span> : <code class="type">unit -> <a href="Landmark.html#TYPEprofiling_options">profiling_options</a></code></pre><div class="info ">
+Get the options.<br>
 </div>
 
 <pre><span id="VALstart_profiling"><span class="keyword">val</span> start_profiling</span> : <code class="type">?profiling_options:<a href="Landmark.html#TYPEprofiling_options">profiling_options</a> -> unit -> unit</code></pre><div class="info ">
