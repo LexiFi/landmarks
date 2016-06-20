@@ -12,7 +12,7 @@ exception LandmarkFailure of string
 
 (** {3 Landmarks} *)
 
-(** {i Landmarks} identifiy portions of code, they are registered
+(** {i Landmarks} identify portions of code, they are registered
 with the function {! register} and delimited by {! enter} and {! exit}. *)
 
 (** The type of landmarks. *)
@@ -72,7 +72,7 @@ val profiling: unit -> bool
 type profile_output =
   | Silent (** disables the automatic output of profiling results
     when the program ends. *)
-  | Temporary (** writes the results in a tempory files and prints its
+  | Temporary (** writes the results in a temporary files and prints its
     path on stdout. *)
   | Channel of out_channel (** writes in the results in out_channel. *)
 

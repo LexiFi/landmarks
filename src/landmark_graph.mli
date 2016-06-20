@@ -27,7 +27,7 @@ type node = {
   location: string; (** Location of the landmark (see {! Landmark.register}). *)
   calls: int; (** Number of time this node was entered. *)
   time: float; (** Time (in cycles) spent between enter and exit. *)
-  sons: id list; (** The list of instance of landmarks that was entered while node was a opened. *)
+  sons: id list; (** The list of instances of landmarks that was entered while the node was opened. *)
   sys_time: float; (** Time (using Sys.time) spent between enter and exit. *)
   allocated_bytes: float; (** Gc.allocated_bytes between enter and exit. *)
   distrib: float array; (** For samplers only. The list of collected samples. *)
