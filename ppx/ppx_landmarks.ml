@@ -131,6 +131,7 @@ let rec arity {pexp_desc; _} =
     Nolabel :: (List.fold_left
       (fun acc {pc_rhs; _} -> max_list (arity pc_rhs) acc)
       [] cases)
+  | Pexp_newtype (_, e) -> arity e
   | _ -> []
 
 let eta_expand f t n =

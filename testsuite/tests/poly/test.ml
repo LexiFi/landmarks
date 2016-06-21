@@ -1,6 +1,10 @@
-let marc =
-  let[@landmark] test x = x
-  in test "marc", test 2
+let _ =
+  let[@landmark] test1 x = x
+  in test1 "marc", test1 2
+
+let _ =
+  let[@landmark] test2 (type t) (x : t) = x
+  in test2 "marc", test2 2
 
 let () =
   let open Landmark in
