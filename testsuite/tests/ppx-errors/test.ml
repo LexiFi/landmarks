@@ -8,8 +8,8 @@ end;;
 
 let () = (print_endline "hello")[@landmark "too"][@landmark "many"][@landmark "landmarks"];;
 
-let[@landmark] () = ();;
+let[@landmark] () = print_endline "hello";;
 
 let () =
-   let[@landmark] _ = 3 in ();;
+   let[@landmark] _ = 2+2 in ();;
 

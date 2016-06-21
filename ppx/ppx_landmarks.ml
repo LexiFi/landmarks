@@ -150,22 +150,27 @@ let eta_expand f t n =
   in
   lam vars
 
+let rec not_a_constant expr = match expr.pexp_desc with
+  | Pexp_constant _ | Pexp_ident _ -> false
+  | Pexp_coerce (e, _, _) | Pexp_poly (e, _) -> not_a_constant e
+  | _ -> true
+
 let translate_value_bindings mapper auto vbs =
   let vbs_arity_name =
     List.map
       (fun vb -> match vb, has_landmark_attribute ~auto vb.pvb_attributes with
          | { pvb_expr; pvb_loc;
              pvb_pat = {ppat_desc; _};
-             _}, Some attr ->
+             _}, Some attr when not_a_constant pvb_expr ->
            (match ppat_desc, filter_map (get_string_payload "landmark") vb.pvb_attributes with
-           | _, [Some name]
-           | Ppat_var {txt = name; _}, []
-           | Ppat_var {txt = name; _}, [ None ] ->
-             let arity = arity pvb_expr in
-             (vb, Some (arity, name, pvb_loc, attr))
-           | _, [] | _, [ _ ] ->
-             if auto then (vb, None) else error pvb_loc `Provide_a_name
-           | _ -> error pvb_loc `Too_many_attributes)
+             | _, [Some name]
+             | Ppat_var {txt = name; _}, []
+             | Ppat_var {txt = name; _}, [ None ] ->
+               let arity = arity pvb_expr in
+               (vb, Some (arity, name, pvb_loc, attr))
+             | _, [] | _, [ _ ] ->
+               if auto then (vb, None) else error pvb_loc `Provide_a_name
+             | _ -> error pvb_loc `Too_many_attributes)
          | _, _ -> (vb, None))
       vbs
   in
