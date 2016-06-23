@@ -48,29 +48,21 @@ A specialization of <code class="code">path_dfs</code> that does not need to rea
 </div>
 </td></tr>
 <tr><td align="left"><br>E</td></tr>
-<tr><td><a href="Landmark_threads.html#VALenter">enter</a> [<a href="Landmark_threads.html">Landmark_threads</a>]</td>
-<td></td></tr>
 <tr><td><a href="Landmark.html#VALenter">enter</a> [<a href="Landmark.html">Landmark</a>]</td>
 <td><div class="info">
 Begins a landmark block.
 </div>
 </td></tr>
-<tr><td><a href="Landmark_threads.html#VALexit">exit</a> [<a href="Landmark_threads.html">Landmark_threads</a>]</td>
-<td></td></tr>
 <tr><td><a href="Landmark.html#VALexit">exit</a> [<a href="Landmark.html">Landmark</a>]</td>
 <td><div class="info">
 Ends a landmark block.
 </div>
 </td></tr>
-<tr><td><a href="Landmark_threads.html#VALexport">export</a> [<a href="Landmark_threads.html">Landmark_threads</a>]</td>
-<td></td></tr>
 <tr><td><a href="Landmark.html#VALexport">export</a> [<a href="Landmark.html">Landmark</a>]</td>
 <td><div class="info">
 Export the profiling information of the current process.
 </div>
 </td></tr>
-<tr><td><a href="Landmark_threads.html#VALexport_and_reset">export_and_reset</a> [<a href="Landmark_threads.html">Landmark_threads</a>]</td>
-<td></td></tr>
 <tr><td><a href="Landmark.html#VALexport_and_reset">export_and_reset</a> [<a href="Landmark.html">Landmark</a>]</td>
 <td><div class="info">
 Export the profiling information of the current process; then reset
@@ -84,8 +76,6 @@ Build a graph from a list of nodes.
 </div>
 </td></tr>
 <tr><td align="left"><br>I</td></tr>
-<tr><td><a href="Landmark_threads.html#VALincrement">increment</a> [<a href="Landmark_threads.html">Landmark_threads</a>]</td>
-<td></td></tr>
 <tr><td><a href="Landmark.html#VALincrement">increment</a> [<a href="Landmark.html">Landmark</a>]</td>
 <td><div class="info">
 Increments the number of calls attached to the counter.
@@ -159,8 +149,6 @@ Get the options.
 <code class="code">register_counter name</code> registers a new sampler.
 </div>
 </td></tr>
-<tr><td><a href="Landmark_threads.html#VALreset">reset</a> [<a href="Landmark_threads.html">Landmark_threads</a>]</td>
-<td></td></tr>
 <tr><td><a href="Landmark.html#VALreset">reset</a> [<a href="Landmark.html">Landmark</a>]</td>
 <td><div class="info">
 Reset the profiling information gathered by the current process.
@@ -172,8 +160,6 @@ Returns the root of a graph.
 </div>
 </td></tr>
 <tr><td align="left"><br>S</td></tr>
-<tr><td><a href="Landmark_threads.html#VALsample">sample</a> [<a href="Landmark_threads.html">Landmark_threads</a>]</td>
-<td></td></tr>
 <tr><td><a href="Landmark.html#VALsample">sample</a> [<a href="Landmark.html">Landmark</a>]</td>
 <td><div class="info">
 Collects a float.
@@ -195,15 +181,11 @@ Returns the sons of node(<code class="code">sons graph node</code> is equivalent
     <code class="code">List.map (node_of_id graph) node.sons</code>
 </div>
 </td></tr>
-<tr><td><a href="Landmark_threads.html#VALstart_profiling">start_profiling</a> [<a href="Landmark_threads.html">Landmark_threads</a>]</td>
-<td></td></tr>
 <tr><td><a href="Landmark.html#VALstart_profiling">start_profiling</a> [<a href="Landmark.html">Landmark</a>]</td>
 <td><div class="info">
 Starts the profiling.
 </div>
 </td></tr>
-<tr><td><a href="Landmark_threads.html#VALstop_profiling">stop_profiling</a> [<a href="Landmark_threads.html">Landmark_threads</a>]</td>
-<td></td></tr>
 <tr><td><a href="Landmark.html#VALstop_profiling">stop_profiling</a> [<a href="Landmark.html">Landmark</a>]</td>
 <td><div class="info">
 Stops the profiling.
@@ -216,16 +198,12 @@ Compute the sum of all calls field.
 </div>
 </td></tr>
 <tr><td align="left"><br>U</td></tr>
-<tr><td><a href="Landmark_threads.html#VALunsafe_wrap">unsafe_wrap</a> [<a href="Landmark_threads.html">Landmark_threads</a>]</td>
-<td></td></tr>
 <tr><td><a href="Landmark.html#VALunsafe_wrap">unsafe_wrap</a> [<a href="Landmark.html">Landmark</a>]</td>
 <td><div class="info">
 Puts landmark blocks around a function without catching exceptions.
 </div>
 </td></tr>
 <tr><td align="left"><br>W</td></tr>
-<tr><td><a href="Landmark_threads.html#VALwrap">wrap</a> [<a href="Landmark_threads.html">Landmark_threads</a>]</td>
-<td></td></tr>
 <tr><td><a href="Landmark.html#VALwrap">wrap</a> [<a href="Landmark.html">Landmark</a>]</td>
 <td><div class="info">
 Puts landmark blocks around a function (and close the block and re-raise

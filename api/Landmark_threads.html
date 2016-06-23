@@ -34,14 +34,5 @@ This module implements of wrapper around some of the primitives
 It requires the Thread module (and only available in
     'landmarks-threads' archive.<br>
 
-<pre><span id="VALenter"><span class="keyword">val</span> enter</span> : <code class="type"><a href="Landmark.html#TYPElandmark">Landmark.landmark</a> -> unit</code></pre>
-<pre><span id="VALexit"><span class="keyword">val</span> exit</span> : <code class="type"><a href="Landmark.html#TYPElandmark">Landmark.landmark</a> -> unit</code></pre>
-<pre><span id="VALincrement"><span class="keyword">val</span> increment</span> : <code class="type">?times:int -> <a href="Landmark.html#TYPEcounter">Landmark.counter</a> -> unit</code></pre>
-<pre><span id="VALsample"><span class="keyword">val</span> sample</span> : <code class="type"><a href="Landmark.html#TYPEsampler">Landmark.sampler</a> -> float -> unit</code></pre>
-<pre><span id="VALwrap"><span class="keyword">val</span> wrap</span> : <code class="type"><a href="Landmark.html#TYPElandmark">Landmark.landmark</a> -> ('a -> 'b) -> 'a -> 'b</code></pre>
-<pre><span id="VALunsafe_wrap"><span class="keyword">val</span> unsafe_wrap</span> : <code class="type"><a href="Landmark.html#TYPElandmark">Landmark.landmark</a> -> ('a -> 'b) -> 'a -> 'b</code></pre>
-<pre><span id="VALreset"><span class="keyword">val</span> reset</span> : <code class="type">unit -> unit</code></pre>
-<pre><span id="VALexport"><span class="keyword">val</span> export</span> : <code class="type">unit -> <a href="Landmark_graph.html#TYPEgraph">Landmark_graph.graph</a></code></pre>
-<pre><span id="VALexport_and_reset"><span class="keyword">val</span> export_and_reset</span> : <code class="type">unit -> <a href="Landmark_graph.html#TYPEgraph">Landmark_graph.graph</a></code></pre>
-<pre><span id="VALstart_profiling"><span class="keyword">val</span> start_profiling</span> : <code class="type">?profiling_options:<a href="Landmark.html#TYPEprofiling_options">Landmark.profiling_options</a> -> unit -> unit</code></pre>
-<pre><span id="VALstop_profiling"><span class="keyword">val</span> stop_profiling</span> : <code class="type">unit -> unit</code></pre></body></html>
+<pre><span class="keyword">include</span> <a href="Landmark.html">Landmark</a></pre>
+</body></html>
