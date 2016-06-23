@@ -13,7 +13,7 @@ During the execution of your program, the traversal of instrumented code by
 the control flow is recorded as a "callgraph" that carries the collected
 measures. The results may be browsed either directly on the console, or
 by exporting results to a simple web-application (that you can either build
-locally or [access online](http://mlasson.github.io/landmarks/viewer.html)).
+locally or [access online](http://LexiFi.github.io/landmarks/viewer.html)).
 
 This tool is intended to be used as a way to find where the time is spent in
 your programs (and not benchmark independent pieces of code like
@@ -23,7 +23,7 @@ tools that directly work with the binary executable like
 [gprof](https://sourceware.org/binutils/docs/gprof/) or
 [perf](https://perf.wiki.kernel.org)).
 
-For more information, you may browse the [API](http://mlasson.github.io/landmarks/api/).
+For more information, you may browse the [API](http://LexiFi.github.io/landmarks/api/).
 
 Installation
 ------------
@@ -42,12 +42,12 @@ opam install landmarks
 
 - With opam (development version):
 ```
-opam pin add landmarks https://github.com/mlasson/landmarks.git
+opam pin add landmarks https://github.com/LexiFi/landmarks.git
 ```
 
 - Manually:
 ```
-git clone https://github.com/mlasson/landmarks.git
+git clone https://github.com/LexiFi/landmarks.git
 cd landmarks
 make
 make install
@@ -242,7 +242,7 @@ Browsing the JSON export using the Web Viewer
 ---------------------------------------------
 
 You can either compile the web viewer on your computer or
-[browse it online](http://mlasson.github.io/landmarks/viewer.html).
+[browse it online](http://LexiFi.github.io/landmarks/viewer.html).
 You need to load the JSON files using the filepicker and then you can click
 around to browse the callgraph.
 
