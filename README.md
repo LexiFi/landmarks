@@ -60,7 +60,7 @@ Usage
 * Compiling and linking:
 ```
   ocamlfind ocamlopt -c -package landmarks prog.ml
-  ocamlfind ocamlopt -o prog -package landmarks landmarks.cmxa prog.cmx
+  ocamlfind ocamlopt -o prog -package landmarks -linkpkg prog.cmx
 ```
 You can replace "ocamlopt" by "ocamlc" to compile the program in
 bytecode.
@@ -68,7 +68,7 @@ bytecode.
 * With the PPX extension:
 ```
   ocamlfind ocamlopt -c -package landmarks.ppx prog.ml
-  ocamlfind ocamlopt -o prog -package landmarks.ppx landmarks.cmxa prog.cmx
+  ocamlfind ocamlopt -o prog -package landmarks -linkpkg prog.cmx
 ```
 
 * Launching the viewer (when available):
