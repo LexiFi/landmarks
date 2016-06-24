@@ -2,7 +2,7 @@ Landmarks: A Simple Profiling Library
 =====================================
 
 *Landmarks* is a simple profiling library for OCaml. It provides primitives to
-delimits portions of code and measure the performance of instrumented code at
+delimit portions of code and measure the performance of instrumented code at
 runtime. The available measures are obtained by aggregating CPU cycles (using
 the cpu's time stamp counter), applicative time (using `Sys.time`) and
 allocated bytes (with `Gc.allocated_bytes`). The instrumentation of the code
@@ -18,7 +18,7 @@ locally or [access online](http://LexiFi.github.io/landmarks/viewer.html)).
 This tool is intended to be used as a way to find where the time is spent in
 your programs (and not benchmark independent pieces of code like
 [Core_bench](https://github.com/janestreet/core_bench)) while providing results
-that only corresponds to the instrumented portion of your program (contrary to
+that only correspond to the instrumented portion of your OCaml code (contrary to
 tools that directly work with the binary executable like
 [gprof](https://sourceware.org/binutils/docs/gprof/) or
 [perf](https://perf.wiki.kernel.org)).
