@@ -15,3 +15,6 @@
     'landmarks-threads' archive. *)
 
 include module type of Landmark
+  with type landmark = Landmark.landmark
+   and type sampler = Landmark.sampler
+   and type counter = Landmark.counter

@@ -153,7 +153,7 @@ let eta_expand f t n =
 
 let rec not_a_constant expr = match expr.pexp_desc with
   | Pexp_constant _ | Pexp_ident _ -> false
-  | Pexp_coerce (e, _, _) | Pexp_poly (e, _) -> not_a_constant e
+  | Pexp_coerce (e, _, _) | Pexp_poly (e, _) | Pexp_constraint (e, _) -> not_a_constant e
   | _ -> true
 
 let translate_value_bindings mapper auto vbs =
@@ -168,7 +168,10 @@ let translate_value_bindings mapper auto vbs =
              | Ppat_var {txt = name; _}, []
              | Ppat_var {txt = name; _}, [ None ] ->
                let arity = arity pvb_expr in
-               (vb, Some (arity, name, pvb_loc, attr))
+               if auto && arity = [] then
+                 (vb, None)
+               else
+                 (vb, Some (arity, name, pvb_loc, attr))
              | _, [] | _, [ _ ] ->
                if auto then (vb, None) else error pvb_loc `Provide_a_name
              | _ -> error pvb_loc `Too_many_attributes)
@@ -181,8 +184,8 @@ let translate_value_bindings mapper auto vbs =
       | {pvb_pat; pvb_loc; pvb_expr; _}, Some (arity, name, loc, attrs) ->
         (* Remove landmark attribute: *)
         let vb =
-         Vb.mk ~attrs ~loc:pvb_loc pvb_pat pvb_expr
-         |> default_mapper.value_binding mapper
+          Vb.mk ~attrs ~loc:pvb_loc pvb_pat pvb_expr
+          |> default_mapper.value_binding mapper
         in
         if arity = [] then
           { vb with pvb_expr = wrap_landmark name loc vb.pvb_expr}

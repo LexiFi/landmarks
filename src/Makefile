@@ -6,7 +6,7 @@ OCAMLMKTOP=ocamlmktop
 OCAMLDOC=ocamldoc
 
 INCLUDES=-I .
-OCAMLFLAGS=-w +A-30-42-41-48-40 -safe-string -strict-sequence -bin-annot
+OCAMLFLAGS=-w +A-30-42-41-48-40-4 -safe-string -strict-sequence -bin-annot
 OCAMLCFLAGS=$(INCLUDES) $(OCAMLFLAGS)
 OCAMLOPTFLAGS=$(INCLUDES) $(OCAMLFLAGS)
 

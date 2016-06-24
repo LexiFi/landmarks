@@ -19,7 +19,6 @@ in: local_noauto
 
 Landmark reached:
 ROOT
-even0
 fib
 incl_lm0
 incl_lm1
@@ -43,6 +42,5 @@ mod_noauto
 next_prime
 noauto
 odd
-odd0
 prime
 print

@@ -338,6 +338,8 @@ let rec output oc = function
     fprintf oc "@;<0 -2>}"
   | List [] -> fprintf oc "[]"
   | List [x] -> fprintf oc "[%a]" output x
+  | List l when List.for_all (function Int _ -> true | _ -> false) l ->
+    fprintf oc "[%s]" (String.concat ", " (List.map (function Int x -> string_of_int x | _ -> assert false) l))
   | List l ->
     fprintf oc "[@,";
     let first = ref true in
