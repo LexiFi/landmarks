@@ -374,7 +374,7 @@ let get_exiting_node current_node =
   else
     Stack.pop current_node.fathers
 
-let increment ?(times = 0) counter =
+let increment ?(times = 1) counter =
   let node = get_entering_node counter in
   node.calls <- node.calls + times
 
