@@ -243,7 +243,7 @@ let rec mapper auto =
             let vbs, new_vbs =
               translate_value_bindings deep_mapper false vbs
             in
-            let body = default_mapper.expr deep_mapper body in
+            let body = deep_mapper.expr deep_mapper body in
             let body =
               if new_vbs = [] then
                 body
