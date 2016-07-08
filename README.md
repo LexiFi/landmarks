@@ -7,7 +7,7 @@ runtime. The available measures are obtained by aggregating CPU cycles (using
 the cpu's time stamp counter), applicative time (using `Sys.time`) and
 allocated bytes (with `Gc.allocated_bytes`). The instrumentation of the code
 may either done by hand, automatically or semi-automatically using a PPX
-extension. 
+extension.
 
 During the execution of your program, the traversal of instrumented code by
 the control flow is recorded as a "callgraph" that carries the collected
@@ -124,7 +124,7 @@ let () =
   end
 ```
 (This file can be compiled with
-  `ocamlfind ocamlc -o prog -package landmarks landmarks.cma unix.cma prog.ml`)
+  `ocamlfind ocamlc -o prog -package landmarks -package unix -linkpkg prog.ml`)
 
 The induced callgraph is:
 ```
@@ -207,9 +207,10 @@ annotated.
 The OCAML_LANDMARKS environment variable
 ----------------------------------------
 
-When the landmarks module is loaded by an instrumented program, the environment
-variable `OCAML_LANDMARKS` is read. If it exists the function `start_profiling`
-is called. This variable is parsed as a comma-separated list of items of the form
+When the landmarks module is loaded by an instrumented program and when the ppx
+rewritter is executed, the environment variable `OCAML_LANDMARKS` is read. If
+it exists the function `start_profiling` is called by the landmark module.
+This variable is parsed as a comma-separated list of items of the form
 `option=argument` or `option` where `option` is:
 
  * `format` with possible arguments: `textual` (default) or `json`. It controls
@@ -248,12 +249,12 @@ around to browse the callgraph.
 
 Instrumenting with threads
 --------------------------
- 
+
 The `Landmark` module is not thread-safe. If you have multiple threads,
 you have to make sure that at most one thread is executing instrumented
 code. For that you may use the `Landmark_threads` module (included
-in the landmarks-threads.cm(x)a archive) that prevents non thread-safe 
-functions to execute in all threads but the one which started the 
+in the landmarks-threads.cm(x)a archive) that prevents non thread-safe
+functions to execute in all threads but the one which started the
 profiling.
 
 
@@ -262,7 +263,7 @@ Instrumenting [js_of_ocaml](http://ocsigen.org/js_of_ocaml/) program
 
 The package contains a bytecode archive `landmarks-noc.cma` that may
 be used to build js_of_ocaml programs. This archive contains everything
-except the implementation of the `clock()` function that you 
+except the implementation of the `clock()` function that you
 therefore need to provide in your javascript runtime.
 
 
@@ -289,11 +290,10 @@ benchmark projects that build archives, shared libraries and packages. This
 of OCAMLPARAM to circumvent these problems.
 
 
-
 Remarks
 -------
 
-The annotation on expressions may temper with polymorphism (this is not 
+The annotation on expressions may temper with polymorphism (this is not
 the case for the let-binding annotation). For instance, the following
 piece of code will fail to compile:
 ```ocaml
