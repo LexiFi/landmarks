@@ -1,333 +1,135 @@
-<!DOCTYPE html>
-<html lang="en-us">
-  <head>
-    <meta charset="UTF-8">
-    <title>Landmarks by mlasson</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
-  </head>
-  <body>
-    <section class="page-header">
-      <h1 class="project-name">Landmarks</h1>
-      <h2 class="project-tagline"></h2>
-      <a href="https://github.com/mlasson/landmarks" class="btn">View on GitHub</a>
-      <a href="https://github.com/mlasson/landmarks/zipball/master" class="btn">Download .zip</a>
-      <a href="https://github.com/mlasson/landmarks/tarball/master" class="btn">Download .tar.gz</a>
-    </section>
-
-    <section class="main-content">
-      <h1>
-<a id="landmarks-a-simple-profiling-library" class="anchor" href="#landmarks-a-simple-profiling-library" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Landmarks: A Simple Profiling Library</h1>
-
-<p><em>Landmarks</em> is a simple profiling library for OCaml. It provides primitives to
-measure time spent in portion of instrumented code. The instrumentation of the
-code may either done by hand, automatically or semi-automatically using a PPX
-extension. The result of the benchmark may be browsed either directly on the
-console, by exporting results to a simple web-application (that you can either
-build locally or access online).</p>
-
-<h2>
-<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h2>
-
+<h1 id="landmarks-a-simple-profiling-library">Landmarks: A Simple Profiling Library</h1>
+<p><em>Landmarks</em> is a simple profiling library for OCaml. It provides primitives to delimit portions of code and measure the performance of instrumented code at runtime. The available measures are obtained by aggregating CPU cycles (using the cpu's time stamp counter), applicative time (using <code>Sys.time</code>) and allocated bytes (with <code>Gc.allocated_bytes</code>). The instrumentation of the code may either done by hand, automatically or semi-automatically using a PPX extension.</p>
+<p>During the execution of your program, the traversal of instrumented code by the control flow is recorded as a &quot;callgraph&quot; that carries the collected measures. The results may be browsed either directly on the console, or by exporting results to a simple web-application (that you can either build locally or <a href="http://LexiFi.github.io/landmarks/viewer.html">access online</a>).</p>
+<p>This tool is intended to be used as a way to find where the time is spent in your programs (and not benchmark independent pieces of code like <a href="https://github.com/janestreet/core_bench">Core_bench</a>) while providing results that only correspond to the instrumented portion of your OCaml code (contrary to tools that directly work with the binary executable like <a href="https://sourceware.org/binutils/docs/gprof/">gprof</a> or <a href="https://perf.wiki.kernel.org">perf</a>).</p>
+<p>For more information, you may browse the <a href="http://LexiFi.github.io/landmarks/api/">API</a>.</p>
+<h2 id="installation">Installation</h2>
 <ul>
-<li>
-<p>Requirements:</p>
-
-<ul>
-<li>findlib (aka ocamlfind)</li>
-</ul>
-</li>
-<li>
-<p>Optional requirements (only for building the viewer):</p>
-
-<ul>
+<li>Requirements:</li>
+<li><p>findlib (aka ocamlfind)</p></li>
+<li>Optional requirements (only for building the viewer):</li>
 <li>gen_js_api</li>
-<li>js_of_ocaml</li>
-</ul>
-</li>
-<li><p>With opam (<em>not yet available</em>):</p></li>
-</ul>
-
-<pre><code>opam install landmarks
-</code></pre>
-
-<ul>
-<li>With opam (development version):</li>
-</ul>
-
-<pre><code>opam pin add landmarks https://github.com/mlasson/landmarks.git
-</code></pre>
-
-<ul>
-<li>Manually:</li>
-</ul>
-
-<pre><code>git clone https://github.com/mlasson/landmarks.git
+<li><p>js_of_ocaml</p></li>
+<li><p>With opam (<em>not yet available</em>):</p>
+<pre><code>opam install landmarks</code></pre></li>
+<li><p>With opam (development version):</p>
+<pre><code>opam pin add landmarks https://github.com/LexiFi/landmarks.git</code></pre></li>
+<li><p>Manually:</p>
+<pre><code>git clone https://github.com/LexiFi/landmarks.git
 cd landmarks
 make
-make install
-</code></pre>
-
-<p>and <code>make uninstall</code> to remove installed files.</p>
-
-<h2>
-<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
-
-<ul>
-<li>Compiling and linking:</li>
+make install</code></pre>
+<p>and <code>make uninstall</code> to remove installed files.</p></li>
 </ul>
-
+<h2 id="usage">Usage</h2>
+<ul>
+<li><p>Compiling and linking:</p>
 <pre><code>  ocamlfind ocamlopt -c -package landmarks prog.ml
-  ocamlfind ocamlopt -o prog -package landmarks landmarks.cmxa prog.cmx
-</code></pre>
-
-<p>You can replace "ocamlopt" by "ocamlc" to compile the program in
-bytecode.</p>
-
-<ul>
-<li>With the PPX extension:</li>
-</ul>
-
+  ocamlfind ocamlopt -o prog -package landmarks -linkpkg prog.cmx</code></pre>
+<p>You can replace &quot;ocamlopt&quot; by &quot;ocamlc&quot; to compile the program in bytecode.</p></li>
+<li><p>With the PPX extension:</p>
 <pre><code>  ocamlfind ocamlopt -c -package landmarks.ppx prog.ml
-  ocamlfind ocamlopt -o prog -package landmarks.ppx landmarks.cmxa prog.cmx
-</code></pre>
-
-<ul>
-<li>Launching the viewer (when available):</li>
+  ocamlfind ocamlopt -o prog -package landmarks -linkpkg prog.cmx</code></pre></li>
+<li><p>Launching the viewer (when available):</p>
+<pre><code>x-www-browser $(ocamlfind query landmarks)/landmarks_viewer.html</code></pre>
+<p>You may want to replace &quot;x-www-browser&quot; with your system's way to invoke your favorite web-browser from the command line. It has to support javascript.</p></li>
 </ul>
-
-<pre><code>x-www-browser $(ocamlfind query landmarks)/landmarks_viewer.html
-</code></pre>
-
-<p>You may want to replace "x-www-browser" with your system's way to
-invoke your favorite web-browser from the command line. It has
-to support javascript.</p>
-
-<h2>
-<a id="benchmarking-manually" class="anchor" href="#benchmarking-manually" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Benchmarking manually</h2>
-
+<h2 id="benchmarking-manually">Benchmarking manually</h2>
 <p>There are three main primitives:</p>
-
-<div class="highlight highlight-source-ocaml"><pre>  <span class="pl-k">val</span> <span class="pl-en">register</span>: <span class="pl-k">string</span> -&gt; <span class="pl-k">landmark</span>
-  <span class="pl-k">val</span> <span class="pl-en">enter</span>: <span class="pl-k">landmark</span> -&gt; <span class="pl-k">unit</span>
-  <span class="pl-k">val</span> <span class="pl-en">exit</span>: <span class="pl-k">landmark</span> -&gt; <span class="pl-k">unit</span></pre></div>
-
-<p>The <code>register</code> function declares new landmarks and should be used at the
-toplevel. The functions <code>enter</code> and <code>exit</code> are used to delimit the portion
-of code attached to a landmark. At the end of the profiling, we retrieve for
-each landmark the aggregated time information spent executing the corresponding
-piece of code. During the execution, a trace of each visited landmark is also
-recorded in order to build a "callgraph".</p>
-
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml">  <span class="kw">val</span> register: <span class="dt">string</span> -&gt; landmark
+  <span class="kw">val</span> enter: landmark -&gt; <span class="dt">unit</span>
+  <span class="kw">val</span> exit: landmark -&gt; <span class="dt">unit</span></code></pre>
+<p>The <code>register</code> function declares new landmarks and should be used at the toplevel. The functions <code>enter</code> and <code>exit</code> are used to delimit the portion of code attached to a landmark. At the end of the profiling, we retrieve for each landmark the aggregated time information spent executing the corresponding piece of code. During the execution, a trace of each visited landmark is also recorded in order to build a &quot;callgraph&quot;.</p>
 <p>For example:</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="ot">open</span> Landmark
 
-<div class="highlight highlight-source-ocaml"><pre><span class="pl-k">open</span> <span class="pl-c1">Landmark</span>
+<span class="kw">let</span> loop = register <span class="st">&quot;loop&quot;</span>
+<span class="kw">let</span> sleep = register <span class="st">&quot;sleep&quot;</span>
+<span class="kw">let</span> main = register <span class="st">&quot;main&quot;</span>
 
-<span class="pl-k">let</span> loop <span class="pl-k">=</span> register <span class="pl-s"><span class="pl-pds">"</span>loop<span class="pl-pds">"</span></span>
-<span class="pl-k">let</span> sleep <span class="pl-k">=</span> register <span class="pl-s"><span class="pl-pds">"</span>sleep<span class="pl-pds">"</span></span>
-<span class="pl-k">let</span> main <span class="pl-k">=</span> register <span class="pl-s"><span class="pl-pds">"</span>main<span class="pl-pds">"</span></span>
-
-<span class="pl-k">let</span> <span class="pl-en">zzz</span> <span class="pl-v">()</span> <span class="pl-k">=</span>
+<span class="kw">let</span> zzz () =
   enter sleep;
-    <span class="pl-c1">Unix.</span>sleep <span class="pl-c1">1</span>;
+    Unix<span class="kw">.</span>sleep <span class="dv">1</span>;
   exit sleep
 
-<span class="pl-k">let</span> <span class="pl-c1">()</span> <span class="pl-k">=</span>
-  <span class="pl-k">begin</span>
-    start_profiling <span class="pl-c1">()</span>;
+<span class="kw">let</span> () =
+  <span class="kw">begin</span>
+    start_profiling ();
     enter main;
       enter loop;
-        <span class="pl-k">for</span> _ <span class="pl-k">=</span> <span class="pl-c1">1</span> <span class="pl-k">to</span> <span class="pl-c1">9</span> <span class="pl-k">do</span>
-          zzz <span class="pl-c1">()</span>
-        <span class="pl-k">done</span>;
+        <span class="kw">for</span> _ = <span class="dv">1</span> <span class="kw">to</span> <span class="dv">9</span> <span class="kw">do</span>
+          zzz ()
+        <span class="kw">done</span>;
       exit loop;
-      zzz <span class="pl-c1">()</span>;
+      zzz ();
     exit main;
-  <span class="pl-k">end</span></pre></div>
-
-<p>(This file can be compiled with
-  <code>ocamlfind ocamlc -o prog -package landmarks landmarks.cma unix.cma prog.ml</code>)</p>
-
+  <span class="kw">end</span></code></pre>
+<p>(This file can be compiled with <code>ocamlfind ocamlc -o prog -package landmarks -package unix -linkpkg prog.ml</code>)</p>
 <p>The induced callgraph is:</p>
-
 <pre><code>- 100.00% : main
 |   - 90.00% : loop
 |   |   - 100.00% : sleep
 |   - 10.00% : sleep
-
 </code></pre>
-
-<p>which can be paraphrased as:</p>
-
-<ul>
-<li>100% of time is spent inside the main landmark,</li>
-<li>90% of time spent inside the main landmark is spent in the loop landmark,</li>
-<li>10% of time spent inside the main landmark is spent in the sleep landmark,</li>
-<li>100% of the time spent in loop is spent in the sleep landmark.</li>
-</ul>
-
-<p>For more information, you may browse the <a href="http://mlasson.github.io/landmarks/api/">API</a>.</p>
-
-<h2>
-<a id="the-clock-function" class="anchor" href="#the-clock-function" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The <code>clock()</code> function</h2>
-
-<p>The library provied a binding to the <a href="https://en.wikipedia.org/wiki/Time_Stamp_Counter">high-performance cycles counter</a>
-for x86 32 and 64 bits architectures (note that you may use the
-<code>landmarks-noc.cm(x)a</code> archive to provide your own implementation). It is
-used to measure the time spent inside instrumented code.</p>
-
-<h2>
-<a id="the-ppx-extension-point" class="anchor" href="#the-ppx-extension-point" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The PPX extension point</h2>
-
-<p>To avoid writing boilerplate code, you may use the ppx extension distributed with
-this package. It allows to instrument expressions using annotation and to
-automatically instrument top-level functions.</p>
-
-<h3>
-<a id="annotations" class="anchor" href="#annotations" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Annotations</h3>
-
-<p>The value <code>expr [@landmark "name"]</code> is expanded into</p>
-
-<div class="highlight highlight-source-ocaml"><pre>  <span class="pl-c1">Landmark.</span>enter __generated_landmark_1;
-  <span class="pl-k">let</span> r <span class="pl-k">=</span>
-    <span class="pl-k">try</span> expr <span class="pl-k">with</span><span class="pl-k"> <span class="pl-v">e</span> -&gt;</span> <span class="pl-c1">Landmark.</span>exit __generated_landmark_1; raise e
-  <span class="pl-k">in</span>
-  <span class="pl-c1">Landmark.</span>exit __generated_landmark_1;
-  r</pre></div>
-
+<p>which can be paraphrased as: - 100% of time is spent inside the main landmark, - 90% of time spent inside the main landmark is spent in the loop landmark, - 10% of time spent inside the main landmark is spent in the sleep landmark, - 100% of the time spent in loop is spent in the sleep landmark.</p>
+<h2 id="the-clock-function">The <code>clock()</code> function</h2>
+<p>The library provides a binding to the <a href="https://en.wikipedia.org/wiki/Time_Stamp_Counter">high-performance cycles counter</a> for x86 32 and 64 bits architectures (note that you may use the <code>landmarks-noc.cm(x)a</code> archive to provide your own implementation). It is used to measure the time spent inside instrumented code.</p>
+<h2 id="the-ppx-extension-point">The PPX extension point</h2>
+<p>To avoid writing boilerplate code, you may use the ppx extension distributed with this package. It allows the programmer to instrument expressions using annotation and to automatically instrument top-level functions.</p>
+<h3 id="annotations">Annotations</h3>
+<p>The value <code>expr [@landmark &quot;name&quot;]</code> is expanded into</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml">  Landmark<span class="kw">.</span>enter __generated_landmark_1;
+  <span class="kw">let</span> r =
+    <span class="kw">try</span> expr <span class="kw">with</span> e -&gt; Landmark<span class="kw">.</span>exit __generated_landmark_1; raise e
+  <span class="kw">in</span>
+  Landmark<span class="kw">.</span>exit __generated_landmark_1;
+  r</code></pre>
 <p>and the declaration</p>
-
-<div class="highlight highlight-source-ocaml"><pre>  <span class="pl-k">let</span> __generated_landmark_1 <span class="pl-k">=</span> <span class="pl-c1">Landmark.</span>register <span class="pl-s"><span class="pl-pds">"</span>name<span class="pl-pds">"</span></span></pre></div>
-
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml">  <span class="kw">let</span> __generated_landmark_1 = Landmark<span class="kw">.</span>register <span class="st">&quot;name&quot;</span></code></pre>
 <p>is appended at the top-level.</p>
-
-<p>It should be pointed out that this transformation does not preserve
-tail-recursive calls (and also prevents some polymorphism generalization).
-To get around these problems, it is recommended to use the other provided
-extension around <code>let ... in</code> and <code>let rec ... in</code>:</p>
-
-<div class="highlight highlight-source-ocaml"><pre><span class="pl-k">let</span>[<span class="pl-k">@</span>landmark] f <span class="pl-k">=</span> body</pre></div>
-
+<p>It should be pointed out that this transformation does not preserve tail-recursive calls (and also prevents some polymorphism generalization). To get around these problems, it is recommended to use the other provided extension around <code>let ... in</code> and <code>let rec ... in</code>:</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span>[@landmark] f = body</code></pre>
 <p>which is expanded in :</p>
-
-<div class="highlight highlight-source-ocaml"><pre><span class="pl-k">let</span> __generated_landmark_2 <span class="pl-k">=</span> <span class="pl-c1">Landmark.</span>register <span class="pl-s"><span class="pl-pds">"</span>f<span class="pl-pds">"</span></span>
-<span class="pl-k">let</span> f <span class="pl-k">=</span> body
-<span class="pl-k">let</span> <span class="pl-en">f</span> <span class="pl-v">x1</span> ... <span class="pl-v">xn</span> <span class="pl-k">=</span>
-  <span class="pl-c1">Landmark.</span>enter __generated_landmark_2;
-  <span class="pl-k">let</span> r <span class="pl-k">=</span>
-    <span class="pl-k">try</span> f x1 ... xn <span class="pl-k">with</span><span class="pl-k"> <span class="pl-v">e</span> -&gt;</span> <span class="pl-c1">Landmark.</span>exit __generated_landmark_2; raise e
-  <span class="pl-k">in</span>
-  <span class="pl-c1">Landmark.</span>exit __generated_landmark_2;
-  r</pre></div>
-
-<p>when the arity <code>n</code> of <code>f</code> is obtained by counting the shallow occurrences
-of <code>fun ... -&gt;</code> and <code>function ... -&gt;</code> in <code>body</code>.</p>
-
-<h3>
-<a id="automatic-instrumentation" class="anchor" href="#automatic-instrumentation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Automatic instrumentation</h3>
-
-<p>The global annotations <code>[@@@landmark "auto"]</code> and <code>[@@@landmark "auto-off"]</code>
-activates or deactivates the automatic instrumentation of top-level functions.
-In automatic mode, all top-level function declarations are implicitly
-annotated.</p>
-
-<h2>
-<a id="the-ocaml_landmarks-environment-variable" class="anchor" href="#the-ocaml_landmarks-environment-variable" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The OCAML_LANDMARKS environment variable</h2>
-
-<p>When the landmarks module is loaded by an instrumented program, the environment
-variable <code>OCAML_LANDMARKS</code> is read. If it exists the function <code>start_profiling</code>
-is called. This variable is parsed as a comma-separated list of items of the form
-<code>option=argument</code> or <code>option</code> where <code>option</code> is:</p>
-
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml"><span class="kw">let</span> __generated_landmark_2 = Landmark<span class="kw">.</span>register <span class="st">&quot;f&quot;</span>
+<span class="kw">let</span> f = body
+<span class="kw">let</span> f x1 ... xn =
+  Landmark<span class="kw">.</span>enter __generated_landmark_2;
+  <span class="kw">let</span> r =
+    <span class="kw">try</span> f x1 ... xn <span class="kw">with</span> e -&gt; Landmark<span class="kw">.</span>exit __generated_landmark_2; raise e
+  <span class="kw">in</span>
+  Landmark<span class="kw">.</span>exit __generated_landmark_2;
+  r</code></pre>
+<p>when the arity <code>n</code> of <code>f</code> is obtained by counting the shallow occurrences of <code>fun ... -&gt;</code> and <code>function ... -&gt;</code> in <code>body</code>.</p>
+<h3 id="automatic-instrumentation">Automatic instrumentation</h3>
+<p>The structure annotations <code>[@@@landmark &quot;auto&quot;]</code> and <code>[@@@landmark &quot;auto-off&quot;]</code> activates or deactivates the automatic instrumentation of top-level functions in a module. In automatic mode, all functions declarations are implicitly annotated.</p>
+<h2 id="the-ocaml_landmarks-environment-variable">The OCAML_LANDMARKS environment variable</h2>
+<p>When the landmarks module is loaded by an instrumented program and when the ppx rewritter is executed, the environment variable <code>OCAML_LANDMARKS</code> is read. If it exists the function <code>start_profiling</code> is called by the landmark module. This variable is parsed as a comma-separated list of items of the form <code>option=argument</code> or <code>option</code> where <code>option</code> is:</p>
 <ul>
-<li><p><code>format</code> with possible arguments: <code>textual</code> (default) or <code>json</code>. It controls
-the output format of the profiling which is either a console friendly
-representation or json encoding of the callgraph.</p></li>
-<li><p><code>output</code> with possible argument: <code>stderr</code> (default), <code>stdout</code>, <code>temporary</code>,
-<code>"&lt;file&gt;"</code> (where <code>&lt;file&gt;</code> is the path a file). It tells where to output the
-results of the profiling. With <code>temporary</code> it will print it in a temporary
-file (the name of this file will be printed on the console).</p></li>
-<li><p><code>auto</code> with no argument. This option is only read by the ppx extension. It
-turns on the automatic instrumentation by default (behaves as if all modules
-starts with the annotation <code>[@@@landmark "auto"]</code>).</p></li>
-<li><p><code>debug</code> with no argument. Activates a verbose mode that outputs traces on
-stderr each time the landmarks primitives are called.</p></li>
+<li><p><code>format</code> with possible arguments: <code>textual</code> (default) or <code>json</code>. It controls the output format of the profiling which is either a console friendly representation or json encoding of the callgraph.</p></li>
+<li><p><code>output</code> with possible argument: <code>stderr</code> (default), <code>stdout</code>, <code>temporary</code>, <code>&quot;&lt;file&gt;&quot;</code> (where <code>&lt;file&gt;</code> is the path a file). It tells where to output the results of the profiling. With <code>temporary</code> it will print it in a temporary file (the name of this file will be printed on the console).</p></li>
+<li><p><code>auto</code> with no argument. This option is only read by the ppx extension. It turns on the automatic instrumentation by default (behaves as if all modules starts with the annotation <code>[@@@landmark &quot;auto&quot;]</code>).</p></li>
+<li><p><code>debug</code> with no argument. Activates a verbose mode that outputs traces on stderr each time the landmarks primitives are called.</p></li>
 <li><p><code>time</code> with no argument. Also collect <code>Sys.time</code> timestamps during profiling.</p></li>
 <li><p><code>off</code> with no argument. Disable profiling.</p></li>
 <li><p><code>allocation</code> with no argument. Also collect <code>Gc.allocated_byte</code> data.</p></li>
-<li><p><code>threads</code> with no argument. Tells the ppx extension to use the
-<code>Landmark_threads</code> module instead of the module <code>Landmark</code>.</p></li>
+<li><p><code>threads</code> with no argument. Tells the ppx extension to use the <code>Landmark_threads</code> module instead of the module <code>Landmark</code>.</p></li>
 </ul>
-
-<h2>
-<a id="browsing-the-json-export-using-the-web-viewer" class="anchor" href="#browsing-the-json-export-using-the-web-viewer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Browsing the JSON export using the Web Viewer</h2>
-
-<p>You can either compile the web viewer on your computer or
-<a href="http://mlasson.github.io/landmarks/viewer.html">browse it online</a>.
-You need to load the JSON files using the filepicker and then you can click
-around to browse the callgraph.</p>
-
-<h2>
-<a id="examples" class="anchor" href="#examples" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Examples</h2>
-
-<p>The example directory contains instructions to instrument some caml projects:
-the ocaml compiler, the coq proof system and omake. These scripts are very
-fragile (as they need to patch the build systems to add the ppx-extension
-and to link with the right archives). You will to adapt them if you want
-to benchmark other versions.</p>
-
-<h2>
-<a id="instrumenting-with-ocamlparam" class="anchor" href="#instrumenting-with-ocamlparam" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Instrumenting with OCAMLPARAM</h2>
-
-<p>A way to blindly instrument a project is to use ocaml's OCAMLPARAM
-experimental feature, by setting the environment variable OCAMLPARAM with</p>
-
-<pre><code>I=$(ocamlfind query landmarks),cma=landmarks.cma,cmxa=landmarks.cmxa,ppx=$(ocamlfind query landmarks)/ppx_landmarks,_"
-</code></pre>
-
-<p>However, the current implementation of OCAMLPARAM does not allow to easily
-benchmark projects that build archives, shared libraries and packages. This
-<a href="https://github.com/ocaml/ocaml/pull/591">pull-request</a> propose some improvments
-of OCAMLPARAM to circumvent these problems.</p>
-
-<h2>
-<a id="remarks" class="anchor" href="#remarks" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Remarks</h2>
-
-<ol>
-<li><p>This library is not thread-safe. If you have multiple threads,
-you have to make sure that at most one thread is executing instrumented
-code. For that you may the <code>Landmark_threads</code> module (that is included
-in the landmarks-threads.cm(x)a archive).</p></li>
-<li><p>You should avoid to instrument small functions (and the automatic
-mode as no heuristic to avoid them). The instrumentation may
-significantly degrade performance.</p></li>
-<li><p>The annotation on expression and not the one on (local) declaration may
-temper with polymorphism. For instance, the following piece of code will fail to
-compile:</p></li>
-</ol>
-
-<div class="highlight highlight-source-ocaml"><pre>  <span class="pl-k">let</span> test <span class="pl-k">=</span> (<span class="pl-k">fun</span> <span class="pl-v">x</span> -&gt; x)[<span class="pl-k">@</span>landmark <span class="pl-s"><span class="pl-pds">"</span>test<span class="pl-pds">"</span></span>]
-  <span class="pl-k">in</span> test <span class="pl-s"><span class="pl-pds">"</span>string<span class="pl-pds">"</span></span>, test <span class="pl-c1">1</span></pre></div>
-
-<h2>
-<a id="about" class="anchor" href="#about" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>About</h2>
-
-<p>This 'Landmarks' package is licensed by LexiFi under the terms of the
-MIT license.</p>
-
-<p>Contact: <a href="mailto:marc.lasson@lexifi.com">marc.lasson@lexifi.com</a></p>
-
-      <footer class="site-footer">
-        <span class="site-footer-owner"><a href="https://github.com/mlasson/landmarks">Landmarks</a> is maintained by <a href="https://github.com/mlasson">mlasson</a>.</span>
-
-        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
-      </footer>
-
-    </section>
-
-  
-  </body>
-</html>
+<h2 id="browsing-the-json-export-using-the-web-viewer">Browsing the JSON export using the Web Viewer</h2>
+<p>You can either compile the web viewer on your computer or <a href="http://LexiFi.github.io/landmarks/viewer.html">browse it online</a>. You need to load the JSON files using the filepicker and then you can click around to browse the callgraph.</p>
+<h2 id="instrumenting-with-threads">Instrumenting with threads</h2>
+<p>The <code>Landmark</code> module is not thread-safe. If you have multiple threads, you have to make sure that at most one thread is executing instrumented code. For that you may use the <code>Landmark_threads</code> module (included in the landmarks-threads.cm(x)a archive) that prevents non thread-safe functions to execute in all threads but the one which started the profiling.</p>
+<h2 id="instrumenting-js_of_ocaml-program">Instrumenting <a href="http://ocsigen.org/js_of_ocaml/">js_of_ocaml</a> program</h2>
+<p>The package contains a bytecode archive <code>landmarks-noc.cma</code> that may be used to build js_of_ocaml programs. This archive contains everything except the implementation of the <code>clock()</code> function that you therefore need to provide in your javascript runtime.</p>
+<h2 id="examples">Examples</h2>
+<p>The example directory contains instructions to instrument some caml projects: the ocaml compiler, the coq proof system and omake. These scripts are very fragile (as they need to patch the build systems to add the ppx-extension and to link with the right archives). You will need to adapt them if you want to benchmark other versions.</p>
+<h2 id="instrumenting-with-ocamlparam">Instrumenting with OCAMLPARAM</h2>
+<p>A way to blindly instrument a project is to use ocaml's OCAMLPARAM experimental feature, by setting the environment variable OCAMLPARAM with</p>
+<pre><code>I=$(ocamlfind query landmarks),cma=landmarks.cma,cmxa=landmarks.cmxa,ppx=$(ocamlfind query landmarks)/ppx_landmarks,_&quot;</code></pre>
+<p>However, the current implementation of OCAMLPARAM does not allow to easily benchmark projects that build archives, shared libraries and packages. This <a href="https://github.com/ocaml/ocaml/pull/591">pull-request</a> propose some improvements of OCAMLPARAM to circumvent these problems.</p>
+<h2 id="remarks">Remarks</h2>
+<p>The annotation on expressions may temper with polymorphism (this is not the case for the let-binding annotation). For instance, the following piece of code will fail to compile:</p>
+<pre class="sourceCode ocaml"><code class="sourceCode ocaml">  <span class="kw">let</span> test = (<span class="kw">fun</span> x -&gt; x)[@landmark <span class="st">&quot;test&quot;</span>]
+  <span class="kw">in</span> test <span class="st">&quot;string&quot;</span>, test <span class="dv">1</span></code></pre>
+<h2 id="about">About</h2>
+<p>This 'Landmarks' package is licensed by LexiFi under the terms of the MIT license.</p>
+<p>Contact: marc.lasson@lexifi.com</p>

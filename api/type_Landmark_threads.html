@@ -14,16 +14,16 @@
 <code class="code"><span class="keyword">sig</span>
 &nbsp;&nbsp;<span class="keyword">external</span>&nbsp;clock&nbsp;:&nbsp;unit&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Int64</span>.t&nbsp;=&nbsp;<span class="string">"caml_highres_clock"</span>
 &nbsp;&nbsp;<span class="keyword">exception</span>&nbsp;<span class="constructor">LandmarkFailure</span>&nbsp;<span class="keyword">of</span>&nbsp;string
-&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;landmark
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;landmark&nbsp;=&nbsp;<span class="constructor">Landmark</span>.landmark
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;register&nbsp;:&nbsp;?location:string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;landmark
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;enter&nbsp;:&nbsp;landmark&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;exit&nbsp;:&nbsp;landmark&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;wrap&nbsp;:&nbsp;landmark&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;unsafe_wrap&nbsp;:&nbsp;landmark&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b
-&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;counter
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;counter&nbsp;=&nbsp;<span class="constructor">Landmark</span>.counter
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;register_counter&nbsp;:&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;counter
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;increment&nbsp;:&nbsp;?times:int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;counter&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit
-&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;sampler
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;sampler&nbsp;=&nbsp;<span class="constructor">Landmark</span>.sampler
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;register_sampler&nbsp;:&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;sampler
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;sample&nbsp;:&nbsp;sampler&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;float&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;profiling&nbsp;:&nbsp;unit&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bool
