@@ -35,7 +35,7 @@ Installation
    * gen_js_api
    * js_of_ocaml
 
-- With opam (*not yet available*):
+- With opam:
 ```
 opam install landmarks
 ```
