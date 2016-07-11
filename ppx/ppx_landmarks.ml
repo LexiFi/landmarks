@@ -26,6 +26,9 @@ open Parsetree
 open Longident
 open Location
 
+let digest x =
+  Digest.to_hex (Digest.string (Marshal.to_string x []))
+
 let with_thread = ref false
 
 let error loc code =
@@ -41,6 +44,7 @@ let error loc code =
   raise (Location.Error (Location.error ~loc
 			  (Printf.sprintf "ppx_landmark: %s" (message code))))
 
+let landmark_hash = ref ""
 let landmark_id = ref 0
 let landmarks_to_register = ref []
 
@@ -98,7 +102,7 @@ let register_landmark name location =
 
 let new_landmark landmark_name loc =
   incr landmark_id;
-  let landmark = Printf.sprintf "__generated_landmark_%d" !landmark_id in
+  let landmark = Printf.sprintf "__generated_landmark_%s_%d" !landmark_hash !landmark_id in
   let landmark_location = string_of_loc loc in
   landmarks_to_register :=
     (landmark, landmark_name, landmark_location) :: !landmarks_to_register;
@@ -297,6 +301,8 @@ let toplevel_mapper auto =
   { default_mapper with
      signature = (fun _ -> default_mapper.signature default_mapper);
      structure = fun _ -> function [] -> [] | l ->
+       assert (!landmark_hash = "");
+       landmark_hash := digest l;
        let disable, l = has_disable l in
        if disable then l else begin
          let first_loc = (List.hd l).pstr_loc in
