@@ -258,8 +258,8 @@ functions to execute in all threads but the one which started the
 profiling.
 
 
-Instrumenting [js_of_ocaml](http://ocsigen.org/js_of_ocaml/) program
---------------------------------------------------------------------
+Instrumenting [js_of_ocaml](http://ocsigen.org/js_of_ocaml/) programs
+---------------------------------------------------------------------
 
 The package contains a bytecode archive `landmarks-noc.cma` that may
 be used to build js_of_ocaml programs. This archive contains everything

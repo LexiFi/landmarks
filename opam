@@ -3,10 +3,10 @@ name: "landmarks"
 version: "1.0"
 maintainer: "Marc Lasson <marc.lasson@lexifi.com>"
 authors: "Marc Lasson <marc.lasson@lexifi.com>"
-homepage: "http://mlasson.github.io/landmarks/"
-bug-reports: "https://github.com/mlasson/landmarks/issues"
+homepage: "http://lexifi.github.io/landmarks/"
+bug-reports: "https://github.com/LexiFi/landmarks/issues"
 license: "MIT"
-dev-repo: "https://github.com/mlasson/landmarks/"
+dev-repo: "https://github.com/LexiFi/landmarks/"
 
 build: [
   [make]
