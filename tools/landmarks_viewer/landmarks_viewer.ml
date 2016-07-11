@@ -172,12 +172,6 @@ module Graph = struct
         (fun {time = time1; _} {time = time2; _} -> compare time2 time1)
         (Landmark_graph.nodes graph)
     in
-    let normal_nodes =
-      List.filter (fun n -> n.kind = Normal || n.kind = Root) all_nodes
-    in
-    let sample_nodes =
-      List.filter (fun n -> n.kind = Sampler) all_nodes
-    in
     let text x = Document.create_text_node document x in
     let profile_with_sys_time =
       if has_sys_time graph then
@@ -220,7 +214,6 @@ module TreeView = struct
      Node.append_child li div;
      let sons = children x in
      if sons <> [] then begin
-       let expanded = expand x in
        let span = create "span" ~text:open_button ~class_name:"collapseButton" in
        Element.set_class_name div "collapsible";
        Node.append_child div span;
@@ -294,8 +287,10 @@ module TreeView = struct
           @ (if sys_time <> 0.0 then ["Time", Printf.sprintf "%.0f" sys_time |> Helper.format_number ] else [])
           @ (if allocated_bytes <> 0.0 then ["Allocated bytes", Printf.sprintf "%.0f" allocated_bytes |> Helper.format_number ] else []))
        in
-       Node.append_child container table;
-       previous_info := Some (fun () -> Node.remove_child container table));
+       let div = create "div" ~class_name:"fixed" in
+       Node.append_child div table;
+       Node.append_child container div;
+       previous_info := Some (fun () -> Node.remove_child container div));
       (match parent, kind with
        | Some parent, Graph.Normal ->
          let parent_value = proj parent in
