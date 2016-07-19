@@ -108,7 +108,10 @@ let new_landmark landmark_name loc =
     (landmark, landmark_name, landmark_location) :: !landmarks_to_register;
   landmark
 
-let wrap_landmark landmark_name loc expr =
+let qualified ctx name = String.concat "." (List.rev (name :: ctx))
+
+let wrap_landmark ctx landmark_name loc expr =
+  let landmark_name = qualified ctx landmark_name in
   let landmark = new_landmark landmark_name loc in
   Exp.sequence (enter_landmark landmark)
   (Exp.let_ Nonrecursive
@@ -160,7 +163,7 @@ let rec not_a_constant expr = match expr.pexp_desc with
   | Pexp_coerce (e, _, _) | Pexp_poly (e, _) | Pexp_constraint (e, _) -> not_a_constant e
   | _ -> true
 
-let translate_value_bindings mapper auto vbs =
+let translate_value_bindings ctx mapper auto vbs =
   let vbs_arity_name =
     List.map
       (fun vb -> match vb, has_landmark_attribute ~auto vb.pvb_attributes with
@@ -192,22 +195,24 @@ let translate_value_bindings mapper auto vbs =
           |> default_mapper.value_binding mapper
         in
         if arity = [] then
-          { vb with pvb_expr = wrap_landmark name loc vb.pvb_expr}
+          { vb with pvb_expr = wrap_landmark ctx name loc vb.pvb_expr}
         else
           vb) vbs_arity_name
   in
   let new_vbs = filter_map (function
       | (_, Some (_ :: _ as arity, name, loc, _)) ->
         let ident = Exp.ident (mknoloc (Lident name)) in
-        let expr = eta_expand (wrap_landmark name loc) ident arity in
+        let expr = eta_expand (wrap_landmark ctx name loc) ident arity in
         Some (Vb.mk (Pat.var (mknoloc name)) expr)
       | _ -> None) vbs_arity_name
   in
   vbs, new_vbs
 
-
-let rec mapper auto =
+let rec mapper auto ctx =
   { default_mapper with
+    module_binding = (fun _ ({pmb_name; _} as binding) ->
+      default_mapper.module_binding (mapper auto (pmb_name.txt :: ctx)) binding
+    );
     structure = (fun _ l ->
       let auto = ref auto in
       List.map (function
@@ -218,9 +223,9 @@ let rec mapper auto =
          | None -> [pstr]
          | _ -> error pstr_loc (`Expecting_payload ["auto"; "auto-off"]))
        | { pstr_desc = Pstr_value (rec_flag, vbs); pstr_loc} ->
-         let mapper = mapper !auto in
+         let mapper = mapper !auto ctx in
          let vbs, new_vbs =
-           translate_value_bindings mapper !auto vbs
+           translate_value_bindings ctx mapper !auto vbs
          in
          let str = Str.value ~loc:pstr_loc rec_flag vbs in
          if new_vbs = [] then [str]
@@ -236,7 +241,7 @@ let rec mapper auto =
            in
            [str; include_wrapper]
        | sti ->
-         let mapper = mapper !auto in
+         let mapper = mapper !auto ctx in
          [mapper.structure_item mapper sti])
      l |> List.flatten);
 
@@ -245,7 +250,7 @@ let rec mapper auto =
         let expr = match expr with
           | ({pexp_desc = Pexp_let (rec_flag, vbs, body); _} as expr) ->
             let vbs, new_vbs =
-              translate_value_bindings deep_mapper false vbs
+              translate_value_bindings ctx deep_mapper false vbs
             in
             let body = deep_mapper.expr deep_mapper body in
             let body =
@@ -262,7 +267,7 @@ let rec mapper auto =
        | [Some landmark_name] ->
          { expr with pexp_attributes =
              remove_attribute "landmark" pexp_attributes }
-           |> wrap_landmark landmark_name pexp_loc
+           |> wrap_landmark ctx landmark_name pexp_loc
        | [ None ] -> error pexp_loc `Provide_a_name
        | [] -> expr
        | _ -> error pexp_loc `Too_many_attributes }
@@ -297,6 +302,7 @@ let has_disable l =
    let res = filter_map f l in
    !disable, res
 
+
 let toplevel_mapper auto =
   { default_mapper with
      signature = (fun _ -> default_mapper.signature default_mapper);
@@ -306,9 +312,10 @@ let toplevel_mapper auto =
        let disable, l = has_disable l in
        if disable then l else begin
          let first_loc = (List.hd l).pstr_loc in
-         let mapper = mapper auto in
+         let module_name = try Filename.chop_extension !Location.input_name with Invalid_argument _ -> !Location.input_name in
+         let mapper = mapper auto [String.capitalize_ascii module_name] in
          let l = mapper.structure mapper l in
-         let landmark_name = Printf.sprintf "load(%s)" !Location.input_name in
+         let landmark_name = Printf.sprintf "load(%s)" module_name in
          let lm =
            if auto then
              Some (new_landmark landmark_name first_loc)
