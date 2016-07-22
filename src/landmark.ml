@@ -269,11 +269,13 @@ let register_generic ?location kind name call_stack =
     | None ->
       let backtrace_slots = Printexc.backtrace_slots call_stack in
       match backtrace_slots with
-      | Some slots when Array.length slots >= 3 ->
-        let loc = Printexc.Slot.location slots.(2) in
+      | Some slots ->
+        String.concat " " (List.map (fun slot ->
+        let loc = Printexc.Slot.location slot in
         (match loc with
-         | Some loc -> loc.Printexc.filename
-         | None -> "internal")
+         | Some {Printexc.filename; line_number; _} ->
+           Printf.sprintf "%s:%d" filename line_number
+         | None -> "internal")) (Array.to_list slots))
       | _ -> "unknown"
   in
   let landmark = new_landmark name location kind in
@@ -283,15 +285,15 @@ let register_generic ?location kind name call_stack =
   landmark
 
 let register ?location name =
-  let call_stack = Printexc.get_callstack 3 in
+  let call_stack = Printexc.get_callstack 4 in
   register_generic ?location Graph.Normal name call_stack
 
 let register_counter name =
-  let call_stack = Printexc.get_callstack 3 in
+  let call_stack = Printexc.get_callstack 4 in
   register_generic Graph.Counter name call_stack
 
 let register_sampler name =
-  let call_stack = Printexc.get_callstack 3 in
+  let call_stack = Printexc.get_callstack 4 in
   register_generic Graph.Sampler name call_stack
 
 let current_node_ref = ref root_node

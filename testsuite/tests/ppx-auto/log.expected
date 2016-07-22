@@ -1,6 +1,7 @@
 in: lm1
 in: lm2
 in: lm3
+in: lm4_alpha
 in: no-auto
 in: mod_lm0
 in: mod_lm1
@@ -34,6 +35,7 @@ Test.incl_noauto2
 Test.lm1
 Test.lm2
 Test.lm3
+Test.lm4
 Test.local1
 Test.local2
 Test.local_module

@@ -167,18 +167,24 @@ let translate_value_bindings ctx mapper auto vbs =
   let vbs_arity_name =
     List.map
       (fun vb -> match vb, has_landmark_attribute ~auto vb.pvb_attributes with
-         | { pvb_expr; pvb_loc;
-             pvb_pat = {ppat_desc; _};
-             _}, Some attr when not_a_constant pvb_expr ->
-           (match ppat_desc, filter_map (get_string_payload "landmark") vb.pvb_attributes with
-             | _, [Some name]
-             | Ppat_var {txt = name; _}, []
-             | Ppat_var {txt = name; _}, [ None ] ->
-               let arity = arity pvb_expr in
-               if auto && arity = [] then
-                 (vb, None)
-               else
-                 (vb, Some (arity, name, pvb_loc, attr))
+         | { pvb_expr; pvb_loc; pvb_pat; _}, Some attr
+             when not_a_constant pvb_expr ->
+           let arity = arity pvb_expr in
+           let from_names arity fun_name landmark_name =
+             if auto && arity = [] then
+               (vb, None)
+             else
+               (vb, Some (arity, fun_name, landmark_name, pvb_loc, attr))
+           in
+           (match pvb_pat.ppat_desc,
+                  filter_map (get_string_payload "landmark") vb.pvb_attributes
+            with
+             | Ppat_var {txt = fun_name; _}, []
+             | Ppat_var {txt = fun_name; _}, [ None ] ->
+               from_names arity fun_name fun_name
+             | Ppat_var {txt = fun_name; _}, [ Some landmark_name ] ->
+               from_names arity fun_name landmark_name
+             | _, [Some name] -> from_names [] "" name
              | _, [] | _, [ _ ] ->
                if auto then (vb, None) else error pvb_loc `Provide_a_name
              | _ -> error pvb_loc `Too_many_attributes)
@@ -188,7 +194,7 @@ let translate_value_bindings ctx mapper auto vbs =
   let vbs = List.map (function
       | (vb, None) ->
         default_mapper.value_binding mapper vb
-      | {pvb_pat; pvb_loc; pvb_expr; _}, Some (arity, name, loc, attrs) ->
+      | {pvb_pat; pvb_loc; pvb_expr; _}, Some (arity, _, name, loc, attrs) ->
         (* Remove landmark attribute: *)
         let vb =
           Vb.mk ~attrs ~loc:pvb_loc pvb_pat pvb_expr
@@ -200,10 +206,10 @@ let translate_value_bindings ctx mapper auto vbs =
           vb) vbs_arity_name
   in
   let new_vbs = filter_map (function
-      | (_, Some (_ :: _ as arity, name, loc, _)) ->
-        let ident = Exp.ident (mknoloc (Lident name)) in
-        let expr = eta_expand (wrap_landmark ctx name loc) ident arity in
-        Some (Vb.mk (Pat.var (mknoloc name)) expr)
+      | (_, Some (_ :: _ as arity, fun_name, landmark_name, loc, _)) ->
+        let ident = Exp.ident (mknoloc (Lident fun_name)) in
+        let expr = eta_expand (wrap_landmark ctx landmark_name loc) ident arity in
+        Some (Vb.mk (Pat.var (mknoloc fun_name)) expr)
       | _ -> None) vbs_arity_name
   in
   vbs, new_vbs

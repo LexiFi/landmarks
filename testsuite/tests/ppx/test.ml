@@ -34,6 +34,7 @@ let print s =
 let lm1 () = print "lm1"
 let[@landmark] lm2 () = print "lm2"
 let lm3 () = print "lm3"
+let[@landmark "lm4_alpha"] lm4 () = print "lm4_alpha"
 
 [@@@landmark "auto-off"]
 
@@ -77,6 +78,8 @@ let local_module () =
   M.local2 ();
   M.local_noauto ()
 
+
+
 let () =
   let open Landmark in
 
@@ -88,12 +91,13 @@ let () =
 
     compute ();
 
-    let[@landmark "unit"] () = (lm1 ();
+    let[@landmark "unit"] unit2 = (lm1 ();
      lm2 ();
      lm3 ();
+     lm4 ();
      noauto ())[@landmark "not module"]
     in
-
+    ignore unit2;
     (let open M in
      mod_lm0 ();
      mod_lm1 ();
