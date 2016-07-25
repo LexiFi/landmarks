@@ -280,13 +280,15 @@ let output oc graph =
   in
 
   Printf.fprintf oc "\nAggregated table:\n----------------\n%!";
-  Printf.fprintf oc "%35s; %20s; %8s; %8s%s\n%!"
-    "Name" "Filename" "Calls" "Time" optional_headers;
+  let max_name_length = List.fold_left (fun acc {name; _} -> max acc (String.length name)) 0 normal_nodes in
+  let max_location_length = List.fold_left (fun acc {location; _} -> max acc (String.length location)) 0 normal_nodes in
+  Printf.fprintf oc "%*s; %*s; %8s; %8s%s\n%!"
+    max_name_length "Name" max_location_length "Filename" "Calls" "Time" optional_headers;
   let print_row ({name; location; calls;
                   time; allocated_bytes; sys_time; _}) =
     let time, unit = human time in
-    Printf.fprintf oc "%35s; %20s; %8d; %7.2f%1s%s\n%!"
-      name location calls time unit (optional_columns sys_time allocated_bytes)
+    Printf.fprintf oc "%*s; %*s; %8d; %7.2f%1s%s\n%!"
+      max_name_length name max_location_length location calls time unit (optional_columns sys_time allocated_bytes)
   in
   List.iter print_row normal_nodes;
   if sample_nodes <> [] then begin
