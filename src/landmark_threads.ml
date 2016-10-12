@@ -35,9 +35,9 @@ let unsafe_wrap lm f x =
   else
     f x
 
-let export () =
+let export ?label () =
   if check () then
-    export ()
+    export ?label ()
   else
     error "export"
 
@@ -47,9 +47,9 @@ let reset () =
   else
     error "reset"
 
-let export_and_reset () =
+let export_and_reset ?label () =
   if check () then
-    export_and_reset ()
+    export_and_reset ?label ()
   else
     error "export_and_reset"
 

@@ -72,8 +72,8 @@ val profiling: unit -> bool
 type profile_output =
   | Silent (** disables the automatic output of profiling results
     when the program ends. *)
-  | Temporary (** writes the results in a temporary files and prints its
-    path on stdout. *)
+  | Temporary of string option (** writes the results in a temporary files
+                                   and prints its path on stderr. *)
   | Channel of out_channel (** writes in the results in out_channel. *)
 
 (** The output format for the results.*)
@@ -123,10 +123,10 @@ val stop_profiling: unit -> unit
 val reset: unit -> unit
 (** Reset the profiling information gathered by the current process. *)
 
-val export: unit -> Landmark_graph.graph
+val export: ?label:string -> unit -> Landmark_graph.graph
 (** Export the profiling information of the current process. *)
 
-val export_and_reset: unit -> Landmark_graph.graph
+val export_and_reset: ?label:string -> unit -> Landmark_graph.graph
 (** Export the profiling information of the current process; then reset
     internal state. *)
 

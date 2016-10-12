@@ -195,7 +195,7 @@ and dummy_node = {
 
 type profile_output =
   | Silent
-  | Temporary
+  | Temporary of string option
   | Channel of out_channel
 
 type profile_format =
@@ -563,7 +563,7 @@ let array_list_map f l =
     let res = Array.make size (f hd) in
     List.iteri (fun k x -> res.(k+1) <- f x) tl; res
 
-let export () =
+let export ?(label = "") () =
   let export_node {landmark; id; calls; floats; sons; distrib; _} =
     let {id = landmark_id; name; location; kind; _} = landmark in
     let {time; allocated_bytes; sys_time; _} = floats in
@@ -579,13 +579,13 @@ let export () =
   end;
   let all_nodes = List.rev !allocated_nodes in
   let nodes = array_list_map export_node all_nodes in
-  {Graph.nodes}
+  {Graph.nodes; label}
 
-let export_and_reset () =
+let export_and_reset ?label () =
   let profiling = !profiling_ref in
   if profiling then
     stop_profiling ();
-  let res = export () in
+  let res = export ?label () in
   reset ();
   if profiling then
     start_profiling ();
@@ -654,16 +654,21 @@ let exit_hook () =
     Printf.eprintf "[Profiling] exit_hook\n%!";
   if !profiling_ref then begin
     stop_profiling ();
-    let cg = export () in
+    let label =
+      String.concat " " (Array.to_list Sys.argv)
+    in
+    let cg = export ~label () in
     match !profile_output, !profile_format with
     | Silent, _ -> ()
     | Channel out, Textual ->
       Graph.output out cg
     | Channel out, JSON ->
       Graph.output_json out cg
-    | Temporary, format ->
-      let tmp_file, oc = Filename.open_temp_file "profile_at_exit" ".tmp" in
-      Printf.printf
+    | Temporary temp_dir, format ->
+      let tmp_file, oc =
+        Filename.open_temp_file ?temp_dir "profile_at_exit" ".tmp"
+      in
+      Printf.eprintf
         "[Profiling] Dumping profiling information in file '%s'.\n" tmp_file;
       flush stdout;
       (match format with
@@ -704,10 +709,20 @@ let parse_env_options s =
     | [ "format"; unknown ] -> invalid_for "format" unknown
     | [ "output"; "stderr" ] -> output := Channel stderr
     | [ "output"; "stdout" ] -> output := Channel stdout
-    | [ "output"; "temporary" ] -> output := Temporary
+    | [ "output"; temporary ] when Landmark_misc.starts_with ~prefix:"temporary" temporary ->
+      begin match split_trim ':' temporary with
+        | ["temporary"] -> output := Temporary None
+        | ["temporary"; dir_spec] ->
+          begin match split_trim '"' dir_spec with
+            | [""; dir; ""] -> output := Temporary (Some dir)
+            | [dir] -> output := Temporary (Some dir)
+            | _ -> invalid_for "output" temporary
+          end
+        | _ -> invalid_for "output" temporary
+      end
     | [ "output"; file_spec ] ->
       (match split_trim '"' file_spec with
-       | [""; file; ""] ->
+       | [""; file; ""] | [file] ->
          (try
             output := Channel (open_out file)
           with _ -> warning (sprintf "Unable to open '%s'" file))
@@ -724,7 +739,7 @@ let parse_env_options s =
     | "auto" :: _  -> expect_no_argument "auto"
     | "remove" :: _ -> expect_no_argument "remove"
     | "threads" :: _  -> expect_no_argument "threads"
-    | [""] -> ()
+    | [""] | ["on"] | ["1"] -> ()
     | opt :: _ :: _ -> warning (Printf.sprintf "To many '=' after '%s'" opt)
     | unknown :: _ -> warning (sprintf "Unknown option '%s'" unknown)
  in

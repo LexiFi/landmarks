@@ -218,9 +218,11 @@ This variable is parsed as a comma-separated list of items of the form
     representation or json encoding of the callgraph.
 
  * `output` with possible argument: `stderr` (default), `stdout`, `temporary`,
-   `"<file>"` (where `<file>` is the path a file). It tells where to output the
+   `<file>` (where `<file>` is the path a file). It tells where to output the
     results of the profiling. With `temporary` it will print it in a temporary
-    file (the name of this file will be printed on the console).
+    file (the name of this file will be printed on the standard error). You may
+    also specify `temporary:<directory>` to specify the directory where the files
+    are generated.
 
  * `auto` with no argument. This option is only read by the ppx extension. It
     turns on the automatic instrumentation by default (behaves as if all modules
@@ -232,6 +234,8 @@ This variable is parsed as a comma-separated list of items of the form
  * `time` with no argument. Also collect `Sys.time` timestamps during profiling.
 
  * `off` with no argument. Disable profiling.
+
+ * `on` with no argument. Enable profiling (may be omitted if any other option but `off` is provided).
 
  * `allocation` with no argument. Also collect `Gc.allocated_byte` data.
 
@@ -308,3 +312,5 @@ This 'Landmarks' package is licensed by LexiFi under the terms of the
 MIT license.
 
 Contact: marc.lasson@lexifi.com
+
+[![Build Status](https://travis-ci.org/LexiFi/landmarks.svg?branch=master)](https://travis-ci.org/LexiFi/landmarks)

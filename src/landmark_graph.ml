@@ -30,18 +30,19 @@ type node = {
 
 type graph = {
   nodes : node array;
+  label: string;
 }
 
-let graph_of_nodes nodes =
-  { nodes = Array.of_list nodes }
+let graph_of_nodes ?(label = "") nodes =
+  { nodes = Array.of_list nodes; label }
 
-let sons {nodes} node =
+let sons {nodes; _} node =
   List.map (fun k -> nodes.(k)) node.sons
 
-let nodes {nodes} =
+let nodes {nodes; _} =
   Array.to_list nodes
 
-let root {nodes} =
+let root {nodes; _} =
   nodes.(0)
 
 module SetNode = Set.Make(struct
@@ -116,7 +117,7 @@ let shallow_ancestor graph =
 let total_number_of_calls graph =
   List.fold_left (fun acc {calls; _ } -> acc + calls) 0 (nodes graph)
 
-let aggregate_landmarks {nodes} =
+let aggregate_landmarks {nodes; label} =
   let group_nodes =
     group_proj (fun ({landmark_id; _} : node) -> landmark_id) (Array.to_list nodes)
   in
@@ -143,7 +144,7 @@ let aggregate_landmarks {nodes} =
       { hd with id; time; calls; sys_time; allocated_bytes; sons}
   in
   let nodes = Array.of_list (List.map aggregate_nodes group_nodes) in
-  { nodes }
+  { nodes; label = if label = "" then "aggretated" else label ^ " (aggregated)" }
 
 let intensity ?(proj = fun {time;_} -> time) graph =
   let sa = shallow_ancestor graph in
@@ -209,7 +210,7 @@ let label graph =
     else name
 
 let output oc graph =
-  Printf.fprintf oc "Call graph:\n-----------\n%!";
+  Printf.fprintf oc "Call graph%s:\n-----------%s\n%!" (if graph.label = "" then "" else " '"^graph.label^"'") (if graph.label = "" then "" else String.make ((String.length graph.label) + 3) '-');
   let label = label graph in
   let color = color graph in
   let human x =
@@ -386,7 +387,8 @@ let json_of_node
         "allocated_bytes", Float allocated_bytes;
         "distrib", List (List.map (fun x -> Float x) (Array.to_list distrib)) ]
 
-let json_of_graphs {nodes} =
-  Map ["nodes", ListClosure (Array.length nodes, fun k -> json_of_node nodes.(k))]
+let json_of_graphs {nodes; label} =
+  Map ["nodes", ListClosure (Array.length nodes, fun k -> json_of_node nodes.(k));
+       "label", String label]
 
 let output_json oc graph = JSON.output oc (json_of_graphs graph)

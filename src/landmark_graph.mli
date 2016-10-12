@@ -36,7 +36,7 @@ type node = {
 (** {3 Callgraph } *)
 
 (** The type of callgraphs. *)
-type graph = { nodes : node array }
+type graph = { nodes : node array; label : string }
 
 val nodes: graph -> node list
 (** Returns all nodes of a graph. *)
@@ -51,7 +51,7 @@ val sons: graph -> node -> node list
 val label: graph -> node -> string
 (** Returns a fully qualified name if it is needed. *)
 
-val graph_of_nodes: node list -> graph
+val graph_of_nodes: ?label:string -> node list -> graph
 (** Build a graph from a list of nodes. *)
 
 

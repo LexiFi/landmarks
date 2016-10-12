@@ -71,3 +71,7 @@ let split c s =
   do () done;
   List.rev !res
 
+let starts_with ~prefix x =
+  let n = String.length prefix in
+  String.length x >= n && prefix = (String.sub x 0 n)
+
