@@ -142,11 +142,8 @@ let rec arity {pexp_desc; _} =
   | _ -> []
 
 let eta_expand f t n =
-  let k = ref 0 in
   let vars =
-    List.map (fun x -> match x with
-        | Nolabel -> incr k; (x, Printf.sprintf "x%d" !k)
-        | Optional s | Labelled s -> (x, s)) n
+    List.mapi (fun k x -> (x, Printf.sprintf "__x%d" k)) n
   in
   let rec app acc = function
     | [] -> acc
