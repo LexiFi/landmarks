@@ -160,6 +160,12 @@ let rec not_a_constant expr = match expr.pexp_desc with
   | Pexp_coerce (e, _, _) | Pexp_poly (e, _) | Pexp_constraint (e, _) -> not_a_constant e
   | _ -> true
 
+let rec name_of_pattern pat =
+  match pat.ppat_desc with
+  | Ppat_var {txt; _} -> Some txt
+  | Ppat_constraint (pat, _) -> name_of_pattern pat
+  | _ -> None
+
 let translate_value_bindings ctx mapper auto vbs =
   let vbs_arity_name =
     List.map
@@ -173,13 +179,13 @@ let translate_value_bindings ctx mapper auto vbs =
              else
                (vb, Some (arity, fun_name, landmark_name, pvb_loc, attr))
            in
-           (match pvb_pat.ppat_desc,
+           (match name_of_pattern pvb_pat,
                   filter_map (get_string_payload "landmark") vb.pvb_attributes
             with
-             | Ppat_var {txt = fun_name; _}, []
-             | Ppat_var {txt = fun_name; _}, [ None ] ->
+             | Some fun_name, []
+             | Some fun_name, [ None ] ->
                from_names arity fun_name fun_name
-             | Ppat_var {txt = fun_name; _}, [ Some landmark_name ] ->
+             | Some fun_name, [ Some landmark_name ] ->
                from_names arity fun_name landmark_name
              | _, [Some name] -> from_names [] "" name
              | _, [] | _, [ _ ] ->
