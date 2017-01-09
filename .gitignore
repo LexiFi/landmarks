@@ -1,0 +1,8 @@
+*.err
+*.out
+*.so
+*.o
+*.a
+*.cm*
+*.byte
+*.batch
