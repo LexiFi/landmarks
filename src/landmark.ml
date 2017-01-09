@@ -704,6 +704,8 @@ let parse_env_options s =
     in
     match split_trim '=' s with
     | [] -> ()
+    | ["debug"] -> debug := true
+    | "debug" :: _  -> expect_no_argument "debug"
     | [ "format"; "textual" ] -> format := Textual;
     | [ "format"; "json" ] -> format := JSON;
     | [ "format"; unknown ] -> invalid_for "format" unknown
