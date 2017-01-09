@@ -1,5 +1,5 @@
 PACKAGE=landmarks
-VERSION=1.0
+VERSION=1.1
 
 .PHONY: landmarks tests clean ppx all tools check_ocamlfind doc
 

@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name: "landmarks"
-version: "1.0"
+version: "1.1"
 maintainer: "Marc Lasson <marc.lasson@lexifi.com>"
 authors: "Marc Lasson <marc.lasson@lexifi.com>"
 homepage: "http://lexifi.github.io/landmarks/"
