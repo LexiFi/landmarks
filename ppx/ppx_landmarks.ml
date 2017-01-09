@@ -139,6 +139,7 @@ let rec arity {pexp_desc; _} =
       (fun acc {pc_rhs; _} -> max_list (arity pc_rhs) acc)
       [] cases)
   | Pexp_newtype (_, e) -> arity e
+  | Pexp_constraint (e, _) -> arity e
   | _ -> []
 
 let eta_expand f t n =
