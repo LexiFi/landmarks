@@ -198,7 +198,7 @@ when the arity `n` of `f` is obtained by counting the shallow occurrences
 of `fun ... ->` and `function ... -> ` in `body`. Please note that when using
 this annotation with let-rec bindings, only entry-point calls will be recorded.
 For instance, in the following piece of code
-```
+```ocaml
   let () = 
     let[@landmark] rec even n = (n = 0) || odd (n - 1)
     and[@landmark] odd n = (n = 1) || n > 0 && even (n - 1)
