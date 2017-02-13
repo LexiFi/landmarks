@@ -195,7 +195,18 @@ let f x1 ... xn =
   r
 ```
 when the arity `n` of `f` is obtained by counting the shallow occurrences
-of `fun ... ->` and `function ... -> ` in `body`.
+of `fun ... ->` and `function ... -> ` in `body`. Please note that when using
+this annotation with let-rec bindings, only entry-point calls will be recorded.
+For instance, in the following piece of code
+```
+  let () = 
+    let[@landmark] rec even n = (n = 0) || odd (n - 1)
+    and[@landmark] odd n = (n = 1) || n > 0 && even (n - 1)
+    in Printf.printf "'six is even' is %b\n" (even 6)
+```
+the landmark associated with "even" will be traversed exactly once (and not three 
+times !) whereas the control flow will not pass through the landmark associated 
+with "odd". 
 
 ### Automatic instrumentation
 
