@@ -240,10 +240,10 @@ This variable is parsed as a comma-separated list of items of the form
       representation or json encoding of the callgraph.
 
     * `output` with possible argument: `stderr` (default), `stdout`, `temporary`,
-      `<file>` (where `<file>` is the path a file). It tells where to output the
+      `<file>` (where `<file>` is the path of a file). It tells where to output the
       results of the profiling. With `temporary` it will print it in a temporary
       file (the name of this file will be printed on the standard error). You may
-      also specify `temporary:<directory>` to specify the directory where the files
+      also use `temporary:<directory>` to specify the directory where the files
       are generated.
 
     * `debug` with no argument. Activates a verbose mode that outputs traces on
