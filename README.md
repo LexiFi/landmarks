@@ -211,47 +211,51 @@ with "odd".
 ### Automatic instrumentation
 
 The structure annotations `[@@@landmark "auto"]` and `[@@@landmark "auto-off"]`
-activates or deactivates the automatic instrumentation of top-level functions
+activate or deactivate the automatic instrumentation of top-level functions
 in a module. In automatic mode, all functions declarations are implicitly
-annotated.
+annotated. Automatic instrumentation can be enabled/disabled for all files via
+option `auto` in `OCAML_LANDMARKS`, as detailed below.
 
 The OCAML_LANDMARKS environment variable
 ----------------------------------------
 
-When the landmarks module is loaded by an instrumented program and when the ppx
-rewritter is executed, the environment variable `OCAML_LANDMARKS` is read. If
-it exists the function `start_profiling` is called by the landmark module.
+The environment variable `OCAML_LANDMARKS` is read at two different stages:
+when the ppx rewriter is executed, and when the landmarks module is loaded by
+an instrumented program.
 This variable is parsed as a comma-separated list of items of the form
-`option=argument` or `option` where `option` is:
+`option=argument` or `option`, where `option` is:
 
- * `format` with possible arguments: `textual` (default) or `json`. It controls
-    the output format of the profiling which is either a console friendly
-    representation or json encoding of the callgraph.
+* During the ppx rewriter stage (at compilation time):
 
- * `output` with possible argument: `stderr` (default), `stdout`, `temporary`,
-   `<file>` (where `<file>` is the path a file). It tells where to output the
-    results of the profiling. With `temporary` it will print it in a temporary
-    file (the name of this file will be printed on the standard error). You may
-    also specify `temporary:<directory>` to specify the directory where the files
-    are generated.
+    * `auto` (no arguments): turns on the automatic instrumentation by default
+      (behaves as if each module starts with annotation `[@@@landmark "auto"]`).
 
- * `auto` with no argument. This option is only read by the ppx extension. It
-    turns on the automatic instrumentation by default (behaves as if all modules
-    starts with the annotation `[@@@landmark "auto"]`).
+    * `threads` (no arguments): tells the ppx extension to use the
+      `Landmark_threads` module instead of the module `Landmark`.
 
- * `debug` with no argument. Activates a verbose mode that outputs traces on
-   stderr each time the landmarks primitives are called.
+* When loading an instrumented program (at runtime):
 
- * `time` with no argument. Also collect `Sys.time` timestamps during profiling.
+    * `format` with possible arguments: `textual` (default) or `json`. It controls
+      the output format of the profiling which is either a console friendly
+      representation or json encoding of the callgraph.
 
- * `off` with no argument. Disable profiling.
+    * `output` with possible argument: `stderr` (default), `stdout`, `temporary`,
+      `<file>` (where `<file>` is the path a file). It tells where to output the
+      results of the profiling. With `temporary` it will print it in a temporary
+      file (the name of this file will be printed on the standard error). You may
+      also specify `temporary:<directory>` to specify the directory where the files
+      are generated.
 
- * `on` with no argument. Enable profiling (may be omitted if any other option but `off` is provided).
+    * `debug` with no argument. Activates a verbose mode that outputs traces on
+      stderr each time the landmarks primitives are called.
 
- * `allocation` with no argument. Also collect `Gc.allocated_byte` data.
+    * `time` with no argument. Also collect `Sys.time` timestamps during profiling.
 
- * `threads` with no argument. Tells the ppx extension to use the
-   `Landmark_threads` module instead of the module `Landmark`.
+    * `off` with no argument. Disable profiling.
+
+    * `on` with no argument. Enable profiling (default; may be omitted).
+
+    * `allocation` with no argument. Also collect `Gc.allocated_byte` data.
 
 
 Browsing the JSON export using the Web Viewer
