@@ -153,7 +153,7 @@ module Graph = struct
     distrib: float array;
   } [@@js] [@@js.verbatim_names]
 
-  type graph = Landmark_graph.graph = {nodes: node array} [@@js]
+  type graph = Landmark_graph.graph = {nodes: node array; label: string} [@@js]
 
   let graph_of_string s =
     try graph_of_js (JSON.parse s) with Ojs_exn.Error _ -> error "Invalid input format."
