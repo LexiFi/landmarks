@@ -306,8 +306,7 @@ let toplevel_mapper auto =
        if disable then l else begin
          let first_loc = (List.hd l).pstr_loc in
          let module_name = try Filename.chop_extension !Location.input_name with Invalid_argument _ -> !Location.input_name in
-         let mapper = mapper auto [String.capitalize module_name][@@ocaml.warning "-3"] in
-         (* Disable the deprecated warning to allow compiling on 4.02. *)
+         let mapper = mapper auto [String.capitalize module_name] in
          let l = mapper.structure mapper l in
          let landmark_name = Printf.sprintf "load(%s)" module_name in
          let lm =

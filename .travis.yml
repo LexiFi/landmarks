@@ -8,7 +8,6 @@ env:
   - OCAML_VERSION=4.04 PACKAGE=landmarks TESTS=false
   - OCAML_VERSION=4.05 PACKAGE=landmarks TESTS=false
   - OCAML_VERSION=4.06 PACKAGE=landmarks TESTS=true
-  - OCAML_VERSION=4.06 PACKAGE=landmarks-viewer
 os:
   - linux
   - osx
