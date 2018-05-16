@@ -10,6 +10,7 @@
 
 (install 
   ((section lib)
+   (package landmarks-viewer)
    (files ((landmarks_viewer.bc.js as landmarks_viewer.js)
            (landmarks_viewer.html as landmarks_viewer.html)))))
 
