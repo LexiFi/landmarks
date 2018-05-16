@@ -313,3 +313,5 @@ MIT license.
 Contact: marc.lasson@lexifi.com
 
 [![Build Status](https://travis-ci.org/LexiFi/landmarks.svg?branch=master)](https://travis-ci.org/LexiFi/landmarks)
+[![Build Status](https://ci.appveyor.com/api/projects/status/github/LexiFi/landmarks)](https://ci.appveyor.com/project/mlasson/landmarks)
+
