@@ -1,0 +1,8 @@
+(library
+ ((name landmark_threads)
+  (public_name landmarks.threads)
+  (flags (:standard -w +A-30-42-41-48-40-4 -safe-string -strict-sequence -g))
+  (libraries (threads landmark))
+))
+
+(jbuild_version 1)

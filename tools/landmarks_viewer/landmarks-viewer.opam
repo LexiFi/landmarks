@@ -1,0 +1,19 @@
+opam-version: "1.2"
+name: "landmarks-viewer"
+version: "1.0"
+maintainer: "Marc Lasson <marc.lasson@lexifi.com>"
+authors: "Marc Lasson <marc.lasson@lexifi.com>"
+homepage: "http://lexifi.github.io/landmarks/"
+bug-reports: "https://github.com/LexiFi/landmarks/issues"
+license: "MIT"
+dev-repo: "https://github.com/LexiFi/landmarks.git"
+build: [
+  ["jbuilder" "build" "--only-packages" name "-j" jobs]
+]
+depends: [
+  "gen_js_api"
+  "js_of_ocaml"
+  "ppxfind"
+  "jbuilder" {build  & >= "1.0+beta18.1"}
+]
+available: ocaml-version >= "4.02.0"

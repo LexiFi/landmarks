@@ -1,8 +1,0 @@
-
-#     val ok : string * int = ("string", 1)
-#       Characters 79-80:
-    in test "string", test 1;;
-                           ^
-Error: This expression has type int but an expression was expected of type
-         string
-# 

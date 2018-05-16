@@ -1,0 +1,7 @@
+(library
+ ((name js_core)
+  (libraries (gen_js_api))
+  (preprocess (action (run ppxfind -legacy gen_js_api.ppx --as-pp ${<})))
+  (modes (byte))))
+
+(jbuild_version 1)

@@ -1,6 +1,10 @@
-upcoming version
-----------------
+version 1.2, 20 may 2018
+------------------------
 * improved documentation (issue #8, pull-request #11, contributed by Andre Maroneze)
+* migrate the build to dune/jbuilder
+* support for OCAML 4.02 (issue #6)
+* landmarks-viewer is now a separate opam package
+* fix issue #13 (Pierre Boutiller & Nils Becker)
 
 
 version 1.1, 9 Jan 2017

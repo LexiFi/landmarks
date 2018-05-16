@@ -1,0 +1,48 @@
+in: lm1
+in: lm2
+in: lm3
+in: lm4_alpha
+in: no-auto
+in: mod_lm0
+in: mod_lm1
+in: mod_lm2
+in: mod_lm3
+in: mod_no-auto
+in: incl_lm0
+in: incl_lm1
+in: incl_lm2
+in: incl_lm3
+in: incl_no-auto1
+in: incl_no-auto2
+in: local1
+in: local2
+in: local_noauto
+
+Landmark reached:
+ROOT
+Test.M.mod_lm0
+Test.M.mod_lm1
+Test.M.mod_lm2
+Test.M.mod_lm3
+Test.fib
+Test.incl_lm0
+Test.incl_lm1
+Test.incl_lm2
+Test.incl_lm3
+Test.lm1
+Test.lm2
+Test.lm3
+Test.lm4_alpha
+Test.local1
+Test.local2
+Test.main
+Test.module
+Test.module
+Test.next_prime
+Test.not module
+Test.odd
+Test.odd0
+Test.prime
+Test.print
+Test.result
+Test.unit

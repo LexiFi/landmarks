@@ -5,7 +5,7 @@
 open Js_core
 
 let error s =
-  alert ("Error: "^s);
+  Js_core.alert ("Error: "^s);
   failwith s
 
 let document = Window.document window
@@ -132,14 +132,14 @@ module Graph = struct
 
   type id = int [@@js]
 
-  type kind = Landmark_graph.kind =
+  type kind = Landmark.Graph.kind =
    | Normal [@js "normal"]
    | Root [@js "root"]
    | Counter  [@js "counter"]
    | Sampler [@js "sampler"]
    [@@js] [@@js.enum]
 
-  type node = Landmark_graph.node = {
+  type node = Landmark.Graph.node = {
     id: int;
     kind : kind;
     landmark_id : int;
@@ -153,10 +153,11 @@ module Graph = struct
     distrib: float array;
   } [@@js] [@@js.verbatim_names]
 
-  type graph = Landmark_graph.graph = {nodes: node array; label: string} [@@js]
+  type graph = Landmark.Graph.graph = {nodes: node array; label: string} [@@js]
 
   let graph_of_string s =
     try graph_of_js (JSON.parse s) with Ojs_exn.Error _ -> error "Invalid input format."
+
   let string_of_graph s = JSON.stringify (graph_to_js s)
 
   let has_sys_time {nodes} =
@@ -166,11 +167,11 @@ module Graph = struct
     Array.exists (fun {allocated_bytes; _} -> allocated_bytes <> 0.0) nodes
 
   let aggregated_table graph =
-    let graph = Landmark_graph.aggregate_landmarks graph in
+    let graph = Landmark.Graph.aggregate_landmarks graph in
     let all_nodes =
       List.sort
         (fun {time = time1; _} {time = time2; _} -> compare time2 time1)
-        (Landmark_graph.nodes graph)
+        (Landmark.Graph.nodes graph)
     in
     let text x = Document.create_text_node document x in
     let profile_with_sys_time =
@@ -251,7 +252,7 @@ module TreeView = struct
         error "callgraph: no root"
       else nodes.(0)
     in
-    let intensity = Landmark_graph.intensity ~proj graph in
+    let intensity = Landmark.Graph.intensity ~proj graph in
     let color node =
       let rgb = Printf.sprintf "rgb(%d,%d,%d)" in
       let open Graph in
@@ -314,8 +315,8 @@ module TreeView = struct
        | _ -> ());
       span
     in
-    let reference = Landmark_graph.shallow_ancestor graph in
-    let depth = Landmark_graph.depth graph in
+    let reference = Landmark.Graph.shallow_ancestor graph in
+    let depth = Landmark.Graph.depth graph in
     let expand node =
       let reference = reference node in
       let open Graph in

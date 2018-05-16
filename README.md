@@ -28,34 +28,41 @@ For more information, you may browse the [API](http://LexiFi.github.io/landmarks
 Installation
 ------------
 
-- Requirements:
-   * findlib (aka ocamlfind)
-
-- Optional requirements (only for building the viewer):
-   * gen_js_api
-   * js_of_ocaml
-
 - With opam:
 ```
 opam install landmarks
 ```
-
-- With opam (development version):
+and 
 ```
-opam pin add landmarks https://github.com/LexiFi/landmarks.git
+opam install landmarks-viewer
 ```
+for installing the landmarks viewer. 
 
 - Manually:
 ```
 git clone https://github.com/LexiFi/landmarks.git
 cd landmarks
-make
-make install
+jbuilder build @install
 ```
 and `make uninstall` to remove installed files.
 
-Usage
------
+
+Usage with dune/jbuilder
+------------------------
+
+Simply use the library `landmarks` and the preprocessor `landmarks.ppx` to
+benchmark your executables and libraries. For instance, the following `jbuild`
+file builds the executable `test` using the `landmarks` library and its PPX. 
+```
+(executable
+  ((name test)
+   (libraries (landmarks))
+   (preprocess (pps (landmarks.ppx)))
+  ))
+```
+
+Usage with ocamlfind
+--------------------
 
 * Compiling and linking:
 ```
@@ -73,11 +80,12 @@ bytecode.
 
 * Launching the viewer (when available):
 ```
-x-www-browser $(ocamlfind query landmarks)/landmarks_viewer.html
+x-www-browser "$(ocamlfind query landmarks-viewer)/landmarks_viewer.html"
 ```
 You may want to replace "x-www-browser" with your system's way to
 invoke your favorite web-browser from the command line. It has
 to support javascript.
+
 
 
 Benchmarking manually
@@ -276,25 +284,6 @@ in the landmarks-threads.cm(x)a archive) that prevents non thread-safe
 functions to execute in all threads but the one which started the
 profiling.
 
-
-Instrumenting [js_of_ocaml](http://ocsigen.org/js_of_ocaml/) programs
----------------------------------------------------------------------
-
-The package contains a bytecode archive `landmarks-noc.cma` that may
-be used to build js_of_ocaml programs. This archive contains everything
-except the implementation of the `clock()` function that you
-therefore need to provide in your javascript runtime.
-
-
-Examples
---------
-
-The example directory contains instructions to instrument some caml projects:
-the ocaml compiler, the coq proof system and omake. These scripts are very
-fragile (as they need to patch the build systems to add the ppx-extension
-and to link with the right archives). You will need to adapt them if you want
-to benchmark other versions.
-
 Instrumenting with OCAMLPARAM
 -----------------------------
 
@@ -303,14 +292,9 @@ experimental feature, by setting the environment variable OCAMLPARAM with
 ```
 I=$(ocamlfind query landmarks),cma=landmarks.cma,cmxa=landmarks.cmxa,ppx=$(ocamlfind query landmarks)/ppx_landmarks,_"
 ```
-However, the current implementation of OCAMLPARAM does not allow to easily
-benchmark projects that build archives, shared libraries and packages. This
-[pull-request](https://github.com/ocaml/ocaml/pull/591) propose some improvements
-of OCAMLPARAM to circumvent these problems.
 
-
-Remarks
--------
+Known Issue
+-----------
 
 The annotation on expressions may temper with polymorphism (this is not
 the case for the let-binding annotation). For instance, the following

@@ -6,7 +6,7 @@ external clock: unit -> Int64.t = "caml_highres_clock"
 
 exception LandmarkFailure of string
 
-module Graph = Landmark_graph
+module Graph = Graph
 
 module SparseArray = struct
   type 'a t = {
@@ -689,7 +689,7 @@ let parse_env_options s =
   let recursive = ref false in
   let allocated_bytes = ref false in
   let split_trim c s =
-    List.map String.trim (Landmark_misc.split c s)
+    List.map String.trim (Misc.split c s)
   in
   let warning s =
     eprintf "[LANDMARKS] %s.\n%!" s
@@ -711,7 +711,7 @@ let parse_env_options s =
     | [ "format"; unknown ] -> invalid_for "format" unknown
     | [ "output"; "stderr" ] -> output := Channel stderr
     | [ "output"; "stdout" ] -> output := Channel stdout
-    | [ "output"; temporary ] when Landmark_misc.starts_with ~prefix:"temporary" temporary ->
+    | [ "output"; temporary ] when Misc.starts_with ~prefix:"temporary" temporary ->
       begin match split_trim ':' temporary with
         | ["temporary"] -> output := Temporary None
         | ["temporary"; dir_spec] ->

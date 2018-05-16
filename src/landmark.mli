@@ -2,6 +2,8 @@
 (* See the attached LICENSE file.                                    *)
 (* Copyright 2016 by LexiFi.                                         *)
 
+module Graph = Graph
+
 (** The main module *)
 
 external clock: unit -> Int64.t = "caml_highres_clock"
@@ -123,14 +125,14 @@ val stop_profiling: unit -> unit
 val reset: unit -> unit
 (** Reset the profiling information gathered by the current process. *)
 
-val export: ?label:string -> unit -> Landmark_graph.graph
+val export: ?label:string -> unit -> Graph.graph
 (** Export the profiling information of the current process. *)
 
-val export_and_reset: ?label:string -> unit -> Landmark_graph.graph
+val export_and_reset: ?label:string -> unit -> Graph.graph
 (** Export the profiling information of the current process; then reset
     internal state. *)
 
-val merge: Landmark_graph.graph -> unit
+val merge: Graph.graph -> unit
 (** Aggregate the profiling information (exported by another process) to the
     current one. This should is used by the master process to merge exported
     profiles of slaves. *)

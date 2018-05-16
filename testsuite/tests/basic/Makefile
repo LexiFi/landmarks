@@ -1,2 +1,0 @@
-EXTRAS=
-include ../../Makefile.common

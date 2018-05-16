@@ -1,0 +1,17 @@
+(rule (copy ../ppx/test.ml test.ml))
+
+(executable 
+  ((name test)
+   (libraries (landmark))
+   (preprocess (pps (ppx_landmarks --auto --remove)))
+  ))
+
+(rule
+ (with-stdout-to test.out
+ (ignore-stderr
+    (setenv "OCAML_LANDMARKS" "on"
+     (run ./test.exe)))))
+
+(alias
+ ((name runtest)
+  (action (diff test.out.expected test.out))))

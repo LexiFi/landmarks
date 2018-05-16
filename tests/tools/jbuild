@@ -1,0 +1,5 @@
+(executable
+ ((name       redirect_stdin)
+  (libraries  (unix))))
+
+(jbuild_version 1)

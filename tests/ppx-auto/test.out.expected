@@ -1,0 +1,48 @@
+in: lm1
+in: lm2
+in: lm3
+in: lm4_alpha
+in: no-auto
+in: mod_lm0
+in: mod_lm1
+in: mod_lm2
+in: mod_lm3
+in: mod_no-auto
+in: incl_lm0
+in: incl_lm1
+in: incl_lm2
+in: incl_lm3
+in: incl_no-auto1
+in: incl_no-auto2
+in: local1
+in: local2
+in: local_noauto
+
+Landmark reached:
+ROOT
+Tests/ppx-auto/test.M.mod_lm0
+Tests/ppx-auto/test.M.mod_lm1
+Tests/ppx-auto/test.M.mod_lm2
+Tests/ppx-auto/test.M.mod_lm3
+Tests/ppx-auto/test.M.mod_noauto
+Tests/ppx-auto/test.fib
+Tests/ppx-auto/test.incl_lm0
+Tests/ppx-auto/test.incl_lm1
+Tests/ppx-auto/test.incl_lm2
+Tests/ppx-auto/test.incl_lm3
+Tests/ppx-auto/test.incl_noauto1
+Tests/ppx-auto/test.incl_noauto2
+Tests/ppx-auto/test.lm1
+Tests/ppx-auto/test.lm2
+Tests/ppx-auto/test.lm3
+Tests/ppx-auto/test.lm4
+Tests/ppx-auto/test.local1
+Tests/ppx-auto/test.local2
+Tests/ppx-auto/test.local_module
+Tests/ppx-auto/test.local_noauto
+Tests/ppx-auto/test.next_prime
+Tests/ppx-auto/test.noauto
+Tests/ppx-auto/test.odd
+Tests/ppx-auto/test.prime
+Tests/ppx-auto/test.print
+load(tests/ppx-auto/test)
