@@ -247,6 +247,8 @@ This variable is parsed as a comma-separated list of items of the form
       the output format of the profiling which is either a console friendly
       representation or json encoding of the callgraph.
 
+    * `threshold` with a number between 0.0 and 100.0 as argument (default: 1.0). If the threshold is not zero the textual output will hide nodes in the callgraph below this threshold (in percent of time of their parent). This option is meaningless for other formats. 
+
     * `output` with possible argument: `stderr` (default), `stdout`, `temporary`,
       `<file>` (where `<file>` is the path of a file). It tells where to output the
       results of the profiling. With `temporary` it will print it in a temporary

@@ -200,7 +200,7 @@ type profile_output =
 
 type profile_format =
   | JSON
-  | Textual
+  | Textual of {threshold : float}
 
 let profiling_ref = ref false
 
@@ -208,7 +208,7 @@ let profile_with_debug = ref false
 let profile_with_allocated_bytes = ref false
 let profile_with_sys_time = ref false
 let profile_output = ref Silent
-let profile_format = ref Textual
+let profile_format = ref (Textual {threshold = 1.0})
 let profile_recursive = ref false
 
 let profiling () = !profiling_ref
@@ -660,8 +660,8 @@ let exit_hook () =
     let cg = export ~label () in
     match !profile_output, !profile_format with
     | Silent, _ -> ()
-    | Channel out, Textual ->
-      Graph.output out cg
+    | Channel out, Textual {threshold} ->
+      Graph.output ~threshold out cg
     | Channel out, JSON ->
       Graph.output_json out cg
     | Temporary temp_dir, format ->
@@ -672,7 +672,7 @@ let exit_hook () =
         "[Profiling] Dumping profiling information in file '%s'.\n" tmp_file;
       flush stdout;
       (match format with
-      | Textual -> Graph.output oc cg
+      | Textual {threshold} -> Graph.output ~threshold oc cg
       | JSON -> Graph.output_json oc cg);
       close_out oc
   end
@@ -706,7 +706,23 @@ let parse_env_options s =
     | [] -> ()
     | ["debug"] -> debug := true
     | "debug" :: _  -> expect_no_argument "debug"
-    | [ "format"; "textual" ] -> format := Textual;
+    | [ "threshold" ; percent ] ->
+      begin match !format with
+      | Textual _ ->
+         let threshold = try Some (float_of_string percent) with _ -> None in
+         begin match threshold with
+         | None ->
+           warning (Printf.sprintf "Unable to parse threshold '%s'" percent)
+         | Some threshold ->
+           format := Textual {threshold}
+         end
+      | _ -> warning (Pritnf.sprintf "The option threshold only makes sense with the 'textual' format.")
+      end
+    | [ "format"; "textual" ] ->
+      begin match !format with
+      | Textual _ -> _
+      | _ -> format := Textual {threshold = 1.0};
+      end
     | [ "format"; "json" ] -> format := JSON;
     | [ "format"; unknown ] -> invalid_for "format" unknown
     | [ "output"; "stderr" ] -> output := Channel stderr

@@ -38,6 +38,7 @@ let graph_of_nodes ?(label = "") nodes =
 
 let sons {nodes; _} node =
   List.map (fun k -> nodes.(k)) node.sons
+  |> List.sort (fun n1 n2 -> compare n2.time n1.time)
 
 let nodes {nodes; _} =
   Array.to_list nodes
@@ -209,7 +210,7 @@ let label graph =
       Printf.sprintf "%s (%s)" name location
     else name
 
-let output oc graph =
+let output ?(threshold = 1.0) oc graph =
   Printf.fprintf oc "Call graph%s:\n-----------%s\n%!" (if graph.label = "" then "" else " '"^graph.label^"'") (if graph.label = "" then "" else String.make ((String.length graph.label) + 3) '-');
   let label = label graph in
   let color = color graph in
@@ -227,9 +228,15 @@ let output oc graph =
     Bytes.set bytes (4 * depth) '-';
     Bytes.to_string bytes
   in
+  let digits_of_call =
+    int_of_float @@
+      1. +. log10 (List.map (fun {calls; _} -> calls) (nodes graph)
+                   |> List.fold_left max 1
+                   |> float_of_int)
+  in
   let regular_call ancestors node =
     match ancestors with
-    | [] -> ()
+    | [] -> true
     | father:: _ ->
       let depth = List.length ancestors in
       let spaces = spaces depth in
@@ -238,16 +245,23 @@ let output oc graph =
         if father_time > 0.0 then
           let percent = 100.0 *. this_time /. father_time in
           let this_time, unit = human this_time in
-          Printf.fprintf oc "%s\n%!"
-            (Printf.sprintf
-               "[ %7.2f%1s cycles in %7d calls ] %s %5.2f%% : %s"
-               this_time unit node.calls spaces percent (color node (label node)))
+          if percent >= threshold then begin
+            Printf.fprintf oc "%s\n%!"
+              (Printf.sprintf
+                 "[ %7.2f%1s cycles in %*d calls ] %s %5.2f%% : %s"
+                 this_time unit digits_of_call node.calls spaces percent (color node (label node)));
+            true
+          end else
+            false
         else
           let this_time, unit = human this_time in
           Printf.fprintf oc "%s\n%!"
             (Printf.sprintf
                "[ %7.2f%1s  cycles in %7d calls ] %s * %s"
-               this_time unit node.calls spaces (color node (label node)))
+               this_time unit node.calls spaces (color node (label node)));
+          false
+       else
+         false
   in
   let recursive_call ancestors node =
     let depth = List.length ancestors in
@@ -279,7 +293,8 @@ let output oc graph =
     | false, true -> Printf.sprintf "; %8.0f" allocated_bytes
     | false, false -> ""
   in
-
+  if threshold > 0.0 then
+    Printf.fprintf oc "\nNote: Nodes accounting for less than %2.2f%% of their parent have been ignored.\n%!" threshold;
   Printf.fprintf oc "\nAggregated table:\n----------------\n%!";
   let max_name_length = List.fold_left (fun acc {name; _} -> max acc (String.length name)) 0 normal_nodes in
   let max_location_length = List.fold_left (fun acc {location; _} -> max acc (String.length location)) 0 normal_nodes in
