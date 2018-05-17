@@ -270,14 +270,13 @@ let register_generic ?location kind name call_stack =
     | None ->
       let backtrace_slots = Printexc.backtrace_slots call_stack in
       match backtrace_slots with
+      | Some [||] | None -> "unknown"
       | Some slots ->
-        String.concat " " (List.map (fun slot ->
-        let loc = Printexc.Slot.location slot in
-        (match loc with
-         | Some {Printexc.filename; line_number; _} ->
-           Printf.sprintf "%s:%d" filename line_number
-         | None -> "internal")) (Array.to_list slots))
-      | _ -> "unknown"
+	let last_slot = slots.(Array.length slots - 1) in
+        match Printexc.Slot.location last_slot with
+        | Some {Printexc.filename; line_number; _} ->
+          Printf.sprintf "%s:%d" filename line_number
+        | None -> "internal"
   in
   let landmark = new_landmark name location kind in
   registered_landmarks := landmark :: !registered_landmarks;
