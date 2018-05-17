@@ -198,12 +198,13 @@ type profile_output =
   | Temporary of string option
   | Channel of out_channel
 
+type textual_option = {threshold : float}
+
 type profile_format =
   | JSON
-  | Textual of {threshold : float}
+  | Textual of textual_option
 
 let profiling_ref = ref false
-
 let profile_with_debug = ref false
 let profile_with_allocated_bytes = ref false
 let profile_with_sys_time = ref false

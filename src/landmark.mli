@@ -78,10 +78,13 @@ type profile_output =
                                    and prints its path on stderr. *)
   | Channel of out_channel (** writes in the results in out_channel. *)
 
+
+type textual_option = {threshold : float}
+
 (** The output format for the results.*)
 type profile_format =
   | JSON (** Easily parsable export format. *)
-  | Textual of {threshold: float}(** Console friendly output; nodes below the threshold (0.0 <= threshold <= 100.0) are not displayed in the callgraph. *)
+  | Textual of textual_option (** Console friendly output; nodes below the threshold (0.0 <= threshold <= 100.0) are not displayed in the callgraph. *)
 
 (** The profiling options control the behavior of the landmark infrastructure. *)
 type profiling_options = {
