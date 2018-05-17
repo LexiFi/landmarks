@@ -3,8 +3,8 @@ let[@landmark] zzz () =
 
 let[@landmark] main () =
   (for _ = 1 to 9 do
-    zzz ()
-  done)[@landmark "loop"];
+     zzz ()
+   done)[@landmark "loop"];
   zzz ()
 
 let () = main ()

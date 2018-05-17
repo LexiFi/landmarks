@@ -1,5 +1,5 @@
 let[@landmark] rec fib n =
-    if n <= 1 then 1 else fib (n - 1) + fib (n - 2)
+  if n <= 1 then 1 else fib (n - 1) + fib (n - 2)
 
 let[@landmark] rec even = function
   | 0 -> even0
@@ -64,15 +64,15 @@ end
 
 let local_module () =
   let module M =
-    struct
-      [@@@landmark "auto"]
-      let local1 () = print "local1"
-      [@@@landmark "auto-off"]
-      let[@landmark] local2 () =
-        print "local2"
-      let local_noauto () =
-        print "local_noauto"
-    end
+  struct
+    [@@@landmark "auto"]
+    let local1 () = print "local1"
+    [@@@landmark "auto-off"]
+    let[@landmark] local2 () =
+      print "local2"
+    let local_noauto () =
+      print "local_noauto"
+  end
   in
   M.local1 ();
   M.local2 ();
@@ -92,10 +92,10 @@ let () =
     compute ();
 
     let[@landmark "unit"] unit2 = (lm1 ();
-     lm2 ();
-     lm3 ();
-     lm4 ();
-     noauto ())[@landmark "not module"]
+                                   lm2 ();
+                                   lm3 ();
+                                   lm4 ();
+                                   noauto ())[@landmark "not module"]
     in
     ignore unit2;
     (let open M in
@@ -106,11 +106,11 @@ let () =
      mod_noauto ())[@landmark "module"];
 
     (incl_lm0 ();
-    incl_lm1 ();
-    incl_lm2 ();
-    incl_lm3 ();
-    incl_noauto1 ();
-    incl_noauto2 ())[@landmark "module"];
+     incl_lm1 ();
+     incl_lm2 ();
+     incl_lm3 ();
+     incl_noauto1 ();
+     incl_noauto2 ())[@landmark "module"];
 
 
     local_module ()
@@ -123,7 +123,7 @@ let () =
     let all_nodes = nodes agg in
     print_endline "\nLandmark reached:";
     all_nodes
-      |> List.map (fun {name; _} -> name)
-      |> List.sort compare
-      |> List.iter print_endline
+    |> List.map (fun {name; _} -> name)
+    |> List.sort compare
+    |> List.iter print_endline
   end

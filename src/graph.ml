@@ -97,8 +97,8 @@ let depth graph =
         | father :: _ -> (HashNode.find result father) + 1
       in
       begin match HashNode.find result node with
-      | exception Not_found -> HashNode.replace result node depth
-      | old_depth -> HashNode.replace result node (min old_depth depth)
+        | exception Not_found -> HashNode.replace result node depth
+        | old_depth -> HashNode.replace result node (min old_depth depth)
       end; true)
     (fun _ _ -> ()) graph;
   fun node -> HashNode.find result node
@@ -107,14 +107,14 @@ let shallow_ancestor graph =
   let result = HashNode.create 17 in
   dfs
     (fun ancestor node ->
-      let sa = match ancestor with
-        | [] -> node
-        | [ root ] -> root
-        | [ father; _ ] -> father
-        | father :: _ -> HashNode.find result father
-      in
-      HashNode.replace result node sa;
-      true
+       let sa = match ancestor with
+         | [] -> node
+         | [ root ] -> root
+         | [ father; _ ] -> father
+         | father :: _ -> HashNode.find result father
+       in
+       HashNode.replace result node sa;
+       true
     )
     (fun  _ _ -> ()) graph;
   fun node -> HashNode.find result node
@@ -234,9 +234,9 @@ let output ?(threshold = 1.0) oc graph =
   in
   let digits_of_call =
     int_of_float @@
-      1. +. log10 (List.map (fun {calls; _} -> calls) (nodes graph)
-                   |> List.fold_left max 1
-                   |> float_of_int)
+    1. +. log10 (List.map (fun {calls; _} -> calls) (nodes graph)
+                 |> List.fold_left max 1
+                 |> float_of_int)
   in
   let regular_call ancestors node =
     match ancestors with
@@ -264,8 +264,8 @@ let output ?(threshold = 1.0) oc graph =
                "[ %7.2f%1s  cycles in %7d calls ] %s * %s"
                this_time unit node.calls spaces (color node (label node)));
           false
-       else
-         false
+      else
+        false
   in
   let recursive_call ancestors node =
     let depth = List.length ancestors in
@@ -330,62 +330,62 @@ let output ?(threshold = 1.0) oc graph =
 
 module JSON = struct
 
-type json =
-  | String of string
-  | Int of int
-  | Float of float
-  | Map of (string * json) list
-  | List of json list
-  | ListClosure of int * (int -> json)
+  type json =
+    | String of string
+    | Int of int
+    | Float of float
+    | Map of (string * json) list
+    | List of json list
+    | ListClosure of int * (int -> json)
 
-open Format
+  open Format
 
-let rec output oc = function
-  | String s ->
-    fprintf oc "\"%s\"" (String.escaped s)
-  | Int n ->
-    fprintf oc "%d" n
-  | Float f ->
-    fprintf oc "%f" f
-  | Map l ->
-    fprintf oc "{@,";
-    let first = ref true in
-    List.iter (fun (name, json) ->
-        if !first then
-          first := false
-        else
-          fprintf oc ",@,";
-        fprintf oc "@[<v 2>%S: %a@]" name output json
-    ) l;
-    fprintf oc "@;<0 -2>}"
-  | List [] -> fprintf oc "[]"
-  | List [x] -> fprintf oc "[%a]" output x
-  | List l when List.for_all (function Int _ -> true | _ -> false) l ->
-    fprintf oc "[%s]" (String.concat ", " (List.map (function Int x -> string_of_int x | _ -> assert false) l))
-  | List l ->
-    fprintf oc "[@,";
-    let first = ref true in
-    List.iter (fun json ->
-        if !first then
-          first := false
-        else
+  let rec output oc = function
+    | String s ->
+      fprintf oc "\"%s\"" (String.escaped s)
+    | Int n ->
+      fprintf oc "%d" n
+    | Float f ->
+      fprintf oc "%f" f
+    | Map l ->
+      fprintf oc "{@,";
+      let first = ref true in
+      List.iter (fun (name, json) ->
+          if !first then
+            first := false
+          else
+            fprintf oc ",@,";
+          fprintf oc "@[<v 2>%S: %a@]" name output json
+        ) l;
+      fprintf oc "@;<0 -2>}"
+    | List [] -> fprintf oc "[]"
+    | List [x] -> fprintf oc "[%a]" output x
+    | List l when List.for_all (function Int _ -> true | _ -> false) l ->
+      fprintf oc "[%s]" (String.concat ", " (List.map (function Int x -> string_of_int x | _ -> assert false) l))
+    | List l ->
+      fprintf oc "[@,";
+      let first = ref true in
+      List.iter (fun json ->
+          if !first then
+            first := false
+          else
+            fprintf oc ",@,";
+          fprintf oc "@[<v 2>%a@]" output json
+        ) l;
+      fprintf oc "@;<0 -2>]"
+
+    | ListClosure (n,f) ->
+      fprintf oc "[@,";
+      for k = 0 to n - 1 do
+        let json = f k in
+        if k > 0 then
           fprintf oc ",@,";
         fprintf oc "@[<v 2>%a@]" output json
-    ) l;
-    fprintf oc "@;<0 -2>]"
+      done;
+      fprintf oc "@;<0 -2>]"
 
-  | ListClosure (n,f) ->
-    fprintf oc "[@,";
-    for k = 0 to n - 1 do
-      let json = f k in
-      if k > 0 then
-        fprintf oc ",@,";
-      fprintf oc "@[<v 2>%a@]" output json
-    done;
-    fprintf oc "@;<0 -2>]"
-
-let output oc =
-  fprintf (formatter_of_out_channel oc) "@[<v 2>%a@]@." output
+  let output oc =
+    fprintf (formatter_of_out_channel oc) "@[<v 2>%a@]@." output
 
 end
 

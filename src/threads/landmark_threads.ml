@@ -3,7 +3,7 @@ include Landmark
 let current_id = ref Thread.(id (self ()))
 
 let check () =
- !current_id = Thread.(id (self ()))
+  !current_id = Thread.(id (self ()))
 
 let error operation =
   failwith (Printf.sprintf "%s: this operation can only be called by the thread that started the profiling" operation)

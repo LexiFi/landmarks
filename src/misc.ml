@@ -5,9 +5,9 @@
 let group_proj f l =
   let tbl = Hashtbl.create (List.length l) in
   List.iter (fun x -> let key = f x in
-  match Hashtbl.find tbl key with
-  | exception Not_found -> Hashtbl.replace tbl key [x]
-  | l -> Hashtbl.replace tbl key (x::l)) l;
+              match Hashtbl.find tbl key with
+              | exception Not_found -> Hashtbl.replace tbl key [x]
+              | l -> Hashtbl.replace tbl key (x::l)) l;
   Hashtbl.fold (fun _ value acc -> value :: acc) tbl []
 
 let flatten_map f l =

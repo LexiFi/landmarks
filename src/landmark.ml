@@ -124,15 +124,15 @@ end
 
 
 type landmark = {
-    id: int;
-    kind : Graph.kind;
-    name: string;
-    location: string;
+  id: int;
+  kind : Graph.kind;
+  name: string;
+  location: string;
 
-    mutable last_parent: node;
-    mutable last_son: node;
-    mutable last_self: node;
-  }
+  mutable last_parent: node;
+  mutable last_son: node;
+  mutable last_self: node;
+}
 
 and node = {
   landmark: landmark;
@@ -150,11 +150,11 @@ and node = {
 }
 
 and floats = {
-    mutable time: float;
-    mutable allocated_bytes: float;
-    mutable allocated_bytes_stamp: float;
-    mutable sys_time: float;
-    mutable sys_timestamp: float;
+  mutable time: float;
+  mutable allocated_bytes: float;
+  mutable allocated_bytes_stamp: float;
+  mutable sys_time: float;
+  mutable sys_timestamp: float;
 }
 
 and counter = landmark
@@ -170,25 +170,25 @@ let new_floats () = {
 }
 
 let rec landmark_root = {
-    kind = Graph.Root;
-    id = 0;
-    name = "ROOT";
-    location = __FILE__;
-    last_parent = dummy_node;
-    last_son = dummy_node;
-    last_self = dummy_node;
+  kind = Graph.Root;
+  id = 0;
+  name = "ROOT";
+  location = __FILE__;
+  last_parent = dummy_node;
+  last_son = dummy_node;
+  last_self = dummy_node;
 }
 
 and dummy_node = {
-    landmark = landmark_root;
-    id = 0;
-    sons = SparseArray.dummy ();
-    fathers = Stack.dummy ();
-    floats = new_floats ();
-    calls = 0;
-    recursive_calls = 0;
-    distrib = Stack.dummy ();
-    timestamp = Int64.zero
+  landmark = landmark_root;
+  id = 0;
+  sons = SparseArray.dummy ();
+  fathers = Stack.dummy ();
+  floats = new_floats ();
+  calls = 0;
+  recursive_calls = 0;
+  distrib = Stack.dummy ();
+  timestamp = Int64.zero
 }
 
 (** STATE **)
@@ -272,7 +272,7 @@ let register_generic ?location kind name call_stack =
       match backtrace_slots with
       | Some [||] | None -> "unknown"
       | Some slots ->
-	let last_slot = slots.(Array.length slots - 1) in
+        let last_slot = slots.(Array.length slots - 1) in
         match Printexc.Slot.location last_slot with
         | Some {Printexc.filename; line_number; _} ->
           Printf.sprintf "%s:%d" filename line_number
@@ -334,7 +334,7 @@ let () = reset ()
 let unroll_until node =
   while
     let current_node = !current_node_ref in
-       current_node != node
+    current_node != node
     && Stack.size current_node.fathers > 0
     && (current_node_ref := Stack.pop current_node.fathers; true)
   do () done
@@ -436,10 +436,10 @@ let aggregate_stat_for current_node =
                  +. Int64.(to_float (sub (clock ()) current_node.timestamp));
   if !profile_with_allocated_bytes then
     floats.allocated_bytes <- floats.allocated_bytes
-                 +. ((Gc.allocated_bytes ()) -. floats.allocated_bytes_stamp);
+                              +. ((Gc.allocated_bytes ()) -. floats.allocated_bytes_stamp);
   if !profile_with_sys_time then
     floats.sys_time <- floats.sys_time
-                 +. (Sys.time () -. floats.sys_timestamp)
+                       +. (Sys.time () -. floats.sys_timestamp)
 
 let exit landmark =
   if !profile_with_debug then
@@ -629,7 +629,7 @@ and new_branch parent graph ({landmark_id; _} as imported : Graph.node) =
   List.iter (new_branch node graph) (Graph.sons graph imported);
 
 and inconsistency_msg =
- "Inconsistency while importing profiling information of slaves processes:\n"
+  "Inconsistency while importing profiling information of slaves processes:\n"
 
 and check_landmark landmark imported =
   if landmark.name <> imported.name
@@ -672,8 +672,8 @@ let exit_hook () =
         "[Profiling] Dumping profiling information in file '%s'.\n" tmp_file;
       flush stdout;
       (match format with
-      | Textual {threshold} -> Graph.output ~threshold oc cg
-      | JSON -> Graph.output_json oc cg);
+       | Textual {threshold} -> Graph.output ~threshold oc cg
+       | JSON -> Graph.output_json oc cg);
       close_out oc
   end
 
@@ -708,20 +708,20 @@ let parse_env_options s =
     | "debug" :: _  -> expect_no_argument "debug"
     | [ "threshold" ; percent ] ->
       begin match !format with
-      | Textual _ ->
-         let threshold = try Some (float_of_string percent) with _ -> None in
-         begin match threshold with
-         | None ->
-           warning (Printf.sprintf "Unable to parse threshold '%s'" percent)
-         | Some threshold ->
-           format := Textual {threshold}
-         end
-      | _ -> warning (Printf.sprintf "The option threshold only makes sense with the 'textual' format.")
+        | Textual _ ->
+          let threshold = try Some (float_of_string percent) with _ -> None in
+          begin match threshold with
+            | None ->
+              warning (Printf.sprintf "Unable to parse threshold '%s'" percent)
+            | Some threshold ->
+              format := Textual {threshold}
+          end
+        | _ -> warning (Printf.sprintf "The option threshold only makes sense with the 'textual' format.")
       end
     | [ "format"; "textual" ] ->
       begin match !format with
-      | Textual _ -> ()
-      | _ -> format := Textual {threshold = 1.0};
+        | Textual _ -> ()
+        | _ -> format := Textual {threshold = 1.0};
       end
     | [ "format"; "json" ] -> format := JSON;
     | [ "format"; unknown ] -> invalid_for "format" unknown
@@ -760,10 +760,12 @@ let parse_env_options s =
     | [""] | ["on"] | ["1"] -> ()
     | opt :: _ :: _ -> warning (Printf.sprintf "To many '=' after '%s'" opt)
     | unknown :: _ -> warning (sprintf "Unknown option '%s'" unknown)
- in
- List.iter parse_option (split_trim ',' s);
- {debug = !debug; allocated_bytes = !allocated_bytes; sys_time = !sys_time;
-  output = !output; format = !format; recursive = !recursive}
+  in
+  List.iter parse_option (split_trim ',' s);
+  {
+    debug = !debug; allocated_bytes = !allocated_bytes; sys_time = !sys_time;
+    output = !output; format = !format; recursive = !recursive
+  }
 
 let () = match Sys.getenv "OCAML_LANDMARKS" with
   | exception Not_found -> ()

@@ -19,8 +19,8 @@ let () =
     let all_nodes = nodes agg in
     print_endline "\nLandmark reached:";
     all_nodes
-      |> List.map (fun {name; location; _} ->
+    |> List.map (fun {name; location; _} ->
         Printf.sprintf "%s (%s)" name location)
-      |> List.sort compare
-      |> List.iter print_endline
+    |> List.sort compare
+    |> List.iter print_endline
   end

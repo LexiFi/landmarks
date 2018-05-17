@@ -1,7 +1,7 @@
 [@@@landmark "random string"];;
 
 module M = struct
-[@@@landmark "random string"];;
+  [@@@landmark "random string"];;
 end;;
 
 [@@@landmark "auto" "no auto"];;
@@ -11,5 +11,5 @@ let () = (print_endline "hello")[@landmark "too"][@landmark "many"][@landmark "l
 let[@landmark] () = print_endline "hello";;
 
 let () =
-   let[@landmark] _ = 2+2 in ();;
+  let[@landmark] _ = 2+2 in ();;
 

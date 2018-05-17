@@ -1,33 +1,33 @@
 (** This test is a bit like test/ppx except we do not use the 'let[@landmark] ...' construction
   * which was not available in ocaml 4.02.
-  *)
+*)
 
 let rec fib n =
-    (if n <= 1 then 1 else fib (n - 1) + fib (n - 2))[@landmark "fib"]
+  (if n <= 1 then 1 else fib (n - 1) + fib (n - 2))[@landmark "fib"]
 
 let rec even n =
   (match n with
-  | 0 -> even0
-  | n -> odd (n - 1))[@landmark "even"]
+   | 0 -> even0
+   | n -> odd (n - 1))[@landmark "even"]
 and odd n =
   (match n with
-  | 0 -> odd0
-  | n -> even (n - 1))[@landmark "odd"]
+   | 0 -> odd0
+   | n -> even (n - 1))[@landmark "odd"]
 and even0 = true
 and odd0 = false[@landmark "odd0"]
 
 let prime n =
   (odd n && (let result =
-              (let k = ref 3 in
-              let m = int_of_float (sqrt (float n)) in
-              try while !k <= m do
-                  if n mod !k = 0 then
-                    raise Exit;
-                  incr k
-                done;
-                true
-              with Exit -> false)[@landmark "result"]
-            in result))[@landmark "prime"]
+               (let k = ref 3 in
+                let m = int_of_float (sqrt (float n)) in
+                try while !k <= m do
+                    if n mod !k = 0 then
+                      raise Exit;
+                    incr k
+                  done;
+                  true
+                with Exit -> false)[@landmark "result"]
+             in result))[@landmark "prime"]
 
 let rec next_prime n =
   (if prime n then n else next_prime (n + 1))[@landmark "next_prime"]
@@ -70,15 +70,15 @@ end
 
 let local_module () =
   let module M =
-    struct
-      [@@@landmark "auto"]
-      let local1 () = print "local1"
-      [@@@landmark "auto-off"]
-      let local2 () =
-        (print "local2")[@landmark "local2"]
-      let local_noauto () =
-        print "local_noauto"
-    end
+  struct
+    [@@@landmark "auto"]
+    let local1 () = print "local1"
+    [@@@landmark "auto-off"]
+    let local2 () =
+      (print "local2")[@landmark "local2"]
+    let local_noauto () =
+      print "local_noauto"
+  end
   in
   M.local1 ();
   M.local2 ();
@@ -89,35 +89,35 @@ let () =
 
   let main () =
     (let compute () =
-      ignore (fib 10);
-      ignore (next_prime 123)
-    in
+       ignore (fib 10);
+       ignore (next_prime 123)
+     in
 
-    compute ();
+     compute ();
 
-    let unit2 = (lm1 ();
-     lm2 ();
-     lm3 ();
-     lm4 ();
-     noauto ())[@landmark "not module"]
-    in
-    ignore unit2;
-    (let open M in
-     mod_lm0 ();
-     mod_lm1 ();
-     mod_lm2 ();
-     mod_lm3 ();
-     mod_noauto ())[@landmark "module"];
+     let unit2 = (lm1 ();
+                  lm2 ();
+                  lm3 ();
+                  lm4 ();
+                  noauto ())[@landmark "not module"]
+     in
+     ignore unit2;
+     (let open M in
+      mod_lm0 ();
+      mod_lm1 ();
+      mod_lm2 ();
+      mod_lm3 ();
+      mod_noauto ())[@landmark "module"];
 
-    (incl_lm0 ();
-    incl_lm1 ();
-    incl_lm2 ();
-    incl_lm3 ();
-    incl_noauto1 ();
-    incl_noauto2 ())[@landmark "module"];
+     (incl_lm0 ();
+      incl_lm1 ();
+      incl_lm2 ();
+      incl_lm3 ();
+      incl_noauto1 ();
+      incl_noauto2 ())[@landmark "module"];
 
 
-    local_module ())[@landmark "main"]
+     local_module ())[@landmark "main"]
   in
   main ();
   if profiling () then begin
@@ -127,7 +127,7 @@ let () =
     let all_nodes = nodes agg in
     print_endline "\nLandmark reached:";
     all_nodes
-      |> List.map (fun {name; _} -> name)
-      |> List.sort compare
-      |> List.iter print_endline
+    |> List.map (fun {name; _} -> name)
+    |> List.sort compare
+    |> List.iter print_endline
   end

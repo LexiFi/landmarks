@@ -15,7 +15,7 @@ exception LandmarkFailure of string
 (** {3 Landmarks} *)
 
 (** {i Landmarks} identify portions of code, they are registered
-with the function {! register} and delimited by {! enter} and {! exit}. *)
+    with the function {! register} and delimited by {! enter} and {! exit}. *)
 
 (** The type of landmarks. *)
 type landmark
@@ -73,7 +73,7 @@ val profiling: unit -> bool
 (** Where to output results. *)
 type profile_output =
   | Silent (** disables the automatic output of profiling results
-    when the program ends. *)
+               when the program ends. *)
   | Temporary of string option (** writes the results in a temporary files
                                    and prints its path on stderr. *)
   | Channel of out_channel (** writes in the results in out_channel. *)
@@ -89,25 +89,25 @@ type profile_format =
 (** The profiling options control the behavior of the landmark infrastructure. *)
 type profiling_options = {
   debug : bool;
-    (** Activates a verbose mode that outputs traces on stderr each time
-        the landmarks primitives are called. Default: false. *)
+  (** Activates a verbose mode that outputs traces on stderr each time
+      the landmarks primitives are called. Default: false. *)
 
   allocated_bytes: bool;
-    (** Also collect {! Gc.allocated_bytes} during profiling. *)
+  (** Also collect {! Gc.allocated_bytes} during profiling. *)
 
   sys_time : bool;
-    (** Also collect {! Sys.time} timestamps during profiling. *)
+  (** Also collect {! Sys.time} timestamps during profiling. *)
 
   recursive : bool;
-    (** When false, the recursive instances of landmarks (entering
-        a landmark that has already been entered) are ignored (the number of
-        calls is updated but it does not generate a new node in the callgraph).*)
+  (** When false, the recursive instances of landmarks (entering
+      a landmark that has already been entered) are ignored (the number of
+      calls is updated but it does not generate a new node in the callgraph).*)
 
   output : profile_output;
-    (** Specify where to output the results. *)
+  (** Specify where to output the results. *)
 
   format : profile_format
-    (** Specify the output format. *)
+  (** Specify the output format. *)
 }
 
 val default_options: profiling_options

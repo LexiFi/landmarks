@@ -56,13 +56,13 @@ let f2 n =
 let rec fr n =
   L.enter LM.recursive;
   let r =
-   if n = 0 then 1.0 else fr (n - 1) *. exp (float n)
+    if n = 0 then 1.0 else fr (n - 1) *. exp (float n)
   in
   L.exit LM.recursive;
   r
 
 let small k n x = if x > 1e-3 then
-  Printf.eprintf "diff%d(%d):%g is not very small.\n%!" k n x
+    Printf.eprintf "diff%d(%d):%g is not very small.\n%!" k n x
 
 let test n =
   let r1, r2, r3 = f1 n, f2 n, fr n in
@@ -100,47 +100,47 @@ let () = begin
     L.increment ~times counter;
     L.sample LM.sampler (Random.float 1.0);
     L.enter box1;
-      L.enter hit1;
-      L.exit hit1;
-      L.enter miss;
-      L.exit miss;
-      L.enter hit1;
-      L.exit hit1;
-      L.enter miss;
-      L.exit miss;
+    L.enter hit1;
+    L.exit hit1;
+    L.enter miss;
+    L.exit miss;
+    L.enter hit1;
+    L.exit hit1;
+    L.enter miss;
+    L.exit miss;
     L.exit box1;
     L.enter box2;
-      L.enter hit2;
-      L.exit hit2;
-      L.enter miss;
-      L.exit miss;
-      L.enter hit2;
-      L.exit hit2;
-      L.enter miss;
-      L.exit miss;
+    L.enter hit2;
+    L.exit hit2;
+    L.enter miss;
+    L.exit miss;
+    L.enter hit2;
+    L.exit hit2;
+    L.enter miss;
+    L.exit miss;
     L.exit box2;
   in
   L.enter profiling;
-    L.enter allocation;
-      topology ();
-    L.exit allocation;
-    L.enter running;
-      for _ = 1 to 10000 do topology () done;
-    L.exit running;
+  L.enter allocation;
+  topology ();
+  L.exit allocation;
+  L.enter running;
+  for _ = 1 to 10000 do topology () done;
+  L.exit running;
   L.exit profiling;
 end
 
 let () = begin
   let open LM in
-    L.enter rec_test;
-     L.enter rec_box1;
-       L.enter rec_box2;
-         L.enter rec_test;
-         L.exit rec_test;
-       L.exit rec_box2;
-     L.exit rec_box1;
-    L.exit rec_test;
-  end
+  L.enter rec_test;
+  L.enter rec_box1;
+  L.enter rec_box2;
+  L.enter rec_test;
+  L.exit rec_test;
+  L.exit rec_box2;
+  L.exit rec_box1;
+  L.exit rec_test;
+end
 
 let random_walk max_depth max_sons length =
   let rec walk depth length =
@@ -150,7 +150,7 @@ let random_walk max_depth max_sons length =
       let sons = Random.int max_sons in
       let length_ref = ref (length - 1) in
       for _ = 1 to sons do
-       length_ref := walk (depth + 1) !length_ref;
+        length_ref := walk (depth + 1) !length_ref;
       done;
       L.exit LM.randoms.(me);
       !length_ref
@@ -159,10 +159,10 @@ let random_walk max_depth max_sons length =
   walk 0 length
 
 let () = begin
-    Printf.printf "Start a random walk ... \n%!";
-    let res = random_walk 5 20 50000 in
-    Printf.printf "done (%d nodes).\n%!" res
-  end
+  Printf.printf "Start a random walk ... \n%!";
+  let res = random_walk 5 20 50000 in
+  Printf.printf "done (%d nodes).\n%!" res
+end
 
 open Landmark.Graph
 
@@ -196,7 +196,7 @@ let checks () =
 
   let result = ref 0 in
   dfs (fun _ {calls; _} ->
-         result := !result + calls; true) (fun _ _ -> ()) graph;
+      result := !result + calls; true) (fun _ _ -> ()) graph;
   if !result <> total then
     Printf.printf "result = %d, total = %d\n%!" !result total;
   assert (!result = total);
@@ -212,8 +212,8 @@ let checks () =
   Printf.printf "Check total number of calls ...\n%!";
   let aggregated_total = total_number_of_calls aggregated_graph in
   if total <> aggregated_total then begin
-     Printf.printf "Bug in aggregation primitive (%d calls before, %d after).\n%!" total aggregated_total;
-     assert false
+    Printf.printf "Bug in aggregation primitive (%d calls before, %d after).\n%!" total aggregated_total;
+    assert false
   end;
   Printf.printf "Check reachability invariant ...\n%!";
   assert (reachable_landmarks graph = reachable_landmarks aggregated_graph);

@@ -12,8 +12,8 @@ let extra_args = Array.sub Sys.argv 2 (Array.length Sys.argv - 2)
 let () =
   let input_fd = Unix.openfile input [O_RDONLY] 0 in
   begin
-   let pid = Unix.create_process executable extra_args input_fd Unix.stdout Unix.stderr in
-   let _, _ = Unix.waitpid [] pid in
-   Unix.close input_fd;
-   exit 0
+    let pid = Unix.create_process executable extra_args input_fd Unix.stdout Unix.stderr in
+    let _, _ = Unix.waitpid [] pid in
+    Unix.close input_fd;
+    exit 0
   end

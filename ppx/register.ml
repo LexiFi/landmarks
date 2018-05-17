@@ -40,14 +40,14 @@ let () =
     if !remove then Mapper.remove_attributes else Ast_mapper.default_mapper
   in
   let reset_args () =
-   remove := default_remove
+    remove := default_remove
   in
   Migrate_parsetree.(Driver.register ~reset_args ~args ~name:"landmarks_remove" Versions.ocaml_404 mapper)
 
 let () =
   let args = Arg.[
-    "--thread", Set threads, "use the thread-safe version.";
-    "--auto", Set auto, "measure all top-level functions."]
+      "--thread", Set threads, "use the thread-safe version.";
+      "--auto", Set auto, "measure all top-level functions."]
   in
   let mapper _ _ =
     if !remove && not !auto then
@@ -60,5 +60,5 @@ let () =
     threads := default_threads;
   in
   Migrate_parsetree.(Driver.register
-         ~reset_args ~args ~name:"landmarks" Versions.ocaml_404 mapper)
+                       ~reset_args ~args ~name:"landmarks" Versions.ocaml_404 mapper)
 

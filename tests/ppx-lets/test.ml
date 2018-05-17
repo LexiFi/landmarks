@@ -1,6 +1,6 @@
 let x = (2+2)[@landmark "four"]
 let () =
-   begin ignore (3 + 4) end[@landmark "seven"]
+  begin ignore (3 + 4) end[@landmark "seven"]
 
 let () =
   (begin
@@ -9,8 +9,8 @@ let () =
   end)[@landmark "main"]
 
 let[@landmark "unit"] () =
-   let[@landmark] main () = () in
-   main ()
+  let[@landmark] main () = () in
+  main ()
 
 let () =
   let open Landmark in
@@ -21,7 +21,7 @@ let () =
     let all_nodes = nodes agg in
     print_endline "\nLandmark reached:";
     all_nodes
-      |> List.map (fun {name; _} -> name)
-      |> List.sort compare
-      |> List.iter print_endline
+    |> List.map (fun {name; _} -> name)
+    |> List.sort compare
+    |> List.iter print_endline
   end
