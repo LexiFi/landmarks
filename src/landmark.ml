@@ -501,7 +501,7 @@ let default_options = {
   sys_time = false;
   recursive = false;
   output = Channel stderr;
-  format = Textual;
+  format = Textual {threshold = 1.0};
 }
 
 let set_profiling_options {debug; allocated_bytes; sys_time; output; format; recursive} =
@@ -683,7 +683,7 @@ let () = Pervasives.at_exit exit_hook
 let parse_env_options s =
   let open Printf in
   let debug = ref false in
-  let format = ref Textual in
+  let format = ref (Textual {threshold = 1.0}) in
   let output = ref (Channel stderr) in
   let sys_time = ref false in
   let recursive = ref false in
@@ -716,11 +716,11 @@ let parse_env_options s =
          | Some threshold ->
            format := Textual {threshold}
          end
-      | _ -> warning (Pritnf.sprintf "The option threshold only makes sense with the 'textual' format.")
+      | _ -> warning (Printf.sprintf "The option threshold only makes sense with the 'textual' format.")
       end
     | [ "format"; "textual" ] ->
       begin match !format with
-      | Textual _ -> _
+      | Textual _ -> ()
       | _ -> format := Textual {threshold = 1.0};
       end
     | [ "format"; "json" ] -> format := JSON;

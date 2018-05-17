@@ -81,10 +81,10 @@ let dfs f g graph =
       g ancestors vertex
     end else begin
       HashNode.add visited_table vertex ();
-      f ancestors vertex;
-      List.iter
-        (aux (SetNode.add vertex ancestors_set) (vertex::ancestors))
-        (sons graph vertex)
+      if f ancestors vertex then
+        List.iter
+          (aux (SetNode.add vertex ancestors_set) (vertex::ancestors))
+          (sons graph vertex)
     end
   in
   aux SetNode.empty [] (root graph)
@@ -96,22 +96,26 @@ let depth graph =
         | [] -> 0
         | father :: _ -> (HashNode.find result father) + 1
       in
-      match HashNode.find result node with
+      begin match HashNode.find result node with
       | exception Not_found -> HashNode.replace result node depth
-      | old_depth -> HashNode.replace result node (min old_depth depth))
+      | old_depth -> HashNode.replace result node (min old_depth depth)
+      end; true)
     (fun _ _ -> ()) graph;
   fun node -> HashNode.find result node
 
 let shallow_ancestor graph =
   let result = HashNode.create 17 in
-  dfs (fun ancestor node ->
+  dfs
+    (fun ancestor node ->
       let sa = match ancestor with
         | [] -> node
         | [ root ] -> root
         | [ father; _ ] -> father
         | father :: _ -> HashNode.find result father
       in
-      HashNode.replace result node sa)
+      HashNode.replace result node sa;
+      true
+    )
     (fun  _ _ -> ()) graph;
   fun node -> HashNode.find result node
 

@@ -187,7 +187,7 @@ let check_invariants_non_aggregated graph =
 
 let reachable_landmarks graph =
   let result = ref [] in
-  dfs (fun _ node -> result := node.landmark_id :: !result) (fun _ _ -> ()) graph;
+  dfs (fun _ node -> result := node.landmark_id :: !result; true) (fun _ _ -> ()) graph;
   List.sort_uniq Pervasives.compare !result
 
 let checks () =
@@ -196,7 +196,7 @@ let checks () =
 
   let result = ref 0 in
   dfs (fun _ {calls; _} ->
-         result := !result + calls) (fun _ _ -> ()) graph;
+         result := !result + calls; true) (fun _ _ -> ()) graph;
   if !result <> total then
     Printf.printf "result = %d, total = %d\n%!" !result total;
   assert (!result = total);

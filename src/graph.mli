@@ -67,9 +67,10 @@ val path_dfs: (bool -> node list -> node -> unit) ->
     sons of g). The function [f] is called when [v] does not belong to [path].
     The flag [visited] is true when the vertex has already been visited. *)
 
-val dfs: (node list -> node -> unit) ->
+val dfs: (node list -> node -> bool) ->
          (node list -> node -> unit) -> graph -> unit
-(** A specialization of [path_dfs] that does not need to read the visited flag. *)
+(** A specialization of [path_dfs] that does not need to read the visited flag.
+    The returned values of the first function tells whether or not the traversal    should continue visiting the children of the current node. *)
 
 (** {3 Utility functions } *)
 
@@ -94,7 +95,7 @@ val aggregate_landmarks: graph -> graph
 
 (** {3 Output } *)
 
-val output: out_channel -> graph -> unit
+val output: ?threshold:float -> out_channel -> graph -> unit
 (** Pretty printed output a call graph on an out_channel. *)
 
 val output_json: out_channel -> graph -> unit

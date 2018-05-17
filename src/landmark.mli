@@ -81,7 +81,7 @@ type profile_output =
 (** The output format for the results.*)
 type profile_format =
   | JSON (** Easily parsable export format. *)
-  | Textual (** Console friendly output. *)
+  | Textual of {threshold: float}(** Console friendly output; nodes below the threshold (0.0 <= threshold <= 100.0) are not displayed in the callgraph. *)
 
 (** The profiling options control the behavior of the landmark infrastructure. *)
 type profiling_options = {
