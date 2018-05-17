@@ -9,3 +9,5 @@
  ((name runtest)
   (deps (test.err test.out))
  ))
+
+(jbuild_version 1)
