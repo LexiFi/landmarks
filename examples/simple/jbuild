@@ -1,0 +1,7 @@
+(executable 
+  ((name main) 
+   (libraries (unix landmark))
+   (preprocess (pps (ppx_landmarks --auto)))
+  ))
+
+(jbuild_version 1)

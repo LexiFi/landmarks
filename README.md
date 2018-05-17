@@ -47,6 +47,7 @@ jbuilder build @install
 and `make uninstall` to remove installed files.
 
 
+
 Usage with dune/jbuilder
 ------------------------
 
@@ -61,6 +62,8 @@ file builds the executable `test` using the `landmarks` library and its PPX.
   ))
 ```
 
+You can find a sample program in the [example directory](https://github.com/LexiFi/landmarks/tree/master/example).
+
 Usage with ocamlfind
 --------------------
 
@@ -74,7 +77,7 @@ bytecode.
 
 * With the PPX extension:
 ```
-  ocamlfind ocamlopt -c -package landmarks.ppx prog.ml
+  ocamlfind ocamlopt -c -package landmarks -package landmarks.ppx prog.ml
   ocamlfind ocamlopt -o prog -package landmarks -linkpkg prog.cmx
 ```
 
@@ -86,7 +89,7 @@ You may want to replace "x-www-browser" with your system's way to
 invoke your favorite web-browser from the command line. It has
 to support javascript.
 
-
+You can find a sample program in the [example directory](https://github.com/LexiFi/landmarks/tree/master/example).
 
 Benchmarking manually
 ---------------------
