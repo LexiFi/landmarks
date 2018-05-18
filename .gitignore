@@ -1,8 +1,2 @@
-*.err
-*.out
-*.so
-*.o
-*.a
-*.cm*
-*.byte
-*.batch
+_build
+.merlin

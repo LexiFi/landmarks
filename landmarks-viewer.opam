@@ -8,7 +8,7 @@ bug-reports: "https://github.com/LexiFi/landmarks/issues"
 license: "MIT"
 dev-repo: "https://github.com/LexiFi/landmarks.git"
 build: [
-  ["jbuilder" "build" "--only-packages" name "-j" jobs]
+  ["jbuilder" "build" "-p" name "-j" jobs]
 ]
 depends: [
   "gen_js_api"
