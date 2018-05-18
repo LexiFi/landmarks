@@ -2,9 +2,9 @@ Characters 0-29:
   [@@@landmark "random string"];;
   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Error: ppx_landmark: expecting payload in ["auto","auto-off","disable"]
-Characters 19-48:
-  [@@@landmark "random string"];;
-  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Characters 21-50:
+    [@@@landmark "random string"];;
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Error: ppx_landmark: expecting payload in ["auto","auto-off"]
 Characters 5-13:
   [@@@landmark "auto" "no auto"];;
@@ -18,8 +18,8 @@ Characters 1-42:
   let[@landmark] () = print_endline "hello";;
   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Error: ppx_landmark: this landmark annotation requires a name argument
-Characters 13-35:
-     let[@landmark] _ = 2+2 in ();;
-     ^^^^^^^^^^^^^^^^^^^^^^
+Characters 12-34:
+    let[@landmark] _ = 2+2 in ();;
+    ^^^^^^^^^^^^^^^^^^^^^^
 Error: ppx_landmark: this landmark annotation requires a name argument
 
