@@ -3,8 +3,6 @@
 (* Copyright 2016 by LexiFi.                                         *)
 
 open Ast_mapper
-open Ast_helper
-open Asttypes
 open Parsetree
 open Longident
 open Location

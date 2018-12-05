@@ -1,0 +1,12 @@
+(rule
+ (targets test.out)
+ (deps (package landmarks))
+ (action
+  (with-stdout-to test.out
+   (setenv TERM dumb
+   (setenv CAML_LD_LIBRARY_PATH ../../src
+   (run ../tools/redirect_stdin.exe %{dep:test.ml} %{dep:../../toplevel/toplevel.bc} -noprompt -no-version -I ../../src/.landmark.objs -ppx "%{dep:../../.ppx/landmarks.ppx/ppx.exe} --as-ppx"))))))
+
+(alias
+ (name runtest)
+ (action (diff test.out.expected test.out)))

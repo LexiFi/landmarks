@@ -1,8 +1,0 @@
-(library
- ((name compatibility)
-  (kind ppx_rewriter)
-  (flags (:standard -open Ast_404))
-  (libraries (ocaml-migrate-parsetree))
-  (preprocess no_preprocessing)))
-
-(jbuild_version 1)

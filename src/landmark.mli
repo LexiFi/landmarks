@@ -12,7 +12,7 @@ external clock: unit -> Int64.t = "caml_highres_clock"
 
 exception LandmarkFailure of string
 
-(** {3 Landmarks} *)
+(** {3 Landmarks } *)
 
 (** {i Landmarks} identify portions of code, they are registered
     with the function {! register} and delimited by {! enter} and {! exit}. *)

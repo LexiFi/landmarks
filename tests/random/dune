@@ -1,0 +1,12 @@
+(executable
+ (name test)
+ (libraries landmark))
+
+(rule
+ (with-stderr-to test.err
+ (with-stdout-to test.out
+   (run ./test.exe))))
+
+(alias
+ (name runtest)
+ (action (diff test.out.expected test.out)))

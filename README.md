@@ -1,6 +1,9 @@
 Landmarks: A Simple Profiling Library
 =====================================
 
+[![Build Status](https://travis-ci.org/LexiFi/landmarks.svg?branch=master)](https://travis-ci.org/LexiFi/landmarks)
+[![Build status](https://ci.appveyor.com/api/projects/status/pny4p8ob35qcxa8c/branch/master?svg=true)](https://ci.appveyor.com/project/mlasson/landmarks/branch/master)
+
 *Landmarks* is a simple profiling library for OCaml. It provides primitives to
 delimit portions of code and measure the performance of instrumented code at
 runtime. The available measures are obtained by aggregating CPU cycles (using
@@ -32,34 +35,34 @@ Installation
 ```
 opam install landmarks
 ```
-and 
+and
 ```
 opam install landmarks-viewer
 ```
-for installing the landmarks viewer. 
+for installing the landmarks viewer.
 
 - Manually:
 ```
 git clone https://github.com/LexiFi/landmarks.git
 cd landmarks
-jbuilder build @install
+dune build @install
 ```
 and `make uninstall` to remove installed files.
 
 
 
-Usage with dune/jbuilder
+Usage with dune
 ------------------------
 
 Simply use the library `landmarks` and the preprocessor `landmarks.ppx` to
-benchmark your executables and libraries. For instance, the following `jbuild`
-file builds the executable `test` using the `landmarks` library and its PPX. 
+benchmark your executables and libraries. For instance, the following `dune`
+file builds the executable `test` using the `landmarks` library and its PPX.
 ```
 (executable
-  ((name test)
-   (libraries (landmarks))
-   (preprocess (pps (landmarks.ppx)))
-  ))
+ (name test)
+ (libraries landmarks)
+ (preprocess (pps landmarks.ppx))
+)
 ```
 
 You can find a sample program in the [example directory](https://github.com/LexiFi/landmarks/tree/master/example).
@@ -210,14 +213,14 @@ of `fun ... ->` and `function ... -> ` in `body`. Please note that when using
 this annotation with let-rec bindings, only entry-point calls will be recorded.
 For instance, in the following piece of code
 ```ocaml
-  let () = 
+  let () =
     let[@landmark] rec even n = (n = 0) || odd (n - 1)
     and[@landmark] odd n = (n = 1) || n > 0 && even (n - 1)
     in Printf.printf "'six is even' is %b\n" (even 6)
 ```
-the landmark associated with "even" will be traversed exactly once (and not three 
-times !) whereas the control flow will not pass through the landmark associated 
-with "odd". 
+the landmark associated with "even" will be traversed exactly once (and not three
+times !) whereas the control flow will not pass through the landmark associated
+with "odd".
 
 ### Automatic instrumentation
 
@@ -250,7 +253,7 @@ This variable is parsed as a comma-separated list of items of the form
       the output format of the profiling which is either a console friendly
       representation or json encoding of the callgraph.
 
-    * `threshold` with a number between 0.0 and 100.0 as argument (default: 1.0). If the threshold is not zero the textual output will hide nodes in the callgraph below this threshold (in percent of time of their parent). This option is meaningless for other formats. 
+    * `threshold` with a number between 0.0 and 100.0 as argument (default: 1.0). If the threshold is not zero the textual output will hide nodes in the callgraph below this threshold (in percent of time of their parent). This option is meaningless for other formats.
 
     * `output` with possible argument: `stderr` (default), `stdout`, `temporary`,
       `<file>` (where `<file>` is the path of a file). It tells where to output the
