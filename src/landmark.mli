@@ -72,11 +72,11 @@ val profiling: unit -> bool
 
 (** Where to output results. *)
 type profile_output =
-  | Silent (** disables the automatic output of profiling results
+  | Silent (** Disables the automatic output of profiling results
     when the program ends. *)
-  | Temporary of string option (** writes the results in a temporary files
+  | Temporary of string option (** Writes the results in a temporary files
                                    and prints its path on stderr. *)
-  | Channel of out_channel (** writes in the results in out_channel. *)
+  | Channel of out_channel (** Writes in the results in out_channel. *)
 
 
 type textual_option = {threshold : float}

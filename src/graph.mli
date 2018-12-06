@@ -45,14 +45,14 @@ val root: graph -> node
 (** Returns the root of a graph. *)
 
 val sons: graph -> node -> node list
-(** Returns the sons of node([sons graph node] is equivalent to
-    [List.map (node_of_id graph) node.sons] *)
+(** Returns the sons of node ([sons graph node] is equivalent to
+    [List.map (node_of_id graph) node.sons]) *)
 
 val label: graph -> node -> string
 (** Returns a fully qualified name if it is needed. *)
 
 val graph_of_nodes: ?label:string -> node list -> graph
-(** Build a graph from a list of nodes. *)
+(** Builds a graph from a list of nodes. *)
 
 
 (** {3 Traversal } *)
@@ -70,7 +70,8 @@ val path_dfs: (bool -> node list -> node -> unit) ->
 val dfs: (node list -> node -> bool) ->
   (node list -> node -> unit) -> graph -> unit
 (** A specialization of [path_dfs] that does not need to read the visited flag.
-    The returned values of the first function tells whether or not the traversal    should continue visiting the children of the current node. *)
+    The returned values of the first function tells whether or not the traversal
+    should continue visiting the children of the current node. *)
 
 (** {3 Utility functions } *)
 
@@ -85,7 +86,7 @@ val intensity: ?proj:(node -> float) -> graph -> node -> float
 (** Returns an arbitrary number between 0.0 and 1.0. *)
 
 val total_number_of_calls: graph -> int
-(** Compute the sum of all calls field. *)
+(** Computes the sum of all calls field. *)
 
 (** {3 Simplification / Merge / Quotienting.} *)
 
@@ -99,4 +100,4 @@ val output: ?threshold:float -> out_channel -> graph -> unit
 (** Pretty printed output a call graph on an out_channel. *)
 
 val output_json: out_channel -> graph -> unit
-(** Output a JSON representation of a call graph on an out_channel. *)
+(** Outputs a JSON representation of a call graph on an out_channel. *)
