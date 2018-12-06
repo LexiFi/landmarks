@@ -26,7 +26,7 @@ tools that directly work with the binary executable like
 [gprof](https://sourceware.org/binutils/docs/gprof/) or
 [perf](https://perf.wiki.kernel.org)).
 
-For more information, you may browse the [API](http://LexiFi.github.io/landmarks/api/).
+For more information, you may browse the [API](http://LexiFi.github.io/landmarks/api/landmarks/Landmark/index.html).
 
 Installation
 ------------
@@ -319,7 +319,3 @@ This 'Landmarks' package is licensed by LexiFi under the terms of the
 MIT license.
 
 Contact: marc.lasson@lexifi.com
-
-[![Build Status](https://travis-ci.org/LexiFi/landmarks.svg?branch=master)](https://travis-ci.org/LexiFi/landmarks)
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/LexiFi/landmarks)](https://ci.appveyor.com/project/mlasson/landmarks)
-
