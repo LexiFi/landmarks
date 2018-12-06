@@ -1,6 +1,7 @@
 (executable
  (name test)
- (libraries landmark))
+ (libraries landmark)
+ (preprocess (pps compatibility)))
 
 (rule
  (with-stderr-to test.err

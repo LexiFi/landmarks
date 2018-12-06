@@ -2,4 +2,5 @@
  (name landmark)
  (public_name landmarks)
  (flags (:standard -w +A-30-42-41-48-40-4 -safe-string -strict-sequence -g))
- (c_names clock))
+ (c_names clock)
+ (preprocess (pps compatibility)))

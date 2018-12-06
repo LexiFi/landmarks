@@ -1,7 +1,7 @@
 (executable
-  (name test)
-  (libraries landmark)
-  (preprocess (pps ppx_landmarks)))
+ (name test)
+ (libraries landmark)
+ (preprocess (pps ppx_landmarks)))
 
 (rule
  (with-stdout-to test.out

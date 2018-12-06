@@ -188,7 +188,7 @@ let check_invariants_non_aggregated graph =
 let reachable_landmarks graph =
   let result = ref [] in
   dfs (fun _ node -> result := node.landmark_id :: !result; true) (fun _ _ -> ()) graph;
-  List.sort_uniq Pervasives.compare !result
+  List.sort_uniq Stdlib.compare !result
 
 let checks () =
   let graph = L.export () in

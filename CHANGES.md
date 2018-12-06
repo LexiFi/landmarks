@@ -3,6 +3,7 @@ version 1.3, 6 dec 2018
 * migrate from jbuilder to dune
 * migrate to opam 2.0
 * adds two new primitives: push/pop_profiling_state
+* prepare migration for Pervasives deprecation
 
 version 1.2, 20 may 2018
 ------------------------
