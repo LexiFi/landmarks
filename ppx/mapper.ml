@@ -93,6 +93,19 @@ let new_landmark landmark_name loc =
 
 let qualified ctx name = String.concat "." (List.rev (name :: ctx))
 
+let raise_ident =
+  let stdlib_raise = "Stdlib.raise" in
+  try
+    let major, minor =
+      Scanf.sscanf Sys.ocaml_version "%d.%d" (fun major minor -> major, minor)
+    in
+    if major = 4 && minor < 7 then
+      "Pervasives.raise"
+    else
+      stdlib_raise
+  with Scanf.Scan_failure _ -> stdlib_raise
+
+
 let wrap_landmark ctx landmark_name loc expr =
   let landmark_name = qualified ctx landmark_name in
   let landmark = new_landmark landmark_name loc in
@@ -103,7 +116,7 @@ let wrap_landmark ctx landmark_name loc expr =
              [Exp.case (Pat.var (mknoloc "e"))
                 (Exp.sequence
                    (exit_landmark landmark)
-                   (Exp.apply (var "Pervasives.raise") [Nolabel, var "e"]))])]
+                   (Exp.apply (var raise_ident) [Nolabel, var "e"]))])]
        (Exp.sequence
           (exit_landmark landmark)
           (var "r")))
