@@ -124,15 +124,15 @@ end
 
 
 type landmark = {
-  id: int;
-  kind : Graph.kind;
-  name: string;
-  location: string;
+    id: int;
+    kind : Graph.kind;
+    name: string;
+    location: string;
 
-  mutable last_parent: node;
-  mutable last_son: node;
-  mutable last_self: node;
-}
+    mutable last_parent: node;
+    mutable last_son: node;
+    mutable last_self: node;
+  }
 
 and node = {
   landmark: landmark;
@@ -150,11 +150,11 @@ and node = {
 }
 
 and floats = {
-  mutable time: float;
-  mutable allocated_bytes: float;
-  mutable allocated_bytes_stamp: float;
-  mutable sys_time: float;
-  mutable sys_timestamp: float;
+    mutable time: float;
+    mutable allocated_bytes: float;
+    mutable allocated_bytes_stamp: float;
+    mutable sys_time: float;
+    mutable sys_timestamp: float;
 }
 
 and counter = landmark
@@ -170,25 +170,25 @@ let new_floats () = {
 }
 
 let rec landmark_root = {
-  kind = Graph.Root;
-  id = 0;
-  name = "ROOT";
-  location = __FILE__;
-  last_parent = dummy_node;
-  last_son = dummy_node;
-  last_self = dummy_node;
+    kind = Graph.Root;
+    id = 0;
+    name = "ROOT";
+    location = __FILE__;
+    last_parent = dummy_node;
+    last_son = dummy_node;
+    last_self = dummy_node;
 }
 
 and dummy_node = {
-  landmark = landmark_root;
-  id = 0;
-  sons = SparseArray.dummy ();
-  fathers = Stack.dummy ();
-  floats = new_floats ();
-  calls = 0;
-  recursive_calls = 0;
-  distrib = Stack.dummy ();
-  timestamp = Int64.zero
+    landmark = landmark_root;
+    id = 0;
+    sons = SparseArray.dummy ();
+    fathers = Stack.dummy ();
+    floats = new_floats ();
+    calls = 0;
+    recursive_calls = 0;
+    distrib = Stack.dummy ();
+    timestamp = Int64.zero
 }
 
 (** STATE **)
@@ -255,7 +255,7 @@ let new_node landmark =
   allocated_nodes := node :: !allocated_nodes;
   node
 
-let root_node = new_node landmark_root
+let current_root_node = ref (new_node landmark_root)
 
 let registered_landmarks = ref [landmark_root]
 
@@ -272,7 +272,7 @@ let register_generic ?location kind name call_stack =
       match backtrace_slots with
       | Some [||] | None -> "unknown"
       | Some slots ->
-        let last_slot = slots.(Array.length slots - 1) in
+	let last_slot = slots.(Array.length slots - 1) in
         match Printexc.Slot.location last_slot with
         | Some {Printexc.filename; line_number; _} ->
           Printf.sprintf "%s:%d" filename line_number
@@ -296,37 +296,81 @@ let register_sampler name =
   let call_stack = Printexc.get_callstack 4 in
   register_generic Graph.Sampler name call_stack
 
-let current_node_ref = ref root_node
+let current_node_ref = ref !current_root_node
 let cache_miss_ref = ref 0
 
 let stamp_root () =
-  root_node.timestamp <- clock ();
+  !current_root_node.timestamp <- clock ();
   if !profile_with_allocated_bytes then
-    root_node.floats.allocated_bytes <- Gc.allocated_bytes ();
+    !current_root_node.floats.allocated_bytes <- Gc.allocated_bytes ();
   if !profile_with_sys_time then
-    root_node.floats.sys_time <- Sys.time ()
+    !current_root_node.floats.sys_time <- Sys.time ()
 
-let reset () =
-  if !profile_with_debug then
-    Printf.eprintf "[Profiling] resetting ...\n%!";
-  (* reset dummy_node *)
-  let floats = root_node.floats in
-  floats.time <- 0.0;
-  floats.allocated_bytes <- 0.0;
-  floats.sys_time <- 0.0;
-  root_node.calls <- 0;
-  root_node.recursive_calls <- 0;
-  stamp_root ();
-  SparseArray.reset root_node.sons;
-  allocated_nodes := [root_node];
-  current_node_ref := root_node;
-  cache_miss_ref := 0;
+let clear_cache () =
   let reset_landmark landmark =
     landmark.last_son <- dummy_node;
     landmark.last_parent <- dummy_node;
     landmark.last_self <- dummy_node;
   in
-  List.iter reset_landmark !registered_landmarks;
+  List.iter reset_landmark !registered_landmarks
+
+type profiling_state = {
+  root : node;
+  nodes: node list;
+  nodes_len: int;
+  current: node;
+  cache_miss: int
+}
+
+let profiling_stack =
+  let dummy =
+    {root = dummy_node; current = dummy_node; nodes = [dummy_node]; cache_miss = 0; nodes_len = 1}
+  in
+  Stack.make dummy 7
+
+let push_profiling_state () =
+  let state =
+    {
+      root = !current_root_node;
+      nodes = !allocated_nodes;
+      nodes_len = !node_id_ref;
+      current = !current_node_ref;
+      cache_miss = !cache_miss_ref;
+    }
+  in
+  clear_cache ();
+  current_root_node := new_node landmark_root;
+  current_node_ref := !current_root_node;
+  cache_miss_ref := 0;
+  allocated_nodes := [!current_root_node];
+  node_id_ref := 1;
+  Stack.push profiling_stack state
+
+let pop_profiling_state () =
+  if profiling_stack.size > 0 then
+    let {root; nodes; nodes_len; current; cache_miss} = Stack.pop profiling_stack in
+    current_root_node := root;
+    current_node_ref := current;
+    cache_miss_ref := cache_miss;
+    allocated_nodes := nodes;
+    node_id_ref := nodes_len
+
+let reset () =
+  if !profile_with_debug then
+    Printf.eprintf "[Profiling] resetting ...\n%!";
+  (* reset dummy_node *)
+  let floats = !current_root_node.floats in
+  floats.time <- 0.0;
+  floats.allocated_bytes <- 0.0;
+  floats.sys_time <- 0.0;
+  !current_root_node.calls <- 0;
+  !current_root_node.recursive_calls <- 0;
+  stamp_root ();
+  SparseArray.reset !current_root_node.sons;
+  allocated_nodes := [!current_root_node];
+  current_node_ref := !current_root_node;
+  cache_miss_ref := 0;
+  clear_cache ();
   node_id_ref := 1
 
 let () = reset ()
@@ -334,14 +378,14 @@ let () = reset ()
 let unroll_until node =
   while
     let current_node = !current_node_ref in
-    current_node != node
+       current_node != node
     && Stack.size current_node.fathers > 0
     && (current_node_ref := Stack.pop current_node.fathers; true)
   do () done
 
 let landmark_failure msg =
-  unroll_until root_node;
-  if !current_node_ref != root_node then
+  unroll_until !current_root_node;
+  if !current_node_ref != !current_root_node then
     reset ();
   if !profile_with_debug then
     (Printf.eprintf "Landmark error: %s\n%!" msg; Pervasives.exit 2)
@@ -436,10 +480,10 @@ let aggregate_stat_for current_node =
                  +. Int64.(to_float (sub (clock ()) current_node.timestamp));
   if !profile_with_allocated_bytes then
     floats.allocated_bytes <- floats.allocated_bytes
-                              +. ((Gc.allocated_bytes ()) -. floats.allocated_bytes_stamp);
+                 +. ((Gc.allocated_bytes ()) -. floats.allocated_bytes_stamp);
   if !profile_with_sys_time then
     floats.sys_time <- floats.sys_time
-                       +. (Sys.time () -. floats.sys_timestamp)
+                 +. (Sys.time () -. floats.sys_timestamp)
 
 let exit landmark =
   if !profile_with_debug then
@@ -535,7 +579,7 @@ let start_profiling ?(profiling_options = default_options) () =
   profiling_ref := true
 
 let rec exit_until_root () =
-  if !current_node_ref != root_node then begin
+  if !current_node_ref != !current_root_node then begin
     let landmark = !current_node_ref.landmark in
     exit landmark;
     exit_until_root ();
@@ -546,7 +590,7 @@ let stop_profiling () =
     failwith "In profiling: cannot stop since profiling is not on-going";
   exit_until_root ();
   let current_node = !current_node_ref in
-  assert (current_node == root_node);
+  assert (current_node == !current_root_node);
   aggregate_stat_for current_node;
   if !profile_with_debug then
     Printf.eprintf "[Profiling] Stop profiling.\n%!";
@@ -574,7 +618,7 @@ let export ?(label = "") () =
      allocated_bytes; sys_time; sons; distrib = Stack.to_array distrib}
   in
   if !profiling_ref then begin
-    aggregate_stat_for root_node;
+    aggregate_stat_for !current_root_node;
     stamp_root ()
   end;
   let all_nodes = List.rev !allocated_nodes in
@@ -629,7 +673,7 @@ and new_branch parent graph ({landmark_id; _} as imported : Graph.node) =
   List.iter (new_branch node graph) (Graph.sons graph imported);
 
 and inconsistency_msg =
-  "Inconsistency while importing profiling information of slaves processes:\n"
+ "Inconsistency while importing profiling information of slaves processes:\n"
 
 and check_landmark landmark imported =
   if landmark.name <> imported.name
@@ -647,7 +691,7 @@ and check_landmark landmark imported =
 let merge (graph : Graph.graph) =
   if !profile_with_debug then
     Printf.eprintf "[Profiling] merging foreign graph\n%!";
-  merge_branch root_node graph (Graph.root graph)
+  merge_branch !current_root_node graph (Graph.root graph)
 
 let exit_hook () =
   if !profile_with_debug then
@@ -672,8 +716,8 @@ let exit_hook () =
         "[Profiling] Dumping profiling information in file '%s'.\n" tmp_file;
       flush stdout;
       (match format with
-       | Textual {threshold} -> Graph.output ~threshold oc cg
-       | JSON -> Graph.output_json oc cg);
+      | Textual {threshold} -> Graph.output ~threshold oc cg
+      | JSON -> Graph.output_json oc cg);
       close_out oc
   end
 
@@ -708,20 +752,20 @@ let parse_env_options s =
     | "debug" :: _  -> expect_no_argument "debug"
     | [ "threshold" ; percent ] ->
       begin match !format with
-        | Textual _ ->
-          let threshold = try Some (float_of_string percent) with _ -> None in
-          begin match threshold with
-            | None ->
-              warning (Printf.sprintf "Unable to parse threshold '%s'" percent)
-            | Some threshold ->
-              format := Textual {threshold}
-          end
-        | _ -> warning (Printf.sprintf "The option threshold only makes sense with the 'textual' format.")
+      | Textual _ ->
+         let threshold = try Some (float_of_string percent) with _ -> None in
+         begin match threshold with
+         | None ->
+           warning (Printf.sprintf "Unable to parse threshold '%s'" percent)
+         | Some threshold ->
+           format := Textual {threshold}
+         end
+      | _ -> warning (Printf.sprintf "The option threshold only makes sense with the 'textual' format.")
       end
     | [ "format"; "textual" ] ->
       begin match !format with
-        | Textual _ -> ()
-        | _ -> format := Textual {threshold = 1.0};
+      | Textual _ -> ()
+      | _ -> format := Textual {threshold = 1.0};
       end
     | [ "format"; "json" ] -> format := JSON;
     | [ "format"; unknown ] -> invalid_for "format" unknown
@@ -760,12 +804,10 @@ let parse_env_options s =
     | [""] | ["on"] | ["1"] -> ()
     | opt :: _ :: _ -> warning (Printf.sprintf "To many '=' after '%s'" opt)
     | unknown :: _ -> warning (sprintf "Unknown option '%s'" unknown)
-  in
-  List.iter parse_option (split_trim ',' s);
-  {
-    debug = !debug; allocated_bytes = !allocated_bytes; sys_time = !sys_time;
-    output = !output; format = !format; recursive = !recursive
-  }
+ in
+ List.iter parse_option (split_trim ',' s);
+ {debug = !debug; allocated_bytes = !allocated_bytes; sys_time = !sys_time;
+  output = !output; format = !format; recursive = !recursive}
 
 let () = match Sys.getenv "OCAML_LANDMARKS" with
   | exception Not_found -> ()
