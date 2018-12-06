@@ -6,7 +6,7 @@ environment:
   FORK_BRANCH: master
   CYG_ROOT: C:\cygwin64
   PACKAGE: landmarks
-  TESTS: false
+  TESTS: true
   matrix:
     - OPAM_SWITCH: 4.07.1+msvc32c
     - OPAM_SWITCH: 4.07.1+msvc64c
