@@ -815,3 +815,4 @@ let () = match Sys.getenv "OCAML_LANDMARKS" with
     try start_profiling ~profiling_options:(parse_env_options str) ()
     with Exit -> ()
 
+external raise : exn -> 'a = "%raise"

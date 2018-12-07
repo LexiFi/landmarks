@@ -147,3 +147,6 @@ val push_profiling_state: unit -> unit
 
 val pop_profiling_state: unit -> unit
 (** See [push_profiling_state ()]. *)
+
+external raise : exn -> 'a = "%raise"
+(** This a redefinition of [Stdlib.raise] to allow generated code to work with -no-stdlib.*)
