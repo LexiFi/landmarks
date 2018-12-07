@@ -1,7 +1,7 @@
 Landmarks: A Simple Profiling Library
 =====================================
 
-[![Build Status](https://travis-ci.org/LexiFi/landmarks.svg?branch=master)](https://travis-ci.org/LexiFi/landmarks)
+[![Build Status](https://travis-ci.com/LexiFi/landmarks.svg?branch=master)](https://travis-ci.com/LexiFi/landmarks)
 [![Build status](https://ci.appveyor.com/api/projects/status/pny4p8ob35qcxa8c/branch/master?svg=true)](https://ci.appveyor.com/project/mlasson/landmarks/branch/master)
 
 *Landmarks* is a simple profiling library for OCaml. It provides primitives to
