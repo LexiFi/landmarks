@@ -15,8 +15,7 @@ extension.
 During the execution of your program, the traversal of instrumented code by
 the control flow is recorded as a "callgraph" that carries the collected
 measures. The results may be browsed either directly on the console, or
-by exporting results to a simple web-application (that you can either build
-locally or [access online](http://LexiFi.github.io/landmarks/viewer.html)).
+exported to json.
 
 This tool is intended to be used as a way to find where the time is spent in
 your programs (and not benchmark independent pieces of code like
@@ -26,7 +25,7 @@ tools that directly work with the binary executable like
 [gprof](https://sourceware.org/binutils/docs/gprof/) or
 [perf](https://perf.wiki.kernel.org)).
 
-For more information, you may browse the [API](http://LexiFi.github.io/landmarks/api/landmarks/Landmark/index.html).
+For more information, you may browse the [API](http://lexifi.github.io/landmarks/landmarks/Landmark/index.html).
 
 Installation
 ------------
