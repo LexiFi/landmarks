@@ -9,4 +9,5 @@
 
 (alias
  (name runtest)
+ (enabled_if (>= %{ocaml_version} "4.04"))
  (action (diff test.out.expected test.out)))
