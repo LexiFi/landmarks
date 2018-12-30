@@ -60,7 +60,7 @@ file builds the executable `test` using the `landmarks` library and its PPX.
 (executable
  (name test)
  (libraries landmarks)
- (preprocess (pps landmarks.ppx))
+ (preprocess (pps landmarks.ppx --auto))
 )
 ```
 
