@@ -56,11 +56,12 @@ Usage with dune
 Simply use the library `landmarks` and the preprocessor `landmarks.ppx` to
 benchmark your executables and libraries. For instance, the following `dune`
 file builds the executable `test` using the `landmarks` library and its PPX.
+The optional `--auto` flag turns on the automatic instrumentation (see below).
 ```
 (executable
  (name test)
  (libraries landmarks)
- (preprocess (pps landmarks.ppx))
+ (preprocess (pps landmarks.ppx --auto))
 )
 ```
 
@@ -79,9 +80,10 @@ bytecode.
 
 * With the PPX extension:
 ```
-  ocamlfind ocamlopt -c -package landmarks -package landmarks.ppx prog.ml
+  ocamlfind ocamlopt -c -package landmarks -package landmarks.ppx -ppxopt landmarks.ppx,--auto prog.ml
   ocamlfind ocamlopt -o prog -package landmarks -linkpkg prog.cmx
 ```
+Note that "-ppxopt landmarks.ppx,--auto" is optional and turns on the automatic instrumentation. 
 
 * Launching the viewer (when available):
 ```
