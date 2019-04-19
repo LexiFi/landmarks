@@ -122,12 +122,12 @@ module Stack = struct
   let to_array {data; size; _} = Array.sub data 0 size
 end
 
-
 type landmark = {
     id: int;
     kind : Graph.kind;
     name: string;
     location: string;
+    user_id: string option;
 
     mutable last_parent: node;
     mutable last_son: node;
@@ -139,7 +139,7 @@ and node = {
 
   id: int;
 
-  sons: node SparseArray.t;
+  children: node SparseArray.t;
   fathers: node Stack.t;
 
   mutable calls: int;
@@ -174,6 +174,7 @@ let rec landmark_root = {
     id = 0;
     name = "ROOT";
     location = __FILE__;
+    user_id = None;
     last_parent = dummy_node;
     last_son = dummy_node;
     last_self = dummy_node;
@@ -182,7 +183,7 @@ let rec landmark_root = {
 and dummy_node = {
     landmark = landmark_root;
     id = 0;
-    sons = SparseArray.dummy ();
+    children = SparseArray.dummy ();
     fathers = Stack.dummy ();
     floats = new_floats ();
     calls = 0;
@@ -214,23 +215,34 @@ let profile_recursive = ref false
 
 let profiling () = !profiling_ref
 
-
 (** REGISTERING **)
 
 let last_landmark_id = ref 1
-let new_landmark name location kind =
+let landmarks_of_id = Hashtbl.create 17
+let landmarks_of_user_id = Hashtbl.create 17
+
+let new_landmark ?user_id ~name ~location ~kind () =
   let id = !last_landmark_id in
   incr last_landmark_id;
-  {
-    id;
-    name;
-    location;
-    kind;
-    last_parent = dummy_node;
-    last_self = dummy_node;
-    last_son = dummy_node;
-  }
-
+  let res =
+    {
+      id;
+      name;
+      location;
+      kind;
+      user_id;
+      last_parent = dummy_node;
+      last_self = dummy_node;
+      last_son = dummy_node;
+    }
+  in
+  Hashtbl.add landmarks_of_id id res;
+  begin match user_id with
+  | Some user_id ->
+      Hashtbl.add landmarks_of_user_id user_id res;
+  | None -> ()
+  end;
+  res
 
 let node_id_ref = ref 0
 let allocated_nodes = ref []
@@ -245,7 +257,7 @@ let new_node landmark =
 
     fathers = Stack.make dummy_node 1;
     distrib = Stack.make 0.0 0;
-    sons = SparseArray.make dummy_node 7;
+    children = SparseArray.make dummy_node 7;
 
     calls = 0;
     recursive_calls = 0;
@@ -259,34 +271,72 @@ let current_root_node = ref (new_node landmark_root)
 
 let registered_landmarks = ref [landmark_root]
 
-let landmark_of_id id =
-  List.nth !registered_landmarks
-    ((List.length !registered_landmarks) - (id + 1))
-
-let register_generic ?location kind name call_stack =
-  let location =
-    match location with
-    | Some name -> name
+let landmark_of_node ({landmark_id = id; name; location; kind; _} : Graph.node) =
+  if String.length id > 0 && id.[0] = '#' then
+    let user_id = String.sub id 1 (String.length id - 1) in
+    match Hashtbl.find_opt landmarks_of_user_id user_id with
+    | None -> new_landmark ~user_id ~name ~kind ~location ()
+    | Some landmark -> landmark
+  else
+    match int_of_string_opt id with
     | None ->
-      let backtrace_slots = Printexc.backtrace_slots call_stack in
-      match backtrace_slots with
-      | Some [||] | None -> "unknown"
-      | Some slots ->
-	let last_slot = slots.(Array.length slots - 1) in
-        match Printexc.Slot.location last_slot with
-        | Some {Printexc.filename; line_number; _} ->
-          Printf.sprintf "%s:%d" filename line_number
-        | None -> "internal"
-  in
-  let landmark = new_landmark name location kind in
+        Printf.eprintf "[PROFILING] Cannot parse landmark id:'%s'\n%!" id;
+        new_landmark ~name ~kind ~location ()
+    | Some id ->
+        match Hashtbl.find_opt landmarks_of_id id with
+        | None ->
+            Printf.eprintf
+              "[PROFILING] Inconsistency: the landmark id:'%d', name:'%s', location:'%s' \
+               has not been registered in the master process.\n%!" id name location;
+            new_landmark ~name ~kind ~location ()
+        | Some landmark ->
+            if landmark.name <> name
+            || landmark.location <> location then begin
+              Printf.eprintf
+                "[PROFILING] Inconsistency: the 'master' landmark '%s' ('%s') \
+                 has the same id (%d) than the 'worker' landmark '%s' ('%s')\n%!"
+                landmark.name landmark.location landmark.id name location;
+              new_landmark ~name ~kind ~location ()
+            end else
+              landmark
+
+let register_generic ~id ~name ~location ~kind () =
+  let landmark = new_landmark ~user_id:id ~name ~location ~kind () in
   registered_landmarks := landmark :: !registered_landmarks;
   if !profile_with_debug then
     Printf.eprintf "[Profiling] registering(%s)\n%!" name;
   landmark
 
-let register ?location name =
+let register_generic ~id ~location kind name =
+  match Hashtbl.find_opt landmarks_of_user_id id with
+  | None -> register_generic ~id ~name ~location ~kind ()
+  | Some lm -> lm
+
+let register_generic ?id ?location kind name call_stack =
+  let location =
+    match location with
+    | Some name -> name
+    | None ->
+        let backtrace_slots = Printexc.backtrace_slots call_stack in
+        match backtrace_slots with
+        | Some [||] | None -> "unknown"
+        | Some slots ->
+            let last_slot = slots.(Array.length slots - 1) in
+            match Printexc.Slot.location last_slot with
+            | Some {Printexc.filename; line_number; _} ->
+                Printf.sprintf "%s:%d" filename line_number
+            | None -> "internal"
+  in
+  let id =
+    match id with
+    | Some id -> id
+    | None -> name^"-"^location
+  in
+  register_generic ~id ~location kind name
+
+let register ?id ?location name =
   let call_stack = Printexc.get_callstack 4 in
-  register_generic ?location Graph.Normal name call_stack
+  register_generic ?id ?location Graph.Normal name call_stack
 
 let register_counter name =
   let call_stack = Printexc.get_callstack 4 in
@@ -366,7 +416,7 @@ let reset () =
   !current_root_node.calls <- 0;
   !current_root_node.recursive_calls <- 0;
   stamp_root ();
-  SparseArray.reset !current_root_node.sons;
+  SparseArray.reset !current_root_node.children;
   allocated_nodes := [!current_root_node];
   current_node_ref := !current_root_node;
   cache_miss_ref := 0;
@@ -388,7 +438,7 @@ let landmark_failure msg =
   if !current_node_ref != !current_root_node then
     reset ();
   if !profile_with_debug then
-    (Printf.eprintf "Landmark error: %s\n%!" msg; Stdlib.exit 2)
+    (Printf.eprintf "Landmark error: %s\n%!" msg; Pervasives.exit 2)
   else
     raise (LandmarkFailure msg)
 
@@ -400,12 +450,12 @@ let get_entering_node ({id;_} as landmark) =
   else begin
     incr cache_miss_ref;
     (* We fetch the son or create it. *)
-    let sons = current_node.sons in
+    let children = current_node.children in
     let son = try
-        SparseArray.get sons id
+        SparseArray.get children id
       with Not_found ->
         let son = new_node landmark in
-        SparseArray.set current_node.sons id son;
+        SparseArray.set current_node.children id son;
         son
     in
     (* Fill the "cache". *)
@@ -501,7 +551,6 @@ let exit landmark =
   else if not !profile_recursive then
     last_self.recursive_calls <- last_self.recursive_calls - 1
 
-
 (* These two functions should be inlined. *)
 let enter landmark =
   if !profiling_ref then
@@ -596,7 +645,6 @@ let stop_profiling () =
     Printf.eprintf "[Profiling] Stop profiling.\n%!";
   profiling_ref := false
 
-
 (** EXPORTING / IMPORTING SLAVE PROFILINGS **)
 
 let array_list_map f l =
@@ -608,14 +656,19 @@ let array_list_map f l =
     List.iteri (fun k x -> res.(k+1) <- f x) tl; res
 
 let export ?(label = "") () =
-  let export_node {landmark; id; calls; floats; sons; distrib; _} =
-    let {id = landmark_id; name; location; kind; _} = landmark in
+  let export_node {landmark; id; calls; floats; children; distrib; _} =
+    let {id = landmark_id; user_id; name; location; kind; _} = landmark in
     let {time; allocated_bytes; sys_time; _} = floats in
-    let sons =
-      List.map (fun ({id;_} : node) -> id) (SparseArray.values sons)
+    let children =
+      List.map (fun ({id;_} : node) -> id) (SparseArray.values children)
+    in
+    let landmark_id =
+      match user_id with
+      | None -> string_of_int landmark_id
+      | Some user_id -> "#"^user_id
     in
     {Graph.landmark_id; id; name; location; calls; time; kind;
-     allocated_bytes; sys_time; sons; distrib = Stack.to_array distrib}
+     allocated_bytes; sys_time; children; distrib = Stack.to_array distrib}
   in
   if !profiling_ref then begin
     aggregate_stat_for !current_root_node;
@@ -623,7 +676,7 @@ let export ?(label = "") () =
   end;
   let all_nodes = List.rev !allocated_nodes in
   let nodes = array_list_map export_node all_nodes in
-  {Graph.nodes; label}
+  {Graph.nodes; label; root = 0}
 
 let export_and_reset ?label () =
   let profiling = !profiling_ref in
@@ -643,25 +696,18 @@ let rec merge_branch node graph (imported : Graph.node) =
   node.calls <- imported.calls + node.calls;
   Array.iter (Stack.push node.distrib) imported.distrib;
 
-  let sons = Graph.sons graph imported in
-  List.iter (fun (imported_son : Graph.node) ->
-      match SparseArray.get node.sons imported_son.landmark_id with
+  let children = Graph.children graph imported in
+  List.iter
+    (fun (imported_son : Graph.node) ->
+      let landmark = landmark_of_node imported_son in
+      match SparseArray.get node.children landmark.id with
       | exception Not_found ->
         new_branch node graph imported_son
-      | son -> merge_branch son graph imported_son) sons
+      | son -> merge_branch son graph imported_son
+    ) children
 
-and new_branch parent graph ({landmark_id; _} as imported : Graph.node) =
-  let landmark =
-    match landmark_of_id landmark_id with
-    | exception Not_found ->
-      let msg = Printf.sprintf
-          "%sThe landmark with id %d has not been registered in master process."
-          inconsistency_msg landmark_id
-      in
-      failwith msg
-    | x -> x
-  in
-  check_landmark landmark imported;
+and new_branch parent graph (imported : Graph.node) =
+  let landmark = landmark_of_node imported in
   let node = new_node landmark in
   node.calls <- imported.calls;
   let floats = node.floats in
@@ -669,24 +715,8 @@ and new_branch parent graph ({landmark_id; _} as imported : Graph.node) =
   floats.allocated_bytes <- imported.allocated_bytes;
   floats.sys_time <- imported.sys_time;
   Array.iter (Stack.push node.distrib) imported.distrib;
-  SparseArray.set parent.sons landmark_id node;
-  List.iter (new_branch node graph) (Graph.sons graph imported);
-
-and inconsistency_msg =
- "Inconsistency while importing profiling information of slaves processes:\n"
-
-and check_landmark landmark imported =
-  if landmark.name <> imported.name
-  || landmark.location <> imported.location then
-    let msg =
-      Printf.sprintf
-        "%sThe 'master' landmark '%s' ('%s') has the same id (%d) than the \
-         'slave' landmark'%s' ('%s')"
-        inconsistency_msg landmark.name landmark.location landmark.id
-        imported.name imported.location
-    in
-    failwith msg
-
+  SparseArray.set parent.children landmark.id node;
+  List.iter (new_branch node graph) (Graph.children graph imported)
 
 let merge (graph : Graph.graph) =
   if !profile_with_debug then
@@ -721,7 +751,7 @@ let exit_hook () =
       close_out oc
   end
 
-let () = Stdlib.at_exit exit_hook
+let () = Pervasives.at_exit exit_hook
 
 
 let parse_env_options s =

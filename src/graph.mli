@@ -22,12 +22,12 @@ type kind =
 type node = {
   id : id;  (** Unique identifier. *)
   kind : kind;
-  landmark_id : int; (** The node is an instance of this landmark. *)
+  landmark_id : string; (** The node is an instance of this landmark. *)
   name: string; (** Name of the landmark (see {! Landmark.register}). *)
   location: string; (** Location of the landmark (see {! Landmark.register}). *)
   calls: int; (** Number of time this node was entered. *)
   time: float; (** Time (in cycles) spent between enter and exit. *)
-  sons: id list; (** The list of instances of landmarks that was entered while the node was opened. *)
+  children: id list; (** The list of instances of landmarks that was entered while the node was opened. *)
   sys_time: float; (** Time (using Sys.time) spent between enter and exit. *)
   allocated_bytes: float; (** Gc.allocated_bytes between enter and exit. *)
   distrib: float array; (** For samplers only. The list of collected samples. *)
@@ -36,7 +36,7 @@ type node = {
 (** {3 Callgraph } *)
 
 (** The type of callgraphs. *)
-type graph = { nodes : node array; label : string }
+type graph = { nodes : node array; label : string; root: id }
 
 val nodes: graph -> node list
 (** Returns all nodes of a graph. *)
@@ -44,34 +44,35 @@ val nodes: graph -> node list
 val root: graph -> node
 (** Returns the root of a graph. *)
 
-val sons: graph -> node -> node list
-(** Returns the sons of node ([sons graph node] is equivalent to
-    [List.map (node_of_id graph) node.sons]) *)
+val children: graph -> node -> node list
+(** Returns the children of node([children graph node] is equivalent to
+    [List.map (node_of_id graph) node.children] *)
+
+val subgraph: graph -> node -> graph
+(** Change the root of a graph *)
 
 val label: graph -> node -> string
 (** Returns a fully qualified name if it is needed. *)
 
-val graph_of_nodes: ?label:string -> node list -> graph
-(** Builds a graph from a list of nodes. *)
-
+val graph_of_nodes: ?label:string -> ?root:id -> node list -> graph
+(** Build a graph from a list of nodes. *)
 
 (** {3 Traversal } *)
 
 val path_dfs: (bool -> node list -> node -> unit) ->
-  (node list -> node -> unit) -> graph -> unit
+                      (node list -> node -> unit) -> graph -> unit
 (** [path_dfs f g graph] traverses the graph in the depth-first fashion starting
     from the root. At each step we call [f visited path v] or [g path v] where
     [v] is the visited node and [path] is the path from the root that led us to
     that node. The function [g] is called when the visited node [v] belongs to
     [path]; it indicates a loop (and the traversal does not continue with the
-    sons of g). The function [f] is called when [v] does not belong to [path].
+    children of g). The function [f] is called when [v] does not belong to [path].
     The flag [visited] is true when the vertex has already been visited. *)
 
 val dfs: (node list -> node -> bool) ->
-  (node list -> node -> unit) -> graph -> unit
+         (node list -> node -> unit) -> graph -> unit
 (** A specialization of [path_dfs] that does not need to read the visited flag.
-    The returned values of the first function tells whether or not the traversal
-    should continue visiting the children of the current node. *)
+    The returned values of the first function tells whether or not the traversal    should continue visiting the children of the current node. *)
 
 (** {3 Utility functions } *)
 
@@ -86,9 +87,12 @@ val intensity: ?proj:(node -> float) -> graph -> node -> float
 (** Returns an arbitrary number between 0.0 and 1.0. *)
 
 val total_number_of_calls: graph -> int
-(** Computes the sum of all calls field. *)
+(** Compute the sum of all calls field. *)
 
 (** {3 Simplification / Merge / Quotienting.} *)
+
+val prune: graph -> graph
+(** Remove the unaccessible nodes from a graph. *)
 
 val aggregate_landmarks: graph -> graph
 (** [aggregate_landmarks g] computes the quotient by the relation "being an
@@ -100,4 +104,4 @@ val output: ?threshold:float -> out_channel -> graph -> unit
 (** Pretty printed output a call graph on an out_channel. *)
 
 val output_json: out_channel -> graph -> unit
-(** Outputs a JSON representation of a call graph on an out_channel. *)
+(** Output a JSON representation of a call graph on an out_channel. *)

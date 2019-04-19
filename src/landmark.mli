@@ -20,9 +20,12 @@ with the function {! register} and delimited by {! enter} and {! exit}. *)
 (** The type of landmarks. *)
 type landmark
 
-val register: ?location:string -> string -> landmark
-(** [register name] registers a new landmark.
-    Should always be called at top-level. *)
+val register: ?id:string -> ?location:string -> string -> landmark
+(** [register name] registers a new landmark. Note that landmarks are
+    identified by location + name (or by [id] if provided). If you
+    register a landmark twice the second call returns a physically equal
+    value to the first call (if you provide [id] the name & location of
+    the second call is ignored). *)
 
 val enter: landmark -> unit
 (** Begins a landmark block.
@@ -72,11 +75,11 @@ val profiling: unit -> bool
 
 (** Where to output results. *)
 type profile_output =
-  | Silent (** Disables the automatic output of profiling results
+  | Silent (** disables the automatic output of profiling results
     when the program ends. *)
-  | Temporary of string option (** Writes the results in a temporary files
+  | Temporary of string option (** writes the results in a temporary files
                                    and prints its path on stderr. *)
-  | Channel of out_channel (** Writes in the results in out_channel. *)
+  | Channel of out_channel (** writes in the results in out_channel. *)
 
 
 type textual_option = {threshold : float}
@@ -84,9 +87,7 @@ type textual_option = {threshold : float}
 (** The output format for the results.*)
 type profile_format =
   | JSON (** Easily parsable export format. *)
-  | Textual of textual_option (** Console friendly output; nodes below the
-                                  threshold (0.0 <= threshold <= 100.0) are
-                                  not displayed in the callgraph. *)
+  | Textual of textual_option (** Console friendly output; nodes below the threshold (0.0 <= threshold <= 100.0) are not displayed in the callgraph. *)
 
 (** The profiling options control the behavior of the landmark infrastructure. *)
 type profiling_options = {
