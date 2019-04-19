@@ -79,6 +79,19 @@ let local_module () =
   M.local_noauto ()
 
 
+class c =
+  let[@landmark] variable = print "variable" in
+  object(self)
+    method[@landmark] m1 = print "m1"
+    method[@landmark] m2 () = print "m2"
+    method[@landmark] m3 () = print "m3"
+    initializer
+      self # m1;
+      self # m2 ();
+      let _ = self # m3 in
+      ignore variable;
+      ()
+  end
 
 let () =
   let open Landmark in
@@ -113,7 +126,9 @@ let () =
      incl_noauto2 ())[@landmark "module"];
 
 
-    local_module ()
+    local_module ();
+
+    ignore (new c)
   in
   main ();
   if profiling () then begin
