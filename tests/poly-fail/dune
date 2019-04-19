@@ -1,11 +1,12 @@
 (rule
  (targets test.out)
- (deps (package landmarks))
+ (deps (package landmarks) (:ppx %{workspace_root}/.ppx/landmarks.ppx/ppx.exe) (:redirect ../tools/redirect_stdin.exe))
  (action
   (with-stdout-to test.out
    (setenv TERM dumb
-   (setenv CAML_LD_LIBRARY_PATH ../../src
-   (run ../tools/redirect_stdin.exe %{dep:test.ml} %{dep:../../toplevel/toplevel.bc} -noprompt -no-version -I ../../src/.landmark.objs -ppx "%{dep:../../.ppx/landmarks.ppx/ppx.exe} --as-ppx"))))))
+   (chdir %{workspace_root}/.ppx/landmarks.ppx
+     (setenv CAML_LD_LIBRARY_PATH %{project_root}/src
+        (run %{redirect} %{dep:test.ml} %{ocaml} -noprompt -no-version %{lib:landmarks:landmark.cma} -I %{project_root}/src/.landmark.objs/byte -ppx "%{ppx} --as-ppx")))))))
 
 (alias
  (name runtest)

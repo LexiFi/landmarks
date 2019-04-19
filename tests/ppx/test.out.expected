@@ -20,29 +20,29 @@ in: local_noauto
 
 Landmark reached:
 ROOT
-Tests/ppx/test.M.mod_lm0
-Tests/ppx/test.M.mod_lm1
-Tests/ppx/test.M.mod_lm2
-Tests/ppx/test.M.mod_lm3
-Tests/ppx/test.fib
-Tests/ppx/test.incl_lm0
-Tests/ppx/test.incl_lm1
-Tests/ppx/test.incl_lm2
-Tests/ppx/test.incl_lm3
-Tests/ppx/test.lm1
-Tests/ppx/test.lm2
-Tests/ppx/test.lm3
-Tests/ppx/test.lm4_alpha
-Tests/ppx/test.local1
-Tests/ppx/test.local2
-Tests/ppx/test.main
-Tests/ppx/test.module
-Tests/ppx/test.module
-Tests/ppx/test.next_prime
-Tests/ppx/test.not module
-Tests/ppx/test.odd
-Tests/ppx/test.odd0
-Tests/ppx/test.prime
-Tests/ppx/test.print
-Tests/ppx/test.result
-Tests/ppx/test.unit
+Test.M.mod_lm0
+Test.M.mod_lm1
+Test.M.mod_lm2
+Test.M.mod_lm3
+Test.fib
+Test.incl_lm0
+Test.incl_lm1
+Test.incl_lm2
+Test.incl_lm3
+Test.lm1
+Test.lm2
+Test.lm3
+Test.lm4_alpha
+Test.local1
+Test.local2
+Test.main
+Test.module
+Test.module
+Test.next_prime
+Test.not module
+Test.odd
+Test.odd0
+Test.prime
+Test.print
+Test.result
+Test.unit

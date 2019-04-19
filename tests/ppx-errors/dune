@@ -1,9 +1,9 @@
 (rule
  (targets test.out)
- (deps (package landmarks))
+ (deps (package landmarks) (:ppx %{workspace_root}/.ppx/landmarks.ppx/ppx.exe) (:redirect ../tools/redirect_stdin.exe))
  (action (with-stdout-to test.out
   (setenv TERM dumb
-  (run ../tools/redirect_stdin.exe %{dep:test.ml} %{ocaml} -no-version -noprompt -ppx "%{dep:../../.ppx/landmarks.ppx/ppx.exe} --as-ppx")))))
+  (chdir %{workspace_root}/.ppx/landmarks.ppx (run %{redirect} %{dep:test.ml} %{ocaml} -no-version -noprompt -ppx "%{ppx} --as-ppx"))))))
 
 (alias
  (name runtest)

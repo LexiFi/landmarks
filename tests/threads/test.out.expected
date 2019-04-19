@@ -2,5 +2,5 @@ Starting 100 threads ...
 
 Landmark reached:
 ROOT
-Tests/threads/test.hello
-Tests/threads/test.main
+Test.hello
+Test.main
