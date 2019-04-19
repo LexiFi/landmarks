@@ -215,9 +215,10 @@ let translate_value_bindings ctx mapper auto vbs =
              | Some fun_name, [ Some landmark ] ->
                from_names arity fun_name landmark
              | _, [Some name] -> from_names [] "" name
-             | _, [] ->
-               if auto then (vb, None) else error pvb_loc `Provide_a_name
-             | _ -> error pvb_loc `Too_many_attributes)
+             | _, [None] -> error pvb_loc `Provide_a_name
+             | _, [] -> (vb, None)
+             | _, _ :: _ :: _ -> error pvb_loc `Too_many_attributes
+           )
          | _, _ -> (vb, None))
       vbs
   in
@@ -326,7 +327,8 @@ let rec mapper auto ctx =
            |> wrap_landmark ctx landmark_name pexp_loc
        | [ None ] -> error pexp_loc `Provide_a_name
        | [] -> expr
-       | _ -> error pexp_loc `Too_many_attributes }
+       | _ -> error pexp_loc `Too_many_attributes
+  }
 
 let remove_attributes =
   { default_mapper with

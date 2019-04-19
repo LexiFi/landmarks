@@ -1,3 +1,4 @@
+in: variable
 in: lm1
 in: lm2
 in: lm3
@@ -17,6 +18,8 @@ in: incl_no-auto2
 in: local1
 in: local2
 in: local_noauto
+in: m1
+in: m2
 
 Landmark reached:
 ROOT

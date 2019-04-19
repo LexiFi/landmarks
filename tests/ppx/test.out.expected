@@ -49,3 +49,4 @@ Test.prime
 Test.print
 Test.result
 Test.unit
+Test.variable
