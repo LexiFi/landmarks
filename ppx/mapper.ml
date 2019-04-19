@@ -153,7 +153,7 @@ let wrap_landmark ctx landmark loc expr =
 
 let rec arity {pexp_desc; _} =
   match pexp_desc with
-  | Pexp_fun (a, _, _, e ) -> a :: arity e
+  | Pexp_fun (a, _, _, e) -> a :: arity e
   | Pexp_function cases ->
     let max_list l1 l2 =
       if List.length l1 < List.length l2 then
@@ -166,7 +166,16 @@ let rec arity {pexp_desc; _} =
       [] cases)
   | Pexp_newtype (_, e) -> arity e
   | Pexp_constraint (e, _) -> arity e
+  | Pexp_poly (e, _) -> arity e
   | _ -> []
+
+let rec wrap_landmark_method ctx landmark loc ({pexp_desc; _} as expr) =
+  match pexp_desc with
+  | Pexp_fun (label, def, pat, e) ->
+    { expr with pexp_desc = Pexp_fun (label, def, pat, wrap_landmark_method ctx landmark loc e)}
+  | Pexp_poly (e, typ) ->
+    { expr with pexp_desc = Pexp_poly (wrap_landmark_method ctx landmark loc e, typ)}
+  | _ -> wrap_landmark ctx landmark loc expr
 
 let eta_expand f t n =
   let vars =
@@ -282,24 +291,48 @@ let rec mapper auto ctx =
          [mapper.structure_item mapper sti])
      l |> List.flatten);
 
+    class_field =
+      (fun deep_mapper class_field ->
+        match class_field with
+        | { pcf_desc = Pcf_method (loc, privat, Cfk_concrete (flag, expr)); pcf_loc; pcf_attributes; _ } ->
+          begin
+            let landmark =
+              match filter_map (get_payload "landmark") pcf_attributes with
+              | [Some landmark_name] -> Some landmark_name
+              | [None] -> Some (Constant loc.txt)
+              | [] -> None
+              | _ :: _ :: _ -> error pcf_loc `Too_many_attributes
+            in
+            match landmark with
+            | None -> class_field
+            | Some landmark ->
+              let expr =
+                wrap_landmark_method ctx landmark pcf_loc (deep_mapper.expr deep_mapper expr)
+              in
+              { class_field with
+                 pcf_desc = Pcf_method (loc, privat, Cfk_concrete (flag, expr));
+                 pcf_attributes = remove_attribute "landmark" pcf_attributes
+              }
+          end
+        | _ -> default_mapper.class_field deep_mapper class_field
+      );
+
     class_expr =
       (fun deep_mapper class_expr ->
-        let expr = match class_expr with
-          | ({pcl_desc = Pcl_let (rec_flag, vbs, body); _} as class_expr) ->
-            let vbs, new_vbs =
-              translate_value_bindings ctx deep_mapper false vbs
-            in
-            let body = deep_mapper.class_expr deep_mapper body in
-            let body =
-              if new_vbs = [] then
-                body
-              else
-                Cl.let_ Nonrecursive new_vbs body
-            in
-            { class_expr with pcl_desc = Pcl_let (rec_flag, vbs, body) }
-          | class_expr -> default_mapper.class_expr deep_mapper class_expr
-        in
-        expr
+        match class_expr with
+        | {pcl_desc = Pcl_let (rec_flag, vbs, body); _} ->
+          let vbs, new_vbs =
+            translate_value_bindings ctx deep_mapper false vbs
+          in
+          let body = deep_mapper.class_expr deep_mapper body in
+          let body =
+            if new_vbs = [] then
+              body
+            else
+              Cl.let_ Nonrecursive new_vbs body
+          in
+          { class_expr with pcl_desc = Pcl_let (rec_flag, vbs, body) }
+        | _ -> default_mapper.class_expr deep_mapper class_expr
       );
 
     expr =

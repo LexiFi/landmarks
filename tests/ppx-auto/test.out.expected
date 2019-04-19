@@ -18,6 +18,7 @@ in: incl_no-auto2
 in: local1
 in: local2
 in: local_noauto
+in: immediate
 in: m1
 in: m2
 

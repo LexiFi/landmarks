@@ -18,6 +18,7 @@ in: incl_no-auto2
 in: local1
 in: local2
 in: local_noauto
+in: immediate
 in: m1
 in: m2
 
@@ -28,6 +29,7 @@ Test.M.mod_lm1
 Test.M.mod_lm2
 Test.M.mod_lm3
 Test.fib
+Test.immediate
 Test.incl_lm0
 Test.incl_lm1
 Test.incl_lm2
@@ -38,6 +40,8 @@ Test.lm3
 Test.lm4_alpha
 Test.local1
 Test.local2
+Test.m1
+Test.m2
 Test.main
 Test.module
 Test.module

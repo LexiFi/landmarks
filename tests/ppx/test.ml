@@ -78,7 +78,6 @@ let local_module () =
   M.local2 ();
   M.local_noauto ()
 
-
 class c =
   let[@landmark] variable = print "variable" in
   object(self)
@@ -127,6 +126,8 @@ let () =
 
 
     local_module ();
+
+    (object method[@landmark] immediate () = print "immediate" end) # immediate ();
 
     ignore (new c)
   in
