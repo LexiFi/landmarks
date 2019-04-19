@@ -240,6 +240,26 @@ let rec mapper auto ctx =
               [mapper.structure_item mapper sti])
           l |> List.flatten);
 
+    class_expr =
+      (fun deep_mapper class_expr ->
+        let expr = match class_expr with
+          | ({pcl_desc = Pcl_let (rec_flag, vbs, body); _} as class_expr) ->
+            let vbs, new_vbs =
+              translate_value_bindings ctx deep_mapper false vbs
+            in
+            let body = deep_mapper.class_expr deep_mapper body in
+            let body =
+              if new_vbs = [] then
+                body
+              else
+                Cl.let_ Nonrecursive new_vbs body
+            in
+            { class_expr with pcl_desc = Pcl_let (rec_flag, vbs, body) }
+          | class_expr -> default_mapper.class_expr deep_mapper class_expr
+        in
+        expr
+      );
+
     expr =
       fun deep_mapper expr ->
         let expr = match expr with
