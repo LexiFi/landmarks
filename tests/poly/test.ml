@@ -6,6 +6,10 @@ let _ =
   let[@landmark] test2 (type t) (x : t) = x
   in test2 "marc", test2 2
 
+let _ =
+  let obj = object method[@landmark] test3 x = x end
+  in obj # test3 "marc", obj # test3 2
+
 let () =
   let open Landmark in
   if profiling () then begin
