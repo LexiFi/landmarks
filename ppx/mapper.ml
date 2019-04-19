@@ -93,20 +93,24 @@ let exit_landmark lm =
     if !with_thread then "Landmark_threads.exit" else "Landmark.exit"
   in
   Exp.apply (var landmark_exit) [Nolabel, var lm]
-let register_landmark name location =
-  Exp.apply (var "Landmark.register")
-    [ Labelled "location", Const.string location |> Exp.constant;
-      Nolabel, name]
 
-let register_constant_landmark name location =
-  register_landmark (Exp.constant (Const.string name)) location
+let register_landmark ?id name location =
+  let args = [ Labelled "location", Const.string location |> Exp.constant; Nolabel, name] in
+  Exp.apply (var "Landmark.register")
+    (match id with
+    | None -> args
+    | Some id -> (Labelled "id", Const.string id |> Exp.constant) :: args)
+
+let register_constant_landmark ?id name location =
+  register_landmark ?id (Exp.constant (Const.string name)) location
 
 let new_landmark landmark_name loc =
   incr landmark_id;
-  let landmark = Printf.sprintf "__generated_landmark_%s_%d" !landmark_hash !landmark_id in
+  let id = Printf.sprintf "%s_%d" !landmark_hash !landmark_id in
+  let landmark = "__generated_landmark_" ^ id in
   let landmark_location = string_of_loc loc in
   landmarks_to_register :=
-    (landmark, landmark_name, landmark_location) :: !landmarks_to_register;
+    (landmark, landmark_name, landmark_location, id) :: !landmarks_to_register;
   landmark
 
 let qualified ctx name = String.concat "." (List.rev (name :: ctx))
@@ -416,9 +420,9 @@ let toplevel_mapper auto =
          if !landmarks_to_register = [] then l else
          let landmarks =
            Str.value Nonrecursive
-             (List.map (fun (landmark, landmark_name, landmark_location) ->
+             (List.map (fun (landmark, landmark_name, landmark_location, id) ->
                Vb.mk (Pat.var (mknoloc landmark))
-                     (register_constant_landmark landmark_name landmark_location))
+                     (register_constant_landmark ~id landmark_name landmark_location))
                  (List.rev !landmarks_to_register))
          in
          match lm with
