@@ -1,6 +1,9 @@
 upcoming version
 ----------------
 * improvements on the doc and examples (pull-request #15, #16, contributed by Leandro Ostera)
+* primitive support for objects (allow to annotate methods)
+* dynamic landmarks
+* TODO: document these new features
 
 version 1.3, 6 dec 2018
 -----------------------
