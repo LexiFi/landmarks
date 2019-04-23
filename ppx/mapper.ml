@@ -2,6 +2,8 @@
 (* See the attached LICENSE file.                                    *)
 (* Copyright 2016 by LexiFi.                                         *)
 
+open Migrate_parsetree.Ast_404
+
 open Ast_mapper
 open Ast_helper
 open Asttypes

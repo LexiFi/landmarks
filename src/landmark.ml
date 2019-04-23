@@ -274,22 +274,22 @@ let registered_landmarks = ref [landmark_root]
 let landmark_of_node ({landmark_id = id; name; location; kind; _} : Graph.node) =
   if String.length id > 0 && id.[0] = '#' then
     let user_id = String.sub id 1 (String.length id - 1) in
-    match Hashtbl.find_opt landmarks_of_user_id user_id with
-    | None -> new_landmark ~user_id ~name ~kind ~location ()
-    | Some landmark -> landmark
+    match Hashtbl.find landmarks_of_user_id user_id with
+    | exception Not_found -> new_landmark ~user_id ~name ~kind ~location ()
+    | landmark -> landmark
   else
-    match int_of_string_opt id with
-    | None ->
+    match int_of_string id with
+    | exception _ ->
         Printf.eprintf "[PROFILING] Cannot parse landmark id:'%s'\n%!" id;
         new_landmark ~name ~kind ~location ()
-    | Some id ->
-        match Hashtbl.find_opt landmarks_of_id id with
-        | None ->
+    | id ->
+        match Hashtbl.find landmarks_of_id id with
+        | exception Not_found ->
             Printf.eprintf
               "[PROFILING] Inconsistency: the landmark id:'%d', name:'%s', location:'%s' \
                has not been registered in the master process.\n%!" id name location;
             new_landmark ~name ~kind ~location ()
-        | Some landmark ->
+        | landmark ->
             if landmark.name <> name
             || landmark.location <> location then begin
               Printf.eprintf
@@ -308,9 +308,10 @@ let register_generic ~id ~name ~location ~kind () =
   landmark
 
 let register_generic ~id ~location kind name =
-  match Hashtbl.find_opt landmarks_of_user_id id with
-  | None -> register_generic ~id ~name ~location ~kind ()
-  | Some lm -> lm
+  match Hashtbl.find landmarks_of_user_id id with
+  | exception Not_found ->
+    register_generic ~id ~name ~location ~kind ()
+  | lm -> lm
 
 let register_generic ?id ?location kind name call_stack =
   let location =
