@@ -1,5 +1,3 @@
-(executable
- (name       toplevel)
- (libraries  compiler-libs.toplevel landmark)
- (link_flags -linkall)
- (modes      (byte exe)))
+(toplevel
+ (name tt)
+ (libraries  compiler-libs.toplevel landmark))
