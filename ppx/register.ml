@@ -2,6 +2,8 @@
 (* See the attached LICENSE file.                                    *)
 (* Copyright 2016 by LexiFi.                                         *)
 
+open Migrate_parsetree.Ast_404
+
 let auto = ref false
 let remove = ref false
 let threads = Mapper.with_thread

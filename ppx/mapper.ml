@@ -399,6 +399,8 @@ let has_disable l =
    let res = filter_map f l in
    !disable, res
 
+let remove_extension s =
+  try Filename.chop_extension s with Invalid_argument _ -> s
 
 let toplevel_mapper auto =
   { default_mapper with
@@ -409,7 +411,7 @@ let toplevel_mapper auto =
        let disable, l = has_disable l in
        if disable then l else begin
          let first_loc = (List.hd l).pstr_loc in
-         let module_name = Filename.remove_extension (Filename.basename !Location.input_name) in
+         let module_name = remove_extension (Filename.basename !Location.input_name) in
          let mapper = mapper auto [String.capitalize_ascii module_name] in
          let l = mapper.structure mapper l in
          let landmark_name = Printf.sprintf "load(%s)" module_name in
