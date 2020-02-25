@@ -439,7 +439,7 @@ let landmark_failure msg =
   if !current_node_ref != !current_root_node then
     reset ();
   if !profile_with_debug then
-    (Printf.eprintf "Landmark error: %s\n%!" msg; Pervasives.exit 2)
+    (Printf.eprintf "Landmark error: %s\n%!" msg; Stdlib.exit 2)
   else
     raise (LandmarkFailure msg)
 
@@ -752,7 +752,7 @@ let exit_hook () =
       close_out oc
   end
 
-let () = Pervasives.at_exit exit_hook
+let () = Stdlib.at_exit exit_hook
 
 
 let parse_env_options s =

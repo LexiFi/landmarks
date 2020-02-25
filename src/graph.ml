@@ -52,7 +52,7 @@ let subgraph graph node =
 
 module SetNode = Set.Make(struct
     type t = node
-    let compare x y = Pervasives.compare x.id y.id
+    let compare x y = Stdlib.compare x.id y.id
   end)
 
 module HashNode = Hashtbl.Make (struct
@@ -242,7 +242,7 @@ let label graph =
       (nodes graph)
   in
   let names = flatten_map (fun l ->
-      List.sort_uniq Pervasives.compare
+      List.sort_uniq Stdlib.compare
         (List.map (fun {name; _} -> name) l)) nodes
   in
   let needs_location =
