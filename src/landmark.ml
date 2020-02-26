@@ -274,22 +274,22 @@ let registered_landmarks = ref [landmark_root]
 let landmark_of_node ({landmark_id = id; name; location; kind; _} : Graph.node) =
   if String.length id > 0 && id.[0] = '#' then
     let user_id = String.sub id 1 (String.length id - 1) in
-    match Hashtbl.find landmarks_of_user_id user_id with
-    | exception Not_found -> new_landmark ~user_id ~name ~kind ~location ()
-    | landmark -> landmark
+    match Hashtbl.find_opt landmarks_of_user_id user_id with
+    | None -> new_landmark ~user_id ~name ~kind ~location ()
+    | Some landmark -> landmark
   else
-    match int_of_string id with
-    | exception _ ->
+    match int_of_string_opt id with
+    | None ->
         Printf.eprintf "[PROFILING] Cannot parse landmark id:'%s'\n%!" id;
         new_landmark ~name ~kind ~location ()
-    | id ->
-        match Hashtbl.find landmarks_of_id id with
-        | exception Not_found ->
+    | Some id ->
+        match Hashtbl.find_opt landmarks_of_id id with
+        | None ->
             Printf.eprintf
               "[PROFILING] Inconsistency: the landmark id:'%d', name:'%s', location:'%s' \
                has not been registered in the master process.\n%!" id name location;
             new_landmark ~name ~kind ~location ()
-        | landmark ->
+        | Some landmark ->
             if landmark.name <> name
             || landmark.location <> location then begin
               Printf.eprintf
@@ -308,10 +308,9 @@ let register_generic ~id ~name ~location ~kind () =
   landmark
 
 let register_generic ~id ~location kind name =
-  match Hashtbl.find landmarks_of_user_id id with
-  | exception Not_found ->
-      register_generic ~id ~name ~location ~kind ()
-  | lm -> lm
+  match Hashtbl.find_opt landmarks_of_user_id id with
+  | None -> register_generic ~id ~name ~location ~kind ()
+  | Some lm -> lm
 
 let register_generic ?id ?location kind name call_stack =
   let location =
@@ -367,23 +366,33 @@ let clear_cache () =
 
 type profiling_state = {
   root : node;
-  nodes: node list;
+  nodes: node_info list;
   nodes_len: int;
   current: node;
   cache_miss: int
 }
+and node_info = {
+  node: node;
+  recursive: bool;
+}
 
 let profiling_stack =
   let dummy =
-    {root = dummy_node; current = dummy_node; nodes = [dummy_node]; cache_miss = 0; nodes_len = 1}
+    {root = dummy_node; current = dummy_node; nodes = [{node = dummy_node; recursive = false}]; cache_miss = 0; nodes_len = 1}
   in
   Stack.make dummy 7
 
 let push_profiling_state () =
+  if !profile_with_debug then
+    Printf.eprintf "[Profiling] Push profiling state ....\n%!";
   let state =
+    let node_info node =
+      let recursive = node.landmark.last_self == node in
+      { node; recursive }
+    in
     {
       root = !current_root_node;
-      nodes = !allocated_nodes;
+      nodes = List.map node_info !allocated_nodes;
       nodes_len = !node_id_ref;
       current = !current_node_ref;
       cache_miss = !cache_miss_ref;
@@ -403,7 +412,7 @@ let pop_profiling_state () =
     current_root_node := root;
     current_node_ref := current;
     cache_miss_ref := cache_miss;
-    allocated_nodes := nodes;
+    allocated_nodes := List.map (fun {node; recursive} -> if recursive then node.landmark.last_self <- node; node) nodes;
     node_id_ref := nodes_len
 
 let reset () =

@@ -135,9 +135,9 @@ let depth graph =
         | [] -> 0
         | father :: _ -> (HashNode.find result father) + 1
       in
-      begin match HashNode.find result node with
-      | exception Not_found -> HashNode.replace result node depth
-      | old_depth -> HashNode.replace result node (min old_depth depth)
+      begin match HashNode.find_opt result node with
+      | None -> HashNode.replace result node depth
+      | Some old_depth -> HashNode.replace result node (min old_depth depth)
       end; true)
     (fun _ _ -> ()) graph;
   fun node -> HashNode.find result node
