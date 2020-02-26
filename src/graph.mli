@@ -60,7 +60,7 @@ val graph_of_nodes: ?label:string -> ?root:id -> node list -> graph
 (** {3 Traversal } *)
 
 val path_dfs: (bool -> node list -> node -> unit) ->
-                      (node list -> node -> unit) -> graph -> unit
+  (node list -> node -> unit) -> graph -> unit
 (** [path_dfs f g graph] traverses the graph in the depth-first fashion starting
     from the root. At each step we call [f visited path v] or [g path v] where
     [v] is the visited node and [path] is the path from the root that led us to
@@ -70,7 +70,7 @@ val path_dfs: (bool -> node list -> node -> unit) ->
     The flag [visited] is true when the vertex has already been visited. *)
 
 val dfs: (node list -> node -> bool) ->
-         (node list -> node -> unit) -> graph -> unit
+  (node list -> node -> unit) -> graph -> unit
 (** A specialization of [path_dfs] that does not need to read the visited flag.
     The returned values of the first function tells whether or not the traversal    should continue visiting the children of the current node. *)
 

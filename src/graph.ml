@@ -77,24 +77,24 @@ let prune graph =
     HashNode.iter (fun n () ->
         if n.id <> node.id then
           l := n :: !l
-    ) visited_table;
+      ) visited_table;
     List.rev !l
   in
   let translator = Hashtbl.create 17 in
   List.iteri
     (fun k n ->
-      assert (not (Hashtbl.mem translator n.id));
-      Hashtbl.add translator n.id k
+       assert (not (Hashtbl.mem translator n.id));
+       Hashtbl.add translator n.id k
     ) nodes;
-let translate node =
-  try
-    let id = Hashtbl.find translator node.id in
-    let children = List.map (Hashtbl.find translator) node.children in
-    { node with id; children}
-  with Not_found -> assert false
-in
-let nodes = Array.of_list (List.map translate nodes) in
-{nodes; label = ""; root = 0}
+  let translate node =
+    try
+      let id = Hashtbl.find translator node.id in
+      let children = List.map (Hashtbl.find translator) node.children in
+      { node with id; children}
+    with Not_found -> assert false
+  in
+  let nodes = Array.of_list (List.map translate nodes) in
+  {nodes; label = ""; root = 0}
 
 let path_dfs f g graph =
   let visited_table = HashNode.create 17 in
@@ -146,14 +146,14 @@ let shallow_ancestor graph =
   let result = HashNode.create 17 in
   dfs
     (fun ancestor node ->
-      let sa = match ancestor with
-        | [] -> node
-        | [ root ] -> root
-        | [ father; _ ] -> father
-        | father :: _ -> HashNode.find result father
-      in
-      HashNode.replace result node sa;
-      true
+       let sa = match ancestor with
+         | [] -> node
+         | [ root ] -> root
+         | [ father; _ ] -> father
+         | father :: _ -> HashNode.find result father
+       in
+       HashNode.replace result node sa;
+       true
     )
     (fun  _ _ -> ()) graph;
   fun node -> HashNode.find result node
@@ -173,20 +173,20 @@ let aggregate_landmarks graph =
     match l with
     | [] -> assert false
     | hd :: tl ->
-      let id = Hashtbl.find translator hd.landmark_id in
-      let time = List.fold_left (fun acc {time; _} -> acc +. time) hd.time tl in
-      let calls = List.fold_left (fun acc {calls; _} -> acc + calls) hd.calls tl in
-      let sys_time = List.fold_left (fun acc {sys_time; _} -> acc +. sys_time) hd.sys_time tl in
-      let allocated_bytes = List.fold_left (fun acc {allocated_bytes; _} -> acc +. allocated_bytes) hd.allocated_bytes tl in
-      let children =
-        let lm_ids_of_children {children; _} =
-          StringSet.of_list (List.map (fun id -> nodes.(id).landmark_id) children)
+        let id = Hashtbl.find translator hd.landmark_id in
+        let time = List.fold_left (fun acc {time; _} -> acc +. time) hd.time tl in
+        let calls = List.fold_left (fun acc {calls; _} -> acc + calls) hd.calls tl in
+        let sys_time = List.fold_left (fun acc {sys_time; _} -> acc +. sys_time) hd.sys_time tl in
+        let allocated_bytes = List.fold_left (fun acc {allocated_bytes; _} -> acc +. allocated_bytes) hd.allocated_bytes tl in
+        let children =
+          let lm_ids_of_children {children; _} =
+            StringSet.of_list (List.map (fun id -> nodes.(id).landmark_id) children)
+          in
+          List.fold_left (fun acc node -> StringSet.union acc (lm_ids_of_children node)) StringSet.empty l
+          |> StringSet.elements
+          |> List.map (Hashtbl.find translator)
         in
-        List.fold_left (fun acc node -> StringSet.union acc (lm_ids_of_children node)) StringSet.empty l
-        |> StringSet.elements
-        |> List.map (Hashtbl.find translator)
-      in
-      { hd with id; time; calls; sys_time; allocated_bytes; children}
+        { hd with id; time; calls; sys_time; allocated_bytes; children}
   in
   let root = Hashtbl.find translator root_id in
   let nodes = Array.of_list (List.map aggregate_nodes group_nodes) in
@@ -275,38 +275,38 @@ let output ?(threshold = 1.0) oc graph =
   in
   let digits_of_call =
     int_of_float @@
-      1. +. log10 (List.map (fun {calls; _} -> calls) (nodes graph)
-                   |> List.fold_left max 1
-                   |> float_of_int)
+    1. +. log10 (List.map (fun {calls; _} -> calls) (nodes graph)
+                 |> List.fold_left max 1
+                 |> float_of_int)
   in
   let regular_call ancestors node =
     match ancestors with
     | [] -> true
     | father:: _ ->
-      let depth = List.length ancestors in
-      let spaces = spaces depth in
-      let this_time, father_time = node.time, father.time in
-      if node.calls > 0 then
-        if father_time > 0.0 then
-          let percent = 100.0 *. this_time /. father_time in
-          let this_time, unit = human this_time in
-          if percent >= threshold then begin
+        let depth = List.length ancestors in
+        let spaces = spaces depth in
+        let this_time, father_time = node.time, father.time in
+        if node.calls > 0 then
+          if father_time > 0.0 then
+            let percent = 100.0 *. this_time /. father_time in
+            let this_time, unit = human this_time in
+            if percent >= threshold then begin
+              Printf.fprintf oc "%s\n%!"
+                (Printf.sprintf
+                   "[ %7.2f%1s cycles in %*d calls ] %s %5.2f%% : %s"
+                   this_time unit digits_of_call node.calls spaces percent (color node (label node)));
+              true
+            end else
+              false
+          else
+            let this_time, unit = human this_time in
             Printf.fprintf oc "%s\n%!"
               (Printf.sprintf
-                 "[ %7.2f%1s cycles in %*d calls ] %s %5.2f%% : %s"
-                 this_time unit digits_of_call node.calls spaces percent (color node (label node)));
-            true
-          end else
+                 "[ %7.2f%1s  cycles in %7d calls ] %s * %s"
+                 this_time unit node.calls spaces (color node (label node)));
             false
         else
-          let this_time, unit = human this_time in
-          Printf.fprintf oc "%s\n%!"
-            (Printf.sprintf
-               "[ %7.2f%1s  cycles in %7d calls ] %s * %s"
-               this_time unit node.calls spaces (color node (label node)));
           false
-       else
-         false
   in
   let recursive_call ancestors node =
     let depth = List.length ancestors in
@@ -371,62 +371,62 @@ let output ?(threshold = 1.0) oc graph =
 
 module JSON = struct
 
-type json =
-  | String of string
-  | Int of int
-  | Float of float
-  | Map of (string * json) list
-  | List of json list
-  | ListClosure of int * (int -> json)
+  type json =
+    | String of string
+    | Int of int
+    | Float of float
+    | Map of (string * json) list
+    | List of json list
+    | ListClosure of int * (int -> json)
 
-open Format
+  open Format
 
-let rec output oc = function
-  | String s ->
-    fprintf oc "\"%s\"" (String.escaped s)
-  | Int n ->
-    fprintf oc "%d" n
-  | Float f ->
-    fprintf oc "%f" f
-  | Map l ->
-    fprintf oc "{@,";
-    let first = ref true in
-    List.iter (fun (name, json) ->
-        if !first then
-          first := false
-        else
-          fprintf oc ",@,";
-        fprintf oc "@[<v 2>%S: %a@]" name output json
-    ) l;
-    fprintf oc "@;<0 -2>}"
-  | List [] -> fprintf oc "[]"
-  | List [x] -> fprintf oc "[%a]" output x
-  | List l when List.for_all (function Int _ -> true | _ -> false) l ->
-    fprintf oc "[%s]" (String.concat ", " (List.map (function Int x -> string_of_int x | _ -> assert false) l))
-  | List l ->
-    fprintf oc "[@,";
-    let first = ref true in
-    List.iter (fun json ->
-        if !first then
-          first := false
-        else
-          fprintf oc ",@,";
-        fprintf oc "@[<v 2>%a@]" output json
-    ) l;
-    fprintf oc "@;<0 -2>]"
+  let rec output oc = function
+    | String s ->
+        fprintf oc "\"%s\"" (String.escaped s)
+    | Int n ->
+        fprintf oc "%d" n
+    | Float f ->
+        fprintf oc "%f" f
+    | Map l ->
+        fprintf oc "{@,";
+        let first = ref true in
+        List.iter (fun (name, json) ->
+            if !first then
+              first := false
+            else
+              fprintf oc ",@,";
+            fprintf oc "@[<v 2>%S: %a@]" name output json
+          ) l;
+        fprintf oc "@;<0 -2>}"
+    | List [] -> fprintf oc "[]"
+    | List [x] -> fprintf oc "[%a]" output x
+    | List l when List.for_all (function Int _ -> true | _ -> false) l ->
+        fprintf oc "[%s]" (String.concat ", " (List.map (function Int x -> string_of_int x | _ -> assert false) l))
+    | List l ->
+        fprintf oc "[@,";
+        let first = ref true in
+        List.iter (fun json ->
+            if !first then
+              first := false
+            else
+              fprintf oc ",@,";
+            fprintf oc "@[<v 2>%a@]" output json
+          ) l;
+        fprintf oc "@;<0 -2>]"
 
-  | ListClosure (n,f) ->
-    fprintf oc "[@,";
-    for k = 0 to n - 1 do
-      let json = f k in
-      if k > 0 then
-        fprintf oc ",@,";
-      fprintf oc "@[<v 2>%a@]" output json
-    done;
-    fprintf oc "@;<0 -2>]"
+    | ListClosure (n,f) ->
+        fprintf oc "[@,";
+        for k = 0 to n - 1 do
+          let json = f k in
+          if k > 0 then
+            fprintf oc ",@,";
+          fprintf oc "@[<v 2>%a@]" output json
+        done;
+        fprintf oc "@;<0 -2>]"
 
-let output oc =
-  fprintf (formatter_of_out_channel oc) "@[<v 2>%a@]@." output
+  let output oc =
+    fprintf (formatter_of_out_channel oc) "@[<v 2>%a@]@." output
 
 end
 

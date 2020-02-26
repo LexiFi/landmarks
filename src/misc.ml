@@ -29,9 +29,9 @@ let group_by ?(equals = (=)) l =
   let rec aux cur stk acc = function
     | [] -> List.rev (stk :: acc)
     | hd::tl when equals cur hd ->
-      aux cur (hd :: stk) acc tl
+        aux cur (hd :: stk) acc tl
     | hd::tl ->
-      aux hd [hd] ((List.rev stk) :: acc) tl
+        aux hd [hd] ((List.rev stk) :: acc) tl
   in
   match l with
   | [] -> []
@@ -40,9 +40,9 @@ let group_by ?(equals = (=)) l =
 let rec choose f = function
   | [] -> []
   | hd :: tl ->
-    match f hd with
-    | Some x -> x :: (choose f tl)
-    | None -> choose f tl
+      match f hd with
+      | Some x -> x :: (choose f tl)
+      | None -> choose f tl
 
 let duplicated_elements proj l =
   List.sort (fun x y -> compare (proj x) (proj y)) l
@@ -62,12 +62,12 @@ let split c s =
   while
     match index_from s !pos c with
     | exception Not_found ->
-      res := sub s !pos (len - !pos) :: !res;
-      false
+        res := sub s !pos (len - !pos) :: !res;
+        false
     | k ->
-      res := sub s !pos (k - !pos) :: !res;
-      pos := k + 1;
-      !pos < len || (res := "" :: !res; false)
+        res := sub s !pos (k - !pos) :: !res;
+        pos := k + 1;
+        !pos < len || (res := "" :: !res; false)
   do () done;
   List.rev !res
 

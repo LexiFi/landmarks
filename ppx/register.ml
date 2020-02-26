@@ -14,12 +14,12 @@ let split c s =
   while
     match index_from s !pos c with
     | exception Not_found ->
-      res := sub s !pos (len - !pos) :: !res;
-      false
+        res := sub s !pos (len - !pos) :: !res;
+        false
     | k ->
-      res := sub s !pos (k - !pos) :: !res;
-      pos := k + 1;
-      !pos < len || (res := "" :: !res; false)
+        res := sub s !pos (k - !pos) :: !res;
+        pos := k + 1;
+        !pos < len || (res := "" :: !res; false)
   do () done;
   List.rev !res
 
@@ -27,10 +27,10 @@ let default_auto, default_remove, default_threads =
   match Sys.getenv "OCAML_LANDMARKS" with
   | exception Not_found -> false, false, false
   | env ->
-    let opts = split ',' env in
-    List.mem "auto" opts,
-    List.mem "remove" opts,
-    List.mem "threads" opts
+      let opts = split ',' env in
+      List.mem "auto" opts,
+      List.mem "remove" opts,
+      List.mem "threads" opts
 
 let () =
   let args =

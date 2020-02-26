@@ -21,12 +21,12 @@ let substitute =
         (* Subsitute String.capitalize_ascii to support 4.02 *)
         | ({pexp_desc =
               Pexp_ident ({txt = Ldot (Lident "String", "capitalize_ascii"); _} as ident); _} as expr) when ocaml_major = 4 && ocaml_minor = 2 ->
-          { expr with pexp_desc = Pexp_ident { ident with txt = Ldot (Lident "String", "capitalize")}}
+            { expr with pexp_desc = Pexp_ident { ident with txt = Ldot (Lident "String", "capitalize")}}
 
         (* Subsitute Stdlib into Pervasives *)
         | ({pexp_desc =
               Pexp_ident ({txt = Ldot (Lident "Stdlib", smth); _} as ident); _} as expr)  when ocaml_major = 4 && ocaml_minor < 7 ->
-          { expr with pexp_desc = Pexp_ident { ident with txt = Ldot (Lident "Pervasives", smth)}}
+            { expr with pexp_desc = Pexp_ident { ident with txt = Ldot (Lident "Pervasives", smth)}}
 
         | expr -> default_mapper.expr mapper expr
       end

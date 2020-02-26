@@ -123,16 +123,16 @@ module Stack = struct
 end
 
 type landmark = {
-    id: int;
-    kind : Graph.kind;
-    name: string;
-    location: string;
-    user_id: string option;
+  id: int;
+  kind : Graph.kind;
+  name: string;
+  location: string;
+  user_id: string option;
 
-    mutable last_parent: node;
-    mutable last_son: node;
-    mutable last_self: node;
-  }
+  mutable last_parent: node;
+  mutable last_son: node;
+  mutable last_self: node;
+}
 
 and node = {
   landmark: landmark;
@@ -150,11 +150,11 @@ and node = {
 }
 
 and floats = {
-    mutable time: float;
-    mutable allocated_bytes: float;
-    mutable allocated_bytes_stamp: float;
-    mutable sys_time: float;
-    mutable sys_timestamp: float;
+  mutable time: float;
+  mutable allocated_bytes: float;
+  mutable allocated_bytes_stamp: float;
+  mutable sys_time: float;
+  mutable sys_timestamp: float;
 }
 
 and counter = landmark
@@ -170,26 +170,26 @@ let new_floats () = {
 }
 
 let rec landmark_root = {
-    kind = Graph.Root;
-    id = 0;
-    name = "ROOT";
-    location = __FILE__;
-    user_id = None;
-    last_parent = dummy_node;
-    last_son = dummy_node;
-    last_self = dummy_node;
+  kind = Graph.Root;
+  id = 0;
+  name = "ROOT";
+  location = __FILE__;
+  user_id = None;
+  last_parent = dummy_node;
+  last_son = dummy_node;
+  last_self = dummy_node;
 }
 
 and dummy_node = {
-    landmark = landmark_root;
-    id = 0;
-    children = SparseArray.dummy ();
-    fathers = Stack.dummy ();
-    floats = new_floats ();
-    calls = 0;
-    recursive_calls = 0;
-    distrib = Stack.dummy ();
-    timestamp = Int64.zero
+  landmark = landmark_root;
+  id = 0;
+  children = SparseArray.dummy ();
+  fathers = Stack.dummy ();
+  floats = new_floats ();
+  calls = 0;
+  recursive_calls = 0;
+  distrib = Stack.dummy ();
+  timestamp = Int64.zero
 }
 
 (** STATE **)
@@ -310,7 +310,7 @@ let register_generic ~id ~name ~location ~kind () =
 let register_generic ~id ~location kind name =
   match Hashtbl.find landmarks_of_user_id id with
   | exception Not_found ->
-    register_generic ~id ~name ~location ~kind ()
+      register_generic ~id ~name ~location ~kind ()
   | lm -> lm
 
 let register_generic ?id ?location kind name call_stack =
@@ -429,7 +429,7 @@ let () = reset ()
 let unroll_until node =
   while
     let current_node = !current_node_ref in
-       current_node != node
+    current_node != node
     && Stack.size current_node.fathers > 0
     && (current_node_ref := Stack.pop current_node.fathers; true)
   do () done
@@ -531,10 +531,10 @@ let aggregate_stat_for current_node =
                  +. Int64.(to_float (sub (clock ()) current_node.timestamp));
   if !profile_with_allocated_bytes then
     floats.allocated_bytes <- floats.allocated_bytes
-                 +. ((Gc.allocated_bytes ()) -. floats.allocated_bytes_stamp);
+                              +. ((Gc.allocated_bytes ()) -. floats.allocated_bytes_stamp);
   if !profile_with_sys_time then
     floats.sys_time <- floats.sys_time
-                 +. (Sys.time () -. floats.sys_timestamp)
+                       +. (Sys.time () -. floats.sys_timestamp)
 
 let exit landmark =
   if !profile_with_debug then
@@ -653,8 +653,8 @@ let array_list_map f l =
   match l with
   | [] -> [||]
   | hd :: tl ->
-    let res = Array.make size (f hd) in
-    List.iteri (fun k x -> res.(k+1) <- f x) tl; res
+      let res = Array.make size (f hd) in
+      List.iteri (fun k x -> res.(k+1) <- f x) tl; res
 
 let export ?(label = "") () =
   let export_node {landmark; id; calls; floats; children; distrib; _} =
@@ -700,11 +700,11 @@ let rec merge_branch node graph (imported : Graph.node) =
   let children = Graph.children graph imported in
   List.iter
     (fun (imported_son : Graph.node) ->
-      let landmark = landmark_of_node imported_son in
-      match SparseArray.get node.children landmark.id with
-      | exception Not_found ->
-        new_branch node graph imported_son
-      | son -> merge_branch son graph imported_son
+       let landmark = landmark_of_node imported_son in
+       match SparseArray.get node.children landmark.id with
+       | exception Not_found ->
+           new_branch node graph imported_son
+       | son -> merge_branch son graph imported_son
     ) children
 
 and new_branch parent graph (imported : Graph.node) =
@@ -736,20 +736,20 @@ let exit_hook () =
     match !profile_output, !profile_format with
     | Silent, _ -> ()
     | Channel out, Textual {threshold} ->
-      Graph.output ~threshold out cg
+        Graph.output ~threshold out cg
     | Channel out, JSON ->
-      Graph.output_json out cg
+        Graph.output_json out cg
     | Temporary temp_dir, format ->
-      let tmp_file, oc =
-        Filename.open_temp_file ?temp_dir "profile_at_exit" ".tmp"
-      in
-      Printf.eprintf
-        "[Profiling] Dumping profiling information in file '%s'.\n" tmp_file;
-      flush stdout;
-      (match format with
-      | Textual {threshold} -> Graph.output ~threshold oc cg
-      | JSON -> Graph.output_json oc cg);
-      close_out oc
+        let tmp_file, oc =
+          Filename.open_temp_file ?temp_dir "profile_at_exit" ".tmp"
+        in
+        Printf.eprintf
+          "[Profiling] Dumping profiling information in file '%s'.\n" tmp_file;
+        flush stdout;
+        (match format with
+         | Textual {threshold} -> Graph.output ~threshold oc cg
+         | JSON -> Graph.output_json oc cg);
+        close_out oc
   end
 
 let () = Stdlib.at_exit exit_hook
@@ -782,44 +782,44 @@ let parse_env_options s =
     | ["debug"] -> debug := true
     | "debug" :: _  -> expect_no_argument "debug"
     | [ "threshold" ; percent ] ->
-      begin match !format with
-      | Textual _ ->
-         let threshold = try Some (float_of_string percent) with _ -> None in
-         begin match threshold with
-         | None ->
-           warning (Printf.sprintf "Unable to parse threshold '%s'" percent)
-         | Some threshold ->
-           format := Textual {threshold}
-         end
-      | _ -> warning (Printf.sprintf "The option threshold only makes sense with the 'textual' format.")
-      end
+        begin match !format with
+        | Textual _ ->
+            let threshold = try Some (float_of_string percent) with _ -> None in
+            begin match threshold with
+            | None ->
+                warning (Printf.sprintf "Unable to parse threshold '%s'" percent)
+            | Some threshold ->
+                format := Textual {threshold}
+            end
+        | _ -> warning (Printf.sprintf "The option threshold only makes sense with the 'textual' format.")
+        end
     | [ "format"; "textual" ] ->
-      begin match !format with
-      | Textual _ -> ()
-      | _ -> format := Textual {threshold = 1.0};
-      end
+        begin match !format with
+        | Textual _ -> ()
+        | _ -> format := Textual {threshold = 1.0};
+        end
     | [ "format"; "json" ] -> format := JSON;
     | [ "format"; unknown ] -> invalid_for "format" unknown
     | [ "output"; "stderr" ] -> output := Channel stderr
     | [ "output"; "stdout" ] -> output := Channel stdout
     | [ "output"; temporary ] when Misc.starts_with ~prefix:"temporary" temporary ->
-      begin match split_trim ':' temporary with
+        begin match split_trim ':' temporary with
         | ["temporary"] -> output := Temporary None
         | ["temporary"; dir_spec] ->
-          begin match split_trim '"' dir_spec with
+            begin match split_trim '"' dir_spec with
             | [""; dir; ""] -> output := Temporary (Some dir)
             | [dir] -> output := Temporary (Some dir)
             | _ -> invalid_for "output" temporary
-          end
+            end
         | _ -> invalid_for "output" temporary
-      end
+        end
     | [ "output"; file_spec ] ->
-      (match split_trim '"' file_spec with
-       | [""; file; ""] | [file] ->
-         (try
-            output := Channel (open_out file)
-          with _ -> warning (sprintf "Unable to open '%s'" file))
-       | _ -> invalid_for "output" file_spec)
+        (match split_trim '"' file_spec with
+         | [""; file; ""] | [file] ->
+             (try
+                output := Channel (open_out file)
+              with _ -> warning (sprintf "Unable to open '%s'" file))
+         | _ -> invalid_for "output" file_spec)
     | ["time"] -> sys_time := true
     | "time" :: _  -> expect_no_argument "time"
     | ["recursive"] -> recursive := true
@@ -835,15 +835,15 @@ let parse_env_options s =
     | [""] | ["on"] | ["1"] -> ()
     | opt :: _ :: _ -> warning (Printf.sprintf "To many '=' after '%s'" opt)
     | unknown :: _ -> warning (sprintf "Unknown option '%s'" unknown)
- in
- List.iter parse_option (split_trim ',' s);
- {debug = !debug; allocated_bytes = !allocated_bytes; sys_time = !sys_time;
-  output = !output; format = !format; recursive = !recursive}
+  in
+  List.iter parse_option (split_trim ',' s);
+  {debug = !debug; allocated_bytes = !allocated_bytes; sys_time = !sys_time;
+   output = !output; format = !format; recursive = !recursive}
 
 let () = match Sys.getenv "OCAML_LANDMARKS" with
   | exception Not_found -> ()
   | str ->
-    try start_profiling ~profiling_options:(parse_env_options str) ()
-    with Exit -> ()
+      try start_profiling ~profiling_options:(parse_env_options str) ()
+      with Exit -> ()
 
 external raise : exn -> 'a = "%raise"
