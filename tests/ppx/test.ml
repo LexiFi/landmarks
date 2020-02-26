@@ -87,7 +87,7 @@ class c =
     initializer
       self # m1;
       self # m2 ();
-      let _ = self # m3 in
+      let _ : _ -> _ = self # m3 in
       ignore variable;
       ()
   end

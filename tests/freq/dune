@@ -3,10 +3,12 @@
  (libraries unix landmark))
 
 (rule
- (with-stderr-to test.err
-  (with-stdout-to test.out
+ (with-stderr-to
+  test.err
+  (with-stdout-to
+   test.out
    (run ./test.exe))))
 
 (alias
  (name runtest)
-  (deps test.err test.out))
+ (deps test.err test.out))

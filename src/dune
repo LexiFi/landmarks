@@ -1,6 +1,10 @@
 (library
  (name landmark)
  (public_name landmarks)
- (flags (:standard -w +A-30-42-41-48-40-4 -safe-string -strict-sequence -g))
- (c_names clock)
- (preprocess (pps compatibility)))
+ (flags
+  (:standard -w +A-30-42-41-48-40-4 -safe-string -strict-sequence -g))
+ (foreign_stubs
+  (language c)
+  (names clock))
+ (preprocess
+  (pps compatibility)))

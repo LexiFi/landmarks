@@ -2,8 +2,6 @@
 (* See the attached LICENSE file.                                    *)
 (* Copyright 2016 by LexiFi.                                         *)
 
-open Migrate_parsetree.Ast_404
-
 let auto = ref false
 let remove = ref false
 let threads = Mapper.with_thread
@@ -44,7 +42,7 @@ let () =
   let reset_args () =
     remove := default_remove
   in
-  Migrate_parsetree.(Driver.register ~reset_args ~args ~name:"landmarks_remove" Versions.ocaml_404 mapper)
+  Migrate_parsetree.(Driver.register ~reset_args ~args ~name:"landmarks_remove" Versions.ocaml_408 mapper)
 
 let () =
   let args = Arg.[
@@ -62,5 +60,4 @@ let () =
     threads := default_threads;
   in
   Migrate_parsetree.(Driver.register
-                       ~reset_args ~args ~name:"landmarks" Versions.ocaml_404 mapper)
-
+                       ~reset_args ~args ~name:"landmarks" Versions.ocaml_408 mapper)

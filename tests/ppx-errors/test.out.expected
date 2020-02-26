@@ -1,25 +1,25 @@
-Characters 0-29:
-  [@@@landmark "random string"];;
-  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Error: ppx_landmark: expecting payload in ["auto","auto-off","disable"]
-Characters 21-50:
-    [@@@landmark "random string"];;
+Line 1, characters 0-29:
+1 | [@@@landmark "random string"];;
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Error: ppx_landmark: expecting payload in ["auto","auto-off","disable"]
+Line 3, characters 2-31:
+3 |   [@@@landmark "random string"];;
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Error: ppx_landmark: expecting payload in ["auto","auto-off"]
-Characters 5-13:
-  [@@@landmark "auto" "no auto"];;
-      ^^^^^^^^
+Line 2, characters 0-30:
+2 | [@@@landmark "auto" "no auto"];;
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Error: ppx_landmark: payload is not a string
-Characters 10-33:
-  let () = (print_endline "hello")[@landmark "too"][@landmark "many"][@landmark "landmarks"];;
-           ^^^^^^^^^^^^^^^^^^^^^^^
+Line 2, characters 9-32:
+2 | let () = (print_endline "hello")[@landmark "too"][@landmark "many"][@landmark "landmarks"];;
+             ^^^^^^^^^^^^^^^^^^^^^^^
 Error: ppx_landmark: too many attributes
-Characters 1-42:
-  let[@landmark] () = print_endline "hello";;
-  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Line 2, characters 0-41:
+2 | let[@landmark] () = print_endline "hello";;
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Error: ppx_landmark: this landmark annotation requires a name argument
-Characters 12-34:
-    let[@landmark] _ = 2+2 in ();;
-    ^^^^^^^^^^^^^^^^^^^^^^
+Line 3, characters 2-24:
+3 |   let[@landmark] _ = 2+2 in ();;
+      ^^^^^^^^^^^^^^^^^^^^^^
 Error: ppx_landmark: this landmark annotation requires a name argument
 

@@ -2,6 +2,8 @@
  (name ppx_landmarks)
  (public_name landmarks.ppx)
  (private_modules mapper register)
+ (flags -open Migrate_parsetree -open Ast_408)
  (kind ppx_rewriter)
  (libraries ocaml-migrate-parsetree)
- (preprocess (pps compatibility)))
+ (preprocess
+  (pps compatibility)))

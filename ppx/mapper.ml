@@ -2,8 +2,6 @@
 (* See the attached LICENSE file.                                    *)
 (* Copyright 2016 by LexiFi.                                         *)
 
-open Migrate_parsetree.Ast_404
-
 open Ast_mapper
 open Ast_helper
 open Asttypes
@@ -34,7 +32,7 @@ let landmark_hash = ref ""
 let landmark_id = ref 0
 let landmarks_to_register = ref []
 
-let has_name key ({txt; _}, _) = txt = key
+let has_name key {attr_name = {txt; _}; _} = txt = key
 
 let remove_attribute key =
   List.filter (fun x -> not (has_name key x))
@@ -50,21 +48,21 @@ type landmark =
   | Dynamic of Parsetree.expression
 
 let get_payload key = function
-    {txt; _}, PStr [{pstr_desc = Pstr_eval ({
+    {attr_name = {txt; _}; attr_payload = PStr [{pstr_desc = Pstr_eval ({
         pexp_desc = Pexp_constant (Pconst_string (x, None)); _
-      }, _); _}] when txt = key ->
-    Some (Some (Constant x))
-  | {txt; _}, PStr [{pstr_desc = Pstr_eval (expression, _); _}] when txt = key ->
-    Some (Some (Dynamic expression))
-  | {txt; _}, PStr [] when txt = key -> Some None
-  | {txt; loc}, _ when txt = key -> error loc `Payload_not_an_expression
+      }, _); _}]; _} when txt = key ->
+      Some (Some (Constant x))
+  | {attr_name = {txt; _}; attr_payload = PStr [{pstr_desc = Pstr_eval (expression, _); _}]; _} when txt = key ->
+      Some (Some (Dynamic expression))
+  | {attr_name = {txt; _}; attr_payload = PStr []; _} when txt = key -> Some None
+  | {attr_name = {txt; _}; attr_loc; _} when txt = key -> error attr_loc `Payload_not_an_expression
   | _ -> None
 
-let get_string_payload key (({txt = _; loc}, _) as e) =
+let get_string_payload key ({attr_loc; _} as e) =
   match get_payload key e with
   | Some None -> Some None
   | Some (Some (Constant x)) -> Some (Some x)
-  | Some (Some (Dynamic _)) -> error loc `Payload_not_a_string
+  | Some (Some (Dynamic _)) -> error attr_loc `Payload_not_a_string
   | None -> None
 
 let has_landmark_attribute ?auto = has_attribute ?auto "landmark"
@@ -77,9 +75,9 @@ let var x = Exp.ident (mknoloc (Longident.parse x))
 let rec filter_map f = function
   | [] -> []
   | hd :: tl ->
-    match f hd with
-    | Some x -> x :: (filter_map f tl)
-    | None -> filter_map f tl
+      match f hd with
+      | Some x -> x :: (filter_map f tl)
+      | None -> filter_map f tl
 
 let string_of_loc (l : Location.t) =
   let file, line, _ = Location.get_pos_info l.loc_start in
@@ -283,7 +281,8 @@ let rec mapper auto ctx =
               if new_vbs = [] then [str]
               else
                 let warning_off =
-                  Str.attribute (mknoloc "ocaml.warning", payload_of_string "-32")
+                  Str.attribute {attr_name = mknoloc "ocaml.warning"; attr_payload = payload_of_string "-32";
+                                 attr_loc = Location.none}
                 in
                 let include_wrapper = new_vbs
                                       |> Str.value Nonrecursive
@@ -310,7 +309,8 @@ let rec mapper auto ctx =
                | _ :: _ :: _ -> error pcf_loc `Too_many_attributes
              in
              match landmark with
-             | None -> class_field
+             | None ->
+               default_mapper.class_field deep_mapper class_field
              | Some landmark ->
                let expr =
                  wrap_landmark_method ctx landmark pcf_loc (deep_mapper.expr deep_mapper expr)
@@ -399,9 +399,6 @@ let has_disable l =
   let res = filter_map f l in
   !disable, res
 
-let remove_extension s =
-  try Filename.chop_extension s with Invalid_argument _ -> s
-
 let toplevel_mapper auto =
   { default_mapper with
     signature = (fun _ -> default_mapper.signature default_mapper);
@@ -411,7 +408,7 @@ let toplevel_mapper auto =
       let disable, l = has_disable l in
       if disable then l else begin
         let first_loc = (List.hd l).pstr_loc in
-        let module_name = remove_extension (Filename.basename !Location.input_name) in
+        let module_name = Filename.remove_extension (Filename.basename !Location.input_name) in
         let mapper = mapper auto [String.capitalize_ascii module_name] in
         let l = mapper.structure mapper l in
         let landmark_name = Printf.sprintf "load(%s)" module_name in

@@ -3,10 +3,13 @@
  (libraries landmark))
 
 (rule
- (with-stdout-to test.out
-   (run ./test.exe)))
+ (with-stdout-to
+  test.out
+  (run ./test.exe)))
 
-(alias
- (name runtest)
- (enabled_if (>= %{ocaml_version} "4.03"))
- (action (diff test.out.expected test.out)))
+(rule
+ (alias runtest)
+ (enabled_if
+  (>= %{ocaml_version} "4.03"))
+ (action
+  (diff test.out.expected test.out)))

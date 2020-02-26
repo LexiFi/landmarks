@@ -1,13 +1,17 @@
 (executable
  (name test)
  (libraries landmark)
- (preprocess (pps compatibility)))
+ (preprocess
+  (pps compatibility)))
 
 (rule
- (with-stderr-to test.err
- (with-stdout-to test.out
+ (with-stderr-to
+  test.err
+  (with-stdout-to
+   test.out
    (run ./test.exe))))
 
-(alias
- (name runtest)
- (action (diff test.out.expected test.out)))
+(rule
+ (alias runtest)
+ (action
+  (diff test.out.expected test.out)))
