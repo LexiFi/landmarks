@@ -30,6 +30,7 @@ Test.M.mod_lm2
 Test.M.mod_lm3
 Test.M.mod_noauto
 Test.fib
+Test.immediate
 Test.incl_lm0
 Test.incl_lm1
 Test.incl_lm2
@@ -44,6 +45,8 @@ Test.local1
 Test.local2
 Test.local_module
 Test.local_noauto
+Test.m1
+Test.m2
 Test.next_prime
 Test.noauto
 Test.odd

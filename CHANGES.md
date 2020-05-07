@@ -4,6 +4,7 @@ upcoming version
 * primitive support for objects (allow to annotate methods)
 * dynamic landmarks
 * TODO: document these new features
+* auto now automatically benchmark all methods
 
 version 1.3, 6 dec 2018
 -----------------------
