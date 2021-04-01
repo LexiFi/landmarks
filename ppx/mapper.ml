@@ -1,13 +1,19 @@
 (* This file is released under the terms of an MIT-like license.     *)
 (* See the attached LICENSE file.                                    *)
 (* Copyright 2016 by LexiFi.                                         *)
+open Ppxlib
 
-open Ast_mapper
 open Ast_helper
 open Asttypes
 open Parsetree
 open Longident
 open Location
+
+let mkloc txt loc =
+  { txt; loc }
+
+let mknoloc txt =
+  mkloc txt !Ast_helper.default_loc
 
 let digest x =
   Digest.to_hex (Digest.string (Marshal.to_string x []))
@@ -25,8 +31,8 @@ let error loc code =
     | `Payload_not_an_expression -> "payload is not an expression"
     | `Provide_a_name -> "this landmark annotation requires a name argument"
   in
-  raise (Location.Error (Location.error ~loc
-                           (Printf.sprintf "ppx_landmark: %s" (message code))))
+  Location.Error.raise (Location.Error.make ~loc ~sub:[]
+                          (Printf.sprintf "ppx_landmark: %s" (message code)))
 
 let landmark_hash = ref ""
 let landmark_id = ref 0
@@ -49,7 +55,7 @@ type landmark =
 
 let get_payload key = function
     {attr_name = {txt; _}; attr_payload = PStr [{pstr_desc = Pstr_eval ({
-        pexp_desc = Pexp_constant (Pconst_string (x, None)); _
+        pexp_desc = Pexp_constant (Pconst_string (x, _, None)); _
       }, _); _}]; _} when txt = key ->
       Some (Some (Constant x))
   | {attr_name = {txt; _}; attr_payload = PStr [{pstr_desc = Pstr_eval (expression, _); _}]; _} when txt = key ->
@@ -80,8 +86,9 @@ let rec filter_map f = function
       | None -> filter_map f tl
 
 let string_of_loc (l : Location.t) =
-  let file, line, _ = Location.get_pos_info l.loc_start in
-  Printf.sprintf "%s:%d" (Location.show_filename file) line
+  let file = l.loc_start.pos_fname in
+  let line = l.loc_start.pos_lnum in
+  Printf.sprintf "%s:%d" file line
 
 let enter_landmark lm =
   let landmark_enter =
@@ -206,7 +213,7 @@ let rec name_of_pattern pat =
   | Ppat_constraint (pat, _) -> name_of_pattern pat
   | _ -> None
 
-let translate_value_bindings ctx mapper auto vbs =
+let translate_value_bindings ctx value_binding auto vbs =
   let vbs_arity_name =
     List.map
       (fun vb -> match vb, has_landmark_attribute ~auto vb.pvb_attributes with
@@ -236,13 +243,12 @@ let translate_value_bindings ctx mapper auto vbs =
       vbs
   in
   let vbs = List.map (function
-      | (vb, None) ->
-          default_mapper.value_binding mapper vb
+      | (vb, None) -> value_binding vb
       | {pvb_pat; pvb_loc; pvb_expr; _}, Some (arity, _, name, loc, attrs) ->
           (* Remove landmark attribute: *)
           let vb =
             Vb.mk ~attrs ~loc:pvb_loc pvb_pat pvb_expr
-            |> default_mapper.value_binding mapper
+            |> value_binding
           in
           if arity = [] then
             { vb with pvb_expr = wrap_landmark ctx name loc vb.pvb_expr}
@@ -258,27 +264,38 @@ let translate_value_bindings ctx mapper auto vbs =
   in
   vbs, new_vbs
 
-let rec mapper auto ctx =
-  { default_mapper with
-    module_binding = (fun _ ({pmb_name; _} as binding) ->
-        default_mapper.module_binding (mapper auto (pmb_name.txt :: ctx)) binding
-      );
-    structure = (fun _ l ->
-        let auto = ref auto in
-        List.map (function
+let mapper =
+  object(self)
+    inherit [bool * string list] Ast_traverse.fold_map as super
+
+    method! module_binding ({pmb_name; _} as binding) ((auto, ctx) as acc) =
+      let acc =
+        match pmb_name.txt with
+        | None -> acc
+        | Some txt -> auto, txt :: ctx
+      in
+      let result, (_, ctx) = super#module_binding binding acc in
+      result, (auto, ctx)
+
+    method! structure l (auto, ctx) =
+      let _, results =
+        List.fold_left (fun (auto, acc) expr ->
+            match expr with
             | { pstr_desc = Pstr_attribute attr; pstr_loc; _} as pstr ->
                 (match get_string_payload "landmark" attr with
-                 | Some (Some "auto") -> auto := true; []
-                 | Some (Some "auto-off") -> auto := false; []
-                 | None -> [pstr]
+                 | Some (Some "auto") -> true, acc
+                 | Some (Some "auto-off") -> false, acc
+                 | None -> auto, pstr :: acc
                  | _ -> error pstr_loc (`Expecting_payload ["auto"; "auto-off"]))
             | { pstr_desc = Pstr_value (rec_flag, vbs); pstr_loc} ->
-                let mapper = mapper !auto ctx in
+                let value_binding vb =
+                  fst (self # value_binding vb (auto, ctx))
+                in
                 let vbs, new_vbs =
-                  translate_value_bindings ctx mapper !auto vbs
+                  translate_value_bindings ctx value_binding auto vbs
                 in
                 let str = Str.value ~loc:pstr_loc rec_flag vbs in
-                if new_vbs = [] then [str]
+                if new_vbs = [] then auto, str :: acc
                 else
                   let warning_off =
                     Str.attribute {attr_name = mknoloc "ocaml.warning"; attr_payload = payload_of_string "-32";
@@ -290,100 +307,107 @@ let rec mapper auto ctx =
                                                     |> Incl.mk
                                                     |> Str.include_
                   in
-                  [str; include_wrapper]
+                  auto, include_wrapper :: str :: acc
             | sti ->
-                let mapper = mapper !auto ctx in
-                [mapper.structure_item mapper sti])
-          l |> List.flatten);
+                let sti, _ = super # structure_item sti (auto, ctx) in
+                auto, sti :: acc) (auto, []) l
+      in
+      List.rev results, (auto, ctx)
 
-    class_field =
-      (fun deep_mapper class_field ->
-         match class_field with
-         | { pcf_desc = Pcf_method (loc, privat, Cfk_concrete (flag, expr)); pcf_loc; pcf_attributes; _ } ->
-             begin
-               let landmark =
-                 match filter_map (get_payload "landmark") pcf_attributes, auto with
-                 | [Some landmark_name], _ -> Some landmark_name
-                 | [None], _ | _, true -> Some (Constant loc.txt)
-                 | [], false -> None
-                 | _ :: _ :: _, _ -> error pcf_loc `Too_many_attributes
-               in
-               match landmark with
-               | None ->
-                   default_mapper.class_field deep_mapper class_field
-               | Some landmark ->
-                   let expr =
-                     wrap_landmark_method ctx landmark pcf_loc (deep_mapper.expr deep_mapper expr)
-                   in
-                   { class_field with
-                     pcf_desc = Pcf_method (loc, privat, Cfk_concrete (flag, expr));
-                     pcf_attributes = remove_attribute "landmark" pcf_attributes
-                   }
-             end
-         | _ -> default_mapper.class_field deep_mapper class_field
-      );
+    method! class_field class_field ((auto, ctx) as acc) =
+      match class_field with
+      | { pcf_desc = Pcf_method (loc, privat, Cfk_concrete (flag, expr)); pcf_loc; pcf_attributes; _ } ->
+          begin
+            let landmark =
+              match filter_map (get_payload "landmark") pcf_attributes, auto with
+              | [Some landmark_name], _ -> Some landmark_name
+              | [None], _ | _, true -> Some (Constant loc.txt)
+              | [], false -> None
+              | _ :: _ :: _, _ -> error pcf_loc `Too_many_attributes
+            in
+            match landmark with
+            | None ->
+                super # class_field class_field acc
+            | Some landmark ->
+                let expr =
+                  wrap_landmark_method ctx landmark pcf_loc (fst (self # expression expr acc))
+                in
+                { class_field with
+                  pcf_desc = Pcf_method (loc, privat, Cfk_concrete (flag, expr));
+                  pcf_attributes = remove_attribute "landmark" pcf_attributes
+                }, acc
+          end
+      | _ -> super # class_field class_field acc
 
-    class_expr =
-      (fun deep_mapper class_expr ->
-         match class_expr with
-         | {pcl_desc = Pcl_let (rec_flag, vbs, body); _} ->
-             let vbs, new_vbs =
-               translate_value_bindings ctx deep_mapper false vbs
-             in
-             let body = deep_mapper.class_expr deep_mapper body in
-             let body =
-               if new_vbs = [] then
-                 body
-               else
-                 Cl.let_ Nonrecursive new_vbs body
-             in
-             { class_expr with pcl_desc = Pcl_let (rec_flag, vbs, body) }
-         | _ -> default_mapper.class_expr deep_mapper class_expr
-      );
+    method! class_expr class_expr ((_, ctx) as acc) =
+      match class_expr with
+      | {pcl_desc = Pcl_let (rec_flag, vbs, body); _} ->
+          let vbs, new_vbs =
+            let value_binding vb =
+              fst (self # value_binding vb acc)
+            in
+            translate_value_bindings ctx value_binding false vbs
+          in
+          let body, _ = self # class_expr body acc in
+          let body =
+            if new_vbs = [] then
+              body
+            else
+              Cl.let_ Nonrecursive new_vbs body
+          in
+          { class_expr with pcl_desc = Pcl_let (rec_flag, vbs, body) }, acc
+      | _ -> super # class_expr class_expr acc
 
-    expr =
-      fun deep_mapper expr ->
-        let expr = match expr with
-          | ({pexp_desc = Pexp_let (rec_flag, vbs, body); _} as expr) ->
-              let vbs, new_vbs =
-                translate_value_bindings ctx deep_mapper false vbs
+    method! expression expr ((_, ctx) as acc) =
+      let expr = match expr with
+        | ({pexp_desc = Pexp_let (rec_flag, vbs, body); _} as expr) ->
+            let vbs, new_vbs =
+              let value_binding vb =
+                fst (self # value_binding vb acc)
               in
-              let body = deep_mapper.expr deep_mapper body in
-              let body =
-                if new_vbs = [] then
-                  body
-                else
-                  Exp.let_ Nonrecursive new_vbs body
-              in
-              { expr with pexp_desc = Pexp_let (rec_flag, vbs, body) }
-          | expr -> default_mapper.expr deep_mapper expr
-        in
-        let {pexp_attributes; pexp_loc; _} = expr in
-        match filter_map (get_payload "landmark") pexp_attributes with
-        | [Some landmark_name] ->
-            { expr with pexp_attributes =
-                          remove_attribute "landmark" pexp_attributes }
-            |> wrap_landmark ctx landmark_name pexp_loc
-        | [ None ] -> error pexp_loc `Provide_a_name
-        | [] -> expr
-        | _ -> error pexp_loc `Too_many_attributes
-  }
+              translate_value_bindings ctx value_binding false vbs
+            in
+            let body = fst (self # expression body acc) in
+            let body =
+              if new_vbs = [] then
+                body
+              else
+                Exp.let_ Nonrecursive new_vbs body
+            in
+            { expr with pexp_desc = Pexp_let (rec_flag, vbs, body) }
+        | expr -> fst (super # expression expr acc)
+      in
+      let {pexp_attributes; pexp_loc; _} = expr in
+      match filter_map (get_payload "landmark") pexp_attributes with
+      | [Some landmark_name] ->
+          { expr with pexp_attributes =
+                        remove_attribute "landmark" pexp_attributes }
+          |> wrap_landmark ctx landmark_name pexp_loc, acc
+      | [ None ] -> error pexp_loc `Provide_a_name
+      | [] -> expr, acc
+      | _ -> error pexp_loc `Too_many_attributes
+
+  end
 
 let remove_attributes =
-  { default_mapper with
-    structure = (fun mapper l ->
-        let l =
-          List.filter (function {pstr_desc = Pstr_attribute attr; _ }
-              when has_landmark_attribute [attr] <> None -> false | _ -> true) l
-        in
-        default_mapper.structure mapper l);
-    attributes = fun mapper attributes ->
-      default_mapper.attributes mapper
+  object
+    inherit Ast_traverse.map as super
+
+    method! structure l =
+      let l =
+        List.filter (function {pstr_desc = Pstr_attribute attr; _ }
+            when has_landmark_attribute [attr] <> None -> false | _ -> true) l
+      in
+      super # structure l
+
+    method! attributes attributes =
+      super # attributes
         (match has_landmark_attribute attributes with
          | Some attrs ->
              attrs
          | None ->
-             attributes) }
+             attributes)
+  end
 
 let has_disable l =
   let disable = ref false in
@@ -400,45 +424,50 @@ let has_disable l =
   !disable, res
 
 let toplevel_mapper auto =
-  { default_mapper with
-    signature = (fun _ -> default_mapper.signature default_mapper);
-    structure = fun _ -> function [] -> [] | l ->
-      assert (!landmark_hash = "");
-      landmark_hash := digest l;
-      let disable, l = has_disable l in
-      if disable then l else begin
-        let first_loc = (List.hd l).pstr_loc in
-        let module_name = Filename.remove_extension (Filename.basename !Location.input_name) in
-        let mapper = mapper auto [String.capitalize_ascii module_name] in
-        let l = mapper.structure mapper l in
-        let landmark_name = Printf.sprintf "load(%s)" module_name in
-        let lm =
-          if auto then
-            Some (new_landmark landmark_name first_loc)
-          else
-            None
-        in
-        if !landmarks_to_register = [] then l else
-          let landmarks =
-            Str.value Nonrecursive
-              (List.map (fun (landmark, landmark_name, landmark_location, id) ->
-                   Vb.mk (Pat.var (mknoloc landmark))
-                     (register_constant_landmark ~id landmark_name landmark_location))
-                  (List.rev !landmarks_to_register))
+  object
+    inherit Ast_traverse.map
+
+    method! signature si = si
+
+    method! structure l =
+      match l with [] -> [] | l ->
+        assert (!landmark_hash = "");
+        landmark_hash := digest l;
+        let disable, l = has_disable l in
+        if disable then l else begin
+          let first_loc = (List.hd l).pstr_loc in
+          let module_name = Filename.remove_extension (Filename.basename !Ocaml_common.Location.input_name) in
+          let ctx = [String.capitalize_ascii module_name] in
+          let l, _ = mapper # structure l (auto, ctx) in
+          let landmark_name = Printf.sprintf "load(%s)" module_name in
+          let lm =
+            if auto then
+              Some (new_landmark landmark_name first_loc)
+            else
+              None
           in
-          match lm with
-          | Some lm ->
-              let begin_load =
-                Str.value Nonrecursive
-                  [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None)
-                     (enter_landmark lm)]
-              in
-              let exit_load =
-                Str.value Nonrecursive
-                  [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None)
-                     (exit_landmark lm)]
-              in
-              landmarks :: (begin_load :: l @ [exit_load])
-          | None ->
-              landmarks :: l
-      end }
+          if !landmarks_to_register = [] then l else
+            let landmarks =
+              Str.value Nonrecursive
+                (List.map (fun (landmark, landmark_name, landmark_location, id) ->
+                     Vb.mk (Pat.var (mknoloc landmark))
+                       (register_constant_landmark ~id landmark_name landmark_location))
+                    (List.rev !landmarks_to_register))
+            in
+            match lm with
+            | Some lm ->
+                let begin_load =
+                  Str.value Nonrecursive
+                    [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None)
+                       (enter_landmark lm)]
+                in
+                let exit_load =
+                  Str.value Nonrecursive
+                    [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None)
+                       (exit_landmark lm)]
+                in
+                landmarks :: (begin_load :: l @ [exit_load])
+            | None ->
+                landmarks :: l
+        end
+  end

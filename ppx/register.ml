@@ -32,32 +32,35 @@ let default_auto, default_remove, default_threads =
       List.mem "remove" opts,
       List.mem "threads" opts
 
-let () =
-  let args =
-    Arg.["--remove", Set remove, "ignore all landmarks annotations."]
-  in
-  let mapper _ _ =
-    if !remove then Mapper.remove_attributes else Ast_mapper.default_mapper
-  in
-  let reset_args () =
-    remove := default_remove
-  in
-  Migrate_parsetree.(Driver.register ~reset_args ~args ~name:"landmarks_remove" Versions.ocaml_408 mapper)
+open Ppxlib
 
 let () =
-  let args = Arg.[
-      "--thread", Set threads, "use the thread-safe version.";
-      "--auto", Set auto, "measure all top-level functions."]
-  in
-  let mapper _ _ =
+  Driver.add_arg "--thread" (Set threads) ~doc:"use the thread-safe version.";
+  Driver.add_arg "--auto" (Set auto) ~doc:"measure all top-level functions.";
+  let impl str =
     if !remove && not !auto then
-      Ast_mapper.default_mapper
+      str
     else
-      Mapper.toplevel_mapper !auto
+      (Mapper.toplevel_mapper !auto) # structure str
   in
-  let reset_args () =
-    auto := default_auto;
-    threads := default_threads;
+  Ppxlib.Driver.register_transformation "landmarks" ~impl
+
+
+let () =
+  Driver.add_arg "--remove" (Set remove) ~doc:"ignore all landmarks annotations.";
+  let impl str  =
+    if !remove then
+      Mapper.remove_attributes # structure str
+    else
+      str
   in
-  Migrate_parsetree.(Driver.register
-                       ~reset_args ~args ~name:"landmarks" Versions.ocaml_408 mapper)
+  let intf sg  =
+    if !remove then
+      Mapper.remove_attributes # signature sg
+    else
+      sg
+  in
+  Ppxlib.Driver.register_transformation
+    "landmarks_remove"
+    ~impl
+    ~intf

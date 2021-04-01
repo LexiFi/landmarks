@@ -1,5 +1,5 @@
 (library
  (name compatibility)
  (kind ppx_rewriter)
- (libraries ocaml-migrate-parsetree)
+ (libraries ppxlib)
  (preprocess no_preprocessing))
