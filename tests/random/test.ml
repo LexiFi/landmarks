@@ -217,6 +217,6 @@ let checks () =
   end;
   Printf.printf "Check reachability invariant ...\n%!";
   assert (reachable_landmarks graph = reachable_landmarks aggregated_graph);
-  List.iter (fun node -> if node.kind = Sampler then assert(node.calls = Array.length node.distrib)) (nodes graph)
+  List.iter (fun node -> if node.kind = Sampler then assert(node.calls = Float.Array.length node.distrib)) (nodes graph)
 
 let () = checks ()
