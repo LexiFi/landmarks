@@ -14,7 +14,7 @@ run-test: ["dune" "runtest" "-p" name]
 depends: [
   "ocaml" { >= "4.05" }
   "ppxlib" { >= "0.21.0" }
-  "dune" {build & >= "2.0"}
+  "dune" {build & >= "2.7"}
 ]
 
 synopsis: "A simple profiling library"
