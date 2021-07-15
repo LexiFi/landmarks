@@ -65,7 +65,7 @@ The optional `--auto` flag turns on the automatic instrumentation (see below).
 )
 ```
 
-You can find a sample program in the [example directory](https://github.com/LexiFi/landmarks/tree/master/example).
+You can find a sample program in the [example directory](https://github.com/LexiFi/landmarks/tree/master/examples).
 
 Usage with ocamlfind
 --------------------
@@ -93,7 +93,7 @@ You may want to replace "x-www-browser" with your system's way to
 invoke your favorite web-browser from the command line. It has
 to support javascript.
 
-You can find a sample program in the [example directory](https://github.com/LexiFi/landmarks/tree/master/example).
+You can find a sample program in the [example directory](https://github.com/LexiFi/landmarks/tree/master/examples).
 
 Benchmarking manually
 ---------------------
