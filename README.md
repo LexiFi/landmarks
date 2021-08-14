@@ -1,9 +1,6 @@
 Landmarks: A Simple Profiling Library
 =====================================
 
-[![Build Status](https://travis-ci.com/LexiFi/landmarks.svg?branch=master)](https://travis-ci.com/LexiFi/landmarks)
-[![Build status](https://ci.appveyor.com/api/projects/status/pny4p8ob35qcxa8c/branch/master?svg=true)](https://ci.appveyor.com/project/mlasson/landmarks/branch/master)
-
 *Landmarks* is a simple profiling library for OCaml. It provides primitives to
 delimit portions of code and measure the performance of instrumented code at
 runtime. The available measures are obtained by aggregating CPU cycles (using
@@ -46,7 +43,6 @@ git clone https://github.com/LexiFi/landmarks.git
 cd landmarks
 dune build @install
 ```
-and `make uninstall` to remove installed files.
 
 
 
