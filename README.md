@@ -27,15 +27,20 @@ For more information, you may browse the [API](http://lexifi.github.io/landmarks
 Installation
 ------------
 
-- With opam:
+The library is split into two packages: `landmarks` for the runtime library
+and `landmarks-ppx` for the preprocessor implementing automatic
+instrumentation.
+
+- Using opam:
 ```
 opam install landmarks
 ```
-and
+or
 ```
-opam install landmarks-viewer
+opam install landmarks-ppx
 ```
-for installing the landmarks viewer.
+will install either the runtime library or both the runtime library and the
+preprocessor.
 
 - Manually:
 ```
@@ -45,11 +50,12 @@ dune build @install
 ```
 
 
-
 Usage with dune
-------------------------
+---------------
 
-Simply use the library `landmarks` and the preprocessor `landmarks.ppx` to
+## Direct Method
+
+Simply use the library `landmarks` and the preprocessor `landmarks-ppx` to
 benchmark your executables and libraries. For instance, the following `dune`
 file builds the executable `test` using the `landmarks` library and its PPX.
 The optional `--auto` flag turns on the automatic instrumentation (see below).
@@ -57,11 +63,20 @@ The optional `--auto` flag turns on the automatic instrumentation (see below).
 (executable
  (name test)
  (libraries landmarks)
- (preprocess (pps landmarks.ppx --auto))
+ (preprocess (pps landmarks-ppx --auto))
 )
 ```
 
-You can find a sample program in the [example directory](https://github.com/LexiFi/landmarks/tree/master/examples).
+## Using dune's instrumentation
+
+It is possible to use dune to automatically trigger the instrumentation of
+a project. Have a look at
+[LexiFi/landmarks-starter](https://github.com/LexiFi/landmarks-starter) for
+a basic example and see the
+[dune manual](https://dune.readthedocs.io/en/stable/instrumentation.html)
+for more information.
+
+![Terminal Video of commands describe below](https://raw.githubusercontent.com/LexiFi/landmarks-starter/master/demo.gif)
 
 Usage with ocamlfind
 --------------------
@@ -76,20 +91,10 @@ bytecode.
 
 * With the PPX extension:
 ```
-  ocamlfind ocamlopt -c -package landmarks -package landmarks.ppx -ppxopt landmarks.ppx,--auto prog.ml
+  ocamlfind ocamlopt -c -package landmarks -package landmarks-ppx -ppxopt landmarks-ppx,--auto prog.ml
   ocamlfind ocamlopt -o prog -package landmarks -linkpkg prog.cmx
 ```
-Note that "-ppxopt landmarks.ppx,--auto" is optional and turns on the automatic instrumentation. 
-
-* Launching the viewer (when available):
-```
-x-www-browser "$(ocamlfind query landmarks-viewer)/landmarks_viewer.html"
-```
-You may want to replace "x-www-browser" with your system's way to
-invoke your favorite web-browser from the command line. It has
-to support javascript.
-
-You can find a sample program in the [example directory](https://github.com/LexiFi/landmarks/tree/master/examples).
+Note that "-ppxopt landmarks-ppx,--auto" is optional and turns on the automatic instrumentation.
 
 Benchmarking manually
 ---------------------
