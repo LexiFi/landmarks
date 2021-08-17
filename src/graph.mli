@@ -30,7 +30,7 @@ type node = {
   children: id list; (** The list of instances of landmarks that was entered while the node was opened. *)
   sys_time: float; (** Time (using Sys.time) spent between enter and exit. *)
   allocated_bytes: float; (** Gc.allocated_bytes between enter and exit. *)
-  distrib: float array; (** For samplers only. The list of collected samples. *)
+  distrib: floatarray; (** For samplers only. The list of collected samples. *)
 }
 
 (** {3 Callgraph } *)

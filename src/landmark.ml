@@ -94,32 +94,61 @@ module SparseArray = struct
 end
 
 module Stack = struct
-  type 'a t = {
-    mutable data : 'a array;
+  module A = struct
+    type (_, _) kind =
+      | Array : ('a, 'a array) kind
+      | Float : (float, floatarray) kind
+    let empty : type a arr. (a, arr) kind -> arr = function
+      | Array -> [||]
+      | Float -> Float.Array.create 0
+    let make : type a arr. (a, arr) kind -> int -> a -> arr = fun kind n null ->
+      match kind with
+      | Array -> Array.make n null
+      | Float -> Float.Array.make n null
+    let length : type a arr. (a, arr) kind -> arr -> int = fun kind arr ->
+      match kind with
+      | Array -> Array.length arr
+      | Float -> Float.Array.length arr
+    let get : type a arr. (a, arr) kind -> arr -> int -> a = fun kind arr n ->
+      match kind with
+      | Array -> Array.get arr n
+      | Float -> Float.Array.get arr n
+    let set : type a arr. (a, arr) kind -> arr -> int -> a -> unit = fun kind arr n ->
+      match kind with
+      | Array -> Array.set arr n
+      | Float -> Float.Array.set arr n
+    let blit : type a arr. (a, arr) kind -> arr -> int -> arr -> int -> int -> unit = fun kind src srcpos dst dstpos n ->
+      match kind with
+      | Array -> Array.blit src srcpos dst dstpos n
+      | Float -> Float.Array.blit src srcpos dst dstpos n
+  end
+  type ('a, 'arr) t = {
+    kind : ('a, 'arr) A.kind;
+    mutable data : 'arr;
     mutable size : int
   }
   (* /!\ Dummy cannot be resized. *)
-  let dummy () = { data = [||]; size = 0 }
-  let make null n = { data = Array.make (max 1 n) null; size = 0 }
+  let dummy kind = { kind; data = A.empty kind; size = 0 }
+  let make kind null n = { kind; data = A.make kind (max 1 n) null; size = 0 }
   let size {size; _} = size
-  let resize ({size; data} as stack) =
-    if size = Array.length data then begin
+  let resize ({kind; size; data} as stack) =
+    if size = A.length kind data then begin
       assert (size > 0);
       let new_length = (2 * (size + 1)) - 1 in
-      stack.data <- Array.make new_length data.(0);
-      Array.blit data 0 stack.data 0 size;
+      stack.data <- A.make kind new_length (A.get kind data 0);
+      A.blit kind data 0 stack.data 0 size;
     end
 
-  let push ({size; _} as stack) x =
+  let push stack x =
     resize stack;
-    stack.data.(size) <- x;
-    stack.size <- size + 1
+    A.set stack.kind stack.data stack.size x;
+    stack.size <- stack.size + 1
 
   let pop stack =
     stack.size <- stack.size - 1;
-    stack.data.(stack.size)
+    A.get stack.kind stack.data stack.size
 
-  let to_array {data; size; _} = Array.sub data 0 size
+  let to_floatarray {data; size; _} = Float.Array.sub data 0 size
 end
 
 type landmark = {
@@ -140,12 +169,12 @@ and node = {
   id: int;
 
   children: node SparseArray.t;
-  fathers: node Stack.t;
+  fathers: (node, node array) Stack.t;
 
   mutable calls: int;
   mutable recursive_calls: int;
   mutable timestamp: Int64.t;
-  distrib: float Stack.t;
+  distrib: (float, floatarray) Stack.t;
   floats : floats;
 }
 
@@ -184,11 +213,11 @@ and dummy_node = {
   landmark = landmark_root;
   id = 0;
   children = SparseArray.dummy ();
-  fathers = Stack.dummy ();
+  fathers = Stack.dummy Array;
   floats = new_floats ();
   calls = 0;
   recursive_calls = 0;
-  distrib = Stack.dummy ();
+  distrib = Stack.dummy Float;
   timestamp = Int64.zero
 }
 
@@ -255,8 +284,8 @@ let new_node landmark =
     landmark;
     id;
 
-    fathers = Stack.make dummy_node 1;
-    distrib = Stack.make 0.0 0;
+    fathers = Stack.make Array dummy_node 1;
+    distrib = Stack.make Float 0.0 0;
     children = SparseArray.make dummy_node 7;
 
     calls = 0;
@@ -380,7 +409,7 @@ let profiling_stack =
   let dummy =
     {root = dummy_node; current = dummy_node; nodes = [{node = dummy_node; recursive = false}]; cache_miss = 0; nodes_len = 1}
   in
-  Stack.make dummy 7
+  Stack.make Array dummy 7
 
 let push_profiling_state () =
   if !profile_with_debug then
@@ -678,7 +707,7 @@ let export ?(label = "") () =
       | Some user_id -> "#"^user_id
     in
     {Graph.landmark_id; id; name; location; calls; time; kind;
-     allocated_bytes; sys_time; children; distrib = Stack.to_array distrib}
+     allocated_bytes; sys_time; children; distrib = Stack.to_floatarray distrib}
   in
   if !profiling_ref then begin
     aggregate_stat_for !current_root_node;
@@ -704,7 +733,7 @@ let rec merge_branch node graph (imported : Graph.node) =
   floats.sys_time <- imported.sys_time +. floats.sys_time;
   floats.allocated_bytes <- imported.allocated_bytes +. floats.allocated_bytes;
   node.calls <- imported.calls + node.calls;
-  Array.iter (Stack.push node.distrib) imported.distrib;
+  Float.Array.iter (Stack.push node.distrib) imported.distrib;
 
   let children = Graph.children graph imported in
   List.iter
@@ -724,7 +753,7 @@ and new_branch parent graph (imported : Graph.node) =
   floats.time <- imported.time;
   floats.allocated_bytes <- imported.allocated_bytes;
   floats.sys_time <- imported.sys_time;
-  Array.iter (Stack.push node.distrib) imported.distrib;
+  Float.Array.iter (Stack.push node.distrib) imported.distrib;
   SparseArray.set parent.children landmark.id node;
   List.iter (new_branch node graph) (Graph.children graph imported)
 

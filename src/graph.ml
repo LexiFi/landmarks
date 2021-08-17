@@ -25,7 +25,7 @@ type node = {
   children: id list;
   sys_time: float;
   allocated_bytes: float;
-  distrib: float array;
+  distrib: floatarray;
 }
 
 type graph = {
@@ -355,10 +355,10 @@ let output ?(threshold = 1.0) oc graph =
   if sample_nodes <> [] then begin
     Printf.fprintf oc "\nSamplings\n----------\n%!";
     let stats d =
-      let avg = (Array.fold_left (+.) 0.0 d) /. (float (Array.length d)) in
+      let avg = (Float.Array.fold_left (+.) 0.0 d) /. (float (Float.Array.length d)) in
       let square x = x *. x in
       let stddev =
-        sqrt ((Array.fold_left (fun acc x -> acc +. square (x -. avg)) 0.0 d) /. (float (Array.length d)))
+        sqrt ((Float.Array.fold_left (fun acc x -> acc +. square (x -. avg)) 0.0 d) /. (float (Float.Array.length d)))
       in
       avg, stddev
     in
@@ -445,7 +445,7 @@ let json_of_node
         "children", List (List.map (fun x -> Int x) children);
         "sys_time", Float sys_time;
         "allocated_bytes", Float allocated_bytes;
-        "distrib", List (List.map (fun x -> Float x) (Array.to_list distrib)) ]
+        "distrib", List (List.map (fun x -> Float x) (Float.Array.to_list distrib)) ]
 
 let json_of_graphs {nodes; label; root} =
   Map ["nodes", ListClosure (Array.length nodes, fun k -> json_of_node nodes.(k));
