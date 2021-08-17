@@ -1,8 +1,8 @@
 (library
  (name ppx_landmarks)
- (public_name landmarks.ppx)
+ (public_name landmarks-ppx)
  (private_modules mapper register)
  (kind ppx_rewriter)
  (libraries ppxlib)
- (preprocess
-  (pps compatibility)))
+ (ppx_runtime_libraries landmarks)
+)

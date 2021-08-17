@@ -2,10 +2,9 @@
  (name landmark)
  (public_name landmarks)
  (flags
-  (:standard -w +A-30-42-41-48-40-4 -safe-string -strict-sequence -g))
+  (:standard -w +A-30-42-41-40-4 -safe-string -strict-sequence))
  (foreign_stubs
   (language c)
   (names clock))
- (instrumentation.backend (ppx ppx_landmarks))
- (preprocess
-  (pps compatibility)))
+ (instrumentation.backend (ppx landmarks-ppx))
+)

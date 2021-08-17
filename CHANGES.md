@@ -1,9 +1,14 @@
-upcoming version
-----------------
-* improvements on the doc and examples (pull-request #15, #16, contributed by Leandro Ostera)
+version 1.4, 15 aug 2021
+------------------------
+* switch to github actions
+* add a link to https://github.com/LexiFi/landmarks-starter
+* split landmarks into landmarks and landmarks-ppx
+* enabled instrumentation (PR #23, @nojb)
+* use floatarray #24 (@nojb)
+* use ppxlib instead of OMP (PR #22)
+* improvements on the doc and examples (PR #15, #16, @ostera)
 * primitive support for objects (allow to annotate methods)
 * dynamic landmarks
-* TODO: document these new features
 * auto now automatically benchmark all methods
 
 version 1.3, 6 dec 2018
@@ -16,11 +21,11 @@ version 1.3, 6 dec 2018
 
 version 1.2, 20 may 2018
 ------------------------
-* improved documentation (issue #8, pull-request #11, contributed by Andre Maroneze)
+* improved documentation (issue #8, PR #11, @maroneze)
 * migrate the build to dune/jbuilder
 * support for OCAML 4.02 (issue #6)
 * landmarks-viewer is now a separate git repository
-* fix issue #13 (Pierre Boutiller & Nils Becker)
+* fix issue #13 (@pirbo & @nilsbecker)
 
 version 1.1, 9 Jan 2017
 -----------------------

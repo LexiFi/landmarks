@@ -1,5 +1,0 @@
-(executable
- (name main)
- (libraries unix landmarks)
- (preprocess
-  (pps landmarks.ppx --auto)))

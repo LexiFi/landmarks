@@ -1,6 +1,20 @@
 (* This file is released under the terms of an MIT-like license.     *)
 (* See the attached LICENSE file.                                    *)
 (* Copyright 2016 by LexiFi.                                         *)
+
+let default_auto, default_remove, default_threads =
+  match Sys.getenv "OCAML_LANDMARKS" with
+  | exception Not_found -> false, false, false
+  | env ->
+      let opts = String.split_on_char ',' env in
+      List.mem "auto" opts,
+      List.mem "remove" opts,
+      List.mem "threads" opts
+
+let auto = ref default_auto
+let remove = ref default_remove
+let threads = ref default_threads
+
 open Ppxlib
 
 open Ast_helper
@@ -17,8 +31,6 @@ let mknoloc txt =
 
 let digest x =
   Digest.to_hex (Digest.string (Marshal.to_string x []))
-
-let with_thread = ref false
 
 let error loc code =
   let open Printf in
@@ -92,12 +104,12 @@ let string_of_loc (l : Location.t) =
 
 let enter_landmark lm =
   let landmark_enter =
-    if !with_thread then "Landmark_threads.enter" else "Landmark.enter"
+    if !threads then "Landmark_threads.enter" else "Landmark.enter"
   in
   Exp.apply (var landmark_enter) [Nolabel, var lm]
 let exit_landmark lm =
   let landmark_exit =
-    if !with_thread then "Landmark_threads.exit" else "Landmark.exit"
+    if !threads then "Landmark_threads.exit" else "Landmark.exit"
   in
   Exp.apply (var landmark_exit) [Nolabel, var lm]
 
