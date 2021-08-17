@@ -6,5 +6,5 @@
  (foreign_stubs
   (language c)
   (names clock))
- (instrumentation.backend (ppx landmarks-ppx))
-)
+ (instrumentation.backend
+  (ppx landmarks-ppx)))

@@ -4,5 +4,4 @@
  (private_modules mapper register)
  (kind ppx_rewriter)
  (libraries ppxlib)
- (ppx_runtime_libraries landmarks)
-)
+ (ppx_runtime_libraries landmarks))

@@ -1,7 +1,6 @@
 (executable
  (name test)
- (libraries landmark)
-)
+ (libraries landmark))
 
 (rule
  (with-stderr-to
