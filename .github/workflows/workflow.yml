@@ -31,6 +31,7 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           dune-cache: true
+          opam-local-packages: *.opam
 
       - run: opam install . --deps-only --with-doc --with-test
 
