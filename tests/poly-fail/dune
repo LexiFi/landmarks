@@ -1,7 +1,6 @@
 (rule
  (targets test.out)
  (deps
-  (package landmarks)
   (:ppx ../tools/standalone.exe)
   (:tt ../../toplevel/tt.exe))
  (action
@@ -13,6 +12,7 @@
 
 (rule
  (alias runtest)
+ (package landmarks-ppx)
  (enabled_if
   (>= %{ocaml_version} "4.08"))
  (action

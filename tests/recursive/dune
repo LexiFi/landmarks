@@ -13,6 +13,7 @@
 
 (rule
  (alias runtest)
+ (package landmarks-ppx)
  (enabled_if
   (>= %{ocaml_version} "4.03"))
  (action

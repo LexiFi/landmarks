@@ -14,5 +14,6 @@
 
 (rule
  (alias runtest)
+ (package landmarks-ppx)
  (action
   (diff test.out.expected test.out)))

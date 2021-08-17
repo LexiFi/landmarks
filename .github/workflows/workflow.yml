@@ -34,7 +34,12 @@ jobs:
 
       - run: opam install . --deps-only --with-doc --with-test
 
-      - run: opam exec -- dune build
+      - run: opam exec -- dune build -p landmarks
 
-      - run: opam exec -- dune build @runtest
+      - run: opam exec -- dune build -p landmarks @runtest
+        continue-on-error: ${{ runner.os == 'Windows' }}
+
+      - run: opam exec -- dune build -p landmarks-ppx
+
+      - run: opam exec -- dune build -p landmarks-ppx @runtest
         continue-on-error: ${{ runner.os == 'Windows' }}
