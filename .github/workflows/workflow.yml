@@ -31,14 +31,19 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           dune-cache: true
-          opam-local-packages: "*.opam"
+          opam-pin: false
+          opam-depext: false
 
-      - run: opam install . --deps-only --with-doc --with-test
+      - run: opam pin add -ny .
+
+      - run: opam install --deps-only --with-doc --with-test -y landmarks
 
       - run: opam exec -- dune build -p landmarks
 
       - run: opam exec -- dune build -p landmarks @runtest
         continue-on-error: ${{ runner.os == 'Windows' }}
+        
+      - run: opam install --deps-only --with-doc --with-test -y landmarks-ppx
 
       - run: opam exec -- dune build -p landmarks-ppx
 
