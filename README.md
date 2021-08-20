@@ -294,15 +294,6 @@ in the landmarks-threads.cm(x)a archive) that prevents non thread-safe
 functions to execute in all threads but the one which started the
 profiling.
 
-Instrumenting with OCAMLPARAM
------------------------------
-
-A way to blindly instrument a project is to use ocaml's OCAMLPARAM
-experimental feature, by setting the environment variable OCAMLPARAM with
-```
-I=$(ocamlfind query landmarks),cma=landmarks.cma,cmxa=landmarks.cmxa,ppx=$(ocamlfind query landmarks)/ppx_landmarks,_"
-```
-
 Known Issue
 -----------
 
