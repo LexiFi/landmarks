@@ -1,3 +1,7 @@
+unreleased
+------------------------
+* add support for `arm64` (M1 mac) (PR #35, @johnyob)
+
 version 1.4, 15 aug 2021
 ------------------------
 * switch to github actions
