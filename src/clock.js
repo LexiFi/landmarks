@@ -11,7 +11,5 @@ function caml_highres_clock() {
   // [2]: https://chromestatus.com/feature/6497206758539264
   //
   // We could probably get vastly better accuracy under Electron by using a Node.js runtime.
-  var rawClockMs = globalThis.performance.now();
-
-  return caml_int64_of_float(rawClockMs);
+  return caml_int64_of_float(globalThis.performance.now());
 }
