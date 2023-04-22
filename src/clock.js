@@ -14,17 +14,5 @@ function caml_highres_clock() {
   // We could probably get vastly better accuracy under Electron by using a Node.js runtime.
   var rawClockMs = globalThis.performance.now();
 
-  // Integer representation.
-  var us = Math.trunc(rawClockMs * 1000);
-
-  // First 24 bits.
-  var low = us & 0xffffff;
-  // Mid 24 bits.
-  var mid = Math.trunc(us / Math.pow(2, 24)) & 0xffffff;
-  // Upper 16 bits.
-  var hi = Math.trunc(us / Math.pow(2, 48)) & 0xffff;
-
-  // Using MlInt64 is necessary for the return value to interact correctly with
-  // OCaml code.
-  return new MlInt64(low, mid, hi);
+  return caml_int64_of_float(rawClockMs);
 }
