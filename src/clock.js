@@ -1,6 +1,5 @@
 //Provides: caml_highres_clock const
-//Requires: MlInt64
-
+//Requires: caml_int64_of_float
 function caml_highres_clock() {
   // WARNING: this method's accuracy varies wildly from browser to browser due
   // to Spectre mitigations.
