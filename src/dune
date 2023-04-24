@@ -6,5 +6,7 @@
  (foreign_stubs
   (language c)
   (names clock))
+ (js_of_ocaml
+  (javascript_files clock.js))
  (instrumentation.backend
   (ppx landmarks-ppx)))
