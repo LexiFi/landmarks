@@ -56,8 +56,7 @@ CAMLprim value allocated_bytes(value v)
 
 CAMLprim int64_t allocated_bytes_major_native(value v)
 {
-  double majwords =
-    Caml_state->stat_major_words + (double) caml_allocated_words;
+  double majwords = caml_stat_major_words + (double) caml_allocated_words;
 
   return (int64_t) (majwords * sizeof(value));
 }
