@@ -1,6 +1,6 @@
 (* This file is released under the terms of an MIT-like license.     *)
 (* See the attached LICENSE file.                                    *)
-(* Copyright 2016 by LexiFi.                                         *)
+(* Copyright (C) 2000-2024 LexiFi                                    *)
 
 (** All about exporting profiling results *)
 
@@ -29,7 +29,8 @@ type node = {
   time: float; (** Time (in cycles) spent between enter and exit. *)
   children: id list; (** The list of instances of landmarks that was entered while the node was opened. *)
   sys_time: float; (** Time (using Sys.time) spent between enter and exit. *)
-  allocated_bytes: float; (** Gc.allocated_bytes between enter and exit. *)
+  allocated_bytes: int; (** Allocated bytes between enter and exit. *)
+  allocated_bytes_major: int; (** Allocated bytes in the major heap between enter and exit. *)
   distrib: floatarray; (** For samplers only. The list of collected samples. *)
 }
 

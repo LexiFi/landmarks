@@ -1,6 +1,6 @@
 (* This file is released under the terms of an MIT-like license.     *)
 (* See the attached LICENSE file.                                    *)
-(* Copyright 2016 by LexiFi.                                         *)
+(* Copyright (C) 2000-2024 LexiFi                                    *)
 
 open Misc
 
@@ -24,7 +24,8 @@ type node = {
   time: float;
   children: id list;
   sys_time: float;
-  allocated_bytes: float;
+  allocated_bytes: int;
+  allocated_bytes_major: int;
   distrib: floatarray;
 }
 
@@ -39,7 +40,7 @@ let graph_of_nodes ?(label = "") ?(root = 0) nodes =
 
 let children {nodes; _} node =
   List.map (fun k -> nodes.(k)) node.children
-  |> List.sort (fun n1 n2 -> compare n2.time n1.time)
+  |> List.sort (fun n1 n2 -> Float.compare n2.time n1.time)
 
 let nodes {nodes; _} =
   Array.to_list nodes
@@ -52,7 +53,7 @@ let subgraph graph node =
 
 module SetNode = Set.Make(struct
     type t = node
-    let compare x y = Stdlib.compare x.id y.id
+    let compare x y = Int.compare x.id y.id
   end)
 
 module HashNode = Hashtbl.Make (struct
@@ -177,7 +178,13 @@ let aggregate_landmarks graph =
         let time = List.fold_left (fun acc {time; _} -> acc +. time) hd.time tl in
         let calls = List.fold_left (fun acc {calls; _} -> acc + calls) hd.calls tl in
         let sys_time = List.fold_left (fun acc {sys_time; _} -> acc +. sys_time) hd.sys_time tl in
-        let allocated_bytes = List.fold_left (fun acc {allocated_bytes; _} -> acc +. allocated_bytes) hd.allocated_bytes tl in
+        let allocated_bytes, allocated_bytes_major =
+          List.fold_left
+            (fun (ab, abm) {allocated_bytes; allocated_bytes_major; _} ->
+               ab + allocated_bytes, abm + allocated_bytes_major)
+            (hd.allocated_bytes, hd.allocated_bytes_major)
+            tl
+        in
         let children =
           let lm_ids_of_children {children; _} =
             StringSet.of_list (List.map (fun id -> nodes.(id).landmark_id) children)
@@ -186,7 +193,7 @@ let aggregate_landmarks graph =
           |> StringSet.elements
           |> List.map (Hashtbl.find translator)
         in
-        { hd with id; time; calls; sys_time; allocated_bytes; children}
+        { hd with id; time; calls; sys_time; allocated_bytes; allocated_bytes_major; children}
   in
   let root = Hashtbl.find translator root_id in
   let nodes = Array.of_list (List.map aggregate_nodes group_nodes) in
@@ -242,7 +249,7 @@ let label graph =
       (nodes graph)
   in
   let names = flatten_map (fun l ->
-      List.sort_uniq Stdlib.compare
+      List.sort_uniq String.compare
         (List.map (fun {name; _} -> name) l)) nodes
   in
   let needs_location =
@@ -317,25 +324,25 @@ let output ?(threshold = 1.0) oc graph =
   let aggregated_graph = aggregate_landmarks graph in
   let all_nodes =
     List.sort
-      (fun {time = time1; _} {time = time2; _} -> compare time2 time1)
+      (fun {time = time1; _} {time = time2; _} -> Float.compare time2 time1)
       (nodes aggregated_graph)
   in
   let normal_nodes = List.filter (fun n -> n.kind = Normal || n.kind = Root) all_nodes in
   let sample_nodes = List.filter (fun n -> n.kind = Sampler) all_nodes in
   let profile_with_sys_time = List.exists (fun {sys_time; _} -> sys_time <> 0.0) normal_nodes in
-  let profile_with_allocated_bytes = List.exists (fun {allocated_bytes; _} -> allocated_bytes <> 0.0) normal_nodes in
+  let profile_with_allocated_bytes = List.exists (fun {allocated_bytes; _} -> allocated_bytes <> 0) normal_nodes in
   let optional_headers =
     match profile_with_sys_time, profile_with_allocated_bytes with
-    | true, true -> Printf.sprintf "; %8s; %8s" "Sys time" "Allocated bytes"
+    | true, true -> Printf.sprintf "; %8s; %8s; %8s" "Sys time" "Allocated bytes" "Allocated bytes major"
     | true, false -> Printf.sprintf "; %8s" "Sys time"
-    | false, true -> Printf.sprintf "; %8s" "Allocated bytes"
+    | false, true -> Printf.sprintf "; %8s; %8s" "Allocated bytes" "Allocated bytes major"
     | false, false -> ""
   in
-  let optional_columns sys_time allocated_bytes =
+  let optional_columns sys_time allocated_bytes allocated_bytes_major =
     match profile_with_sys_time, profile_with_allocated_bytes with
-    | true, true -> Printf.sprintf "; %8.3f; %8.0f" sys_time allocated_bytes
+    | true, true -> Printf.sprintf "; %8.3f; %d; %d" sys_time allocated_bytes allocated_bytes_major
     | true, false -> Printf.sprintf "; %8.3f" sys_time
-    | false, true -> Printf.sprintf "; %8.0f" allocated_bytes
+    | false, true -> Printf.sprintf "; %d; %d" allocated_bytes allocated_bytes_major
     | false, false -> ""
   in
   if threshold > 0.0 then
@@ -346,10 +353,10 @@ let output ?(threshold = 1.0) oc graph =
   Printf.fprintf oc "%*s; %*s; %8s; %8s%s\n%!"
     max_name_length "Name" max_location_length "Filename" "Calls" "Time" optional_headers;
   let print_row ({name; location; calls;
-                  time; allocated_bytes; sys_time; _}) =
+                  time; allocated_bytes; allocated_bytes_major; sys_time; _}) =
     let time, unit = human time in
     Printf.fprintf oc "%*s; %*s; %8d; %7.2f%1s%s\n%!"
-      max_name_length name max_location_length location calls time unit (optional_columns sys_time allocated_bytes)
+      max_name_length name max_location_length location calls time unit (optional_columns sys_time allocated_bytes allocated_bytes_major)
   in
   List.iter print_row normal_nodes;
   if sample_nodes <> [] then begin
@@ -434,7 +441,7 @@ open JSON
 
 let json_of_node
     {id; kind; landmark_id; name; location;
-     calls; time; children; sys_time; allocated_bytes; distrib} =
+     calls; time; children; sys_time; allocated_bytes; allocated_bytes_major; distrib} =
   Map [ "id", Int id;
         "kind", String (string_of_kind kind);
         "landmark_id", String landmark_id;
@@ -444,7 +451,8 @@ let json_of_node
         "time", Float time;
         "children", List (List.map (fun x -> Int x) children);
         "sys_time", Float sys_time;
-        "allocated_bytes", Float allocated_bytes;
+        "allocated_bytes", Int allocated_bytes;
+        "allocated_bytes_major", Int allocated_bytes_major;
         "distrib", List (List.map (fun x -> Float x) (Float.Array.to_list distrib)) ]
 
 let json_of_graphs {nodes; label; root} =
