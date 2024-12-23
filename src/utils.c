@@ -41,12 +41,10 @@ CAMLprim value caml_highres_clock(value unit)
 
 CAMLprim int64_t allocated_bytes_native(value v)
 {
-  double minwords =
-    Caml_state->stat_minor_words
-    + (double) (caml_young_end - caml_young_ptr);
-  double prowords = Caml_state->stat_promoted_words;
-  double majwords =
-    Caml_state->stat_major_words + (double) caml_allocated_words;
+  double minwords = caml_stat_minor_words
+                    + (double) (caml_young_alloc_end - caml_young_ptr);
+  double prowords = caml_stat_promoted_words;
+  double majwords = caml_stat_major_words + (double) caml_allocated_words;
 
   return (int64_t) ((minwords + majwords - prowords) * sizeof(value));
 }
