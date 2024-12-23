@@ -27,6 +27,8 @@ jobs:
             ocaml-compiler: 4.09.x
           - os: macos-latest
             ocaml-compiler: 4.08.x
+          - os: windows-latest
+            ocaml-compiler: 5.2.x
 
     runs-on: ${{ matrix.os }}
 
