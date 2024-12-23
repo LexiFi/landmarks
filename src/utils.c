@@ -21,6 +21,10 @@ CAMLprim int64_t caml_highres_clock_native(value unit)
     int64_t v;
     v = __rdtsc();
     return v;
+#elif defined(__aarch64__)
+    uint64_t v;
+    __asm__ __volatile__ ("mrs %0, cntvct_el0" : "=r"(v));
+    return v;
 #elif defined(__GNUC__)
     uint32_t hi = 0, lo = 0;
     __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
