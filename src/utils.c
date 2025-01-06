@@ -3,7 +3,6 @@
    Copyright (C) 2000-2024 LexiFi                                    */
 
 #define CAML_INTERNALS
-#define CAML_NAME_SPACE
 
 #include <caml/mlvalues.h>
 #include <caml/alloc.h>
