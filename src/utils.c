@@ -9,27 +9,33 @@
 #include <caml/major_gc.h>
 #include <caml/minor_gc.h>
 #include <caml/gc_ctrl.h>
-
-#ifndef _MSC_VER
 #include <stdint.h>
+
+#ifdef _MSC_VER
+#include <intrin.h>
+#pragma intrinsic(__rdtsc)
 #endif
 
 CAMLprim int64_t caml_highres_clock_native(value unit)
 {
-#if defined(_MSC_VER)
-    int64_t v;
-    v = __rdtsc();
-    return v;
-#elif defined(__aarch64__)
-    uint64_t v;
-    __asm__ __volatile__ ("mrs %0, cntvct_el0" : "=r"(v));
-    return v;
-#elif defined(__GNUC__)
-    uint32_t hi = 0, lo = 0;
-    __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
-    return ((int64_t)lo)|( ((int64_t)hi)<<32 );
+#if defined(__GNUC__)
+#if defined(__aarch64__)
+  uint64_t v;
+  __asm__ __volatile__("mrs %0, cntvct_el0" : "=r"(v));
+  return v;
+#elif defined(__x86_64__)
+  uint32_t hi = 0, lo = 0;
+  __asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
+  return ((int64_t)lo) | (((int64_t)hi) << 32);
 #else
-    return 0;
+  return 0;
+#endif
+#elif defined(_MSC_VER)
+  int64_t v;
+  v = __rdtsc();
+  return v;
+#else
+  return 0;
 #endif
 }
 
