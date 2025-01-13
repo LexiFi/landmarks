@@ -1,9 +1,9 @@
 name: Main workflow
 
 on:
-  - pull_request
-  - push
-  - schedule:
+  pull_request:
+  push:
+  schedule:
     - cron: '0 0 * * 0'  # At 00:00 UTC every Sunday
 
 jobs:
