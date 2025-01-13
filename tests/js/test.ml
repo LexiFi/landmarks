@@ -17,9 +17,10 @@ let () =
     let cg = export () in
     let agg = aggregate_landmarks cg in
     let all_nodes = nodes agg in
+    assert ((root cg).time > 0.);
     print_endline "\nLandmark reached:";
     all_nodes
-    |> List.map (fun {name; time; _} -> Printf.sprintf "%s %.0f" name time)
+    |> List.map (fun {name; _} -> name)
     |> List.sort String.compare
     |> List.iter print_endline
   end
