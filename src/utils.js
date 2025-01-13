@@ -13,3 +13,15 @@ function caml_highres_clock() {
   // We could probably get vastly better accuracy under Electron by using a Node.js runtime.
   return caml_int64_of_float(globalThis.performance.now());
 }
+
+//Provides: allocated_bytes const
+//Requires: caml_int64_of_float
+function allocated_bytes() {
+  return caml_int64_of_float(0);
+}
+
+//Provides: allocated_bytes_major const
+//Requires: caml_int64_of_float
+function allocated_bytes_major() {
+  return caml_int64_of_float(0);
+}
