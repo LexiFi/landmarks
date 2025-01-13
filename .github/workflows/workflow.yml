@@ -3,6 +3,8 @@ name: Main workflow
 on:
   - pull_request
   - push
+  - schedule:
+    - cron: '0 0 * * 0'  # At 00:00 UTC every Sunday
 
 jobs:
   build:
@@ -10,9 +12,9 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-latest
           - ubuntu-latest
-          - windows-latest
+        node-version:
+          - 20.x
         ocaml-compiler:
           - 5.2.x
           - 4.12.x
@@ -20,15 +22,6 @@ jobs:
           - 4.10.x
           - 4.09.x
           - 4.08.x
-        exclude:
-          - os: macos-latest
-            ocaml-compiler: 4.11.x
-          - os: macos-latest
-            ocaml-compiler: 4.09.x
-          - os: macos-latest
-            ocaml-compiler: 4.08.x
-          - os: windows-latest
-            ocaml-compiler: 5.2.x
 
     runs-on: ${{ matrix.os }}
 
@@ -44,11 +37,10 @@ jobs:
           opam-pin: false
           opam-depext: false
 
-      - name: Ensure Node.js is installed (Ubuntu only)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get install -y nodejs
-          node --version
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
 
       - run: opam pin add -ny .
 

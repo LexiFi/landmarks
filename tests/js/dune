@@ -4,7 +4,6 @@
  (libraries landmark))
 
 (rule
-  (enabled_if (= %{ocaml-config:system} linux))
   (deps ./test.bc.js)
   (target test.out)
   (action
@@ -16,9 +15,6 @@
 
 (rule
  (alias runtest)
- (enabled_if
-    (and
-   (>= %{ocaml_version} "4.04")
-   (= %{ocaml-config:system} linux)))
+ (enabled_if (>= %{ocaml_version} "4.04"))
  (action
   (diff test.out.expected test.out)))
