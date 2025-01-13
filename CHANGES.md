@@ -1,4 +1,4 @@
-unreleased
+version 1.5, unreleased
 ------------------------
 * report allocations on major heap (PR #40, @edwinans)
 * fix extra allocations for 'allocation' option (PR #40, @edwinans)
