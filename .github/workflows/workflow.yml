@@ -44,9 +44,17 @@ jobs:
           opam-pin: false
           opam-depext: false
 
+      - name: Ensure Node.js is installed (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get install -y nodejs
+          node --version
+
       - run: opam pin add -ny .
 
       - run: opam install --deps-only --with-doc --with-test -y landmarks
+
+      - run: opam install js_of_ocaml
 
       - run: opam exec -- dune build -p landmarks
 

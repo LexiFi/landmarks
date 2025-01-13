@@ -12,6 +12,8 @@
 (rule
  (alias runtest)
  (enabled_if
-  (>= %{ocaml_version} "4.04"))
+    (and
+   (>= %{ocaml_version} "4.04")
+   (= %{ocaml-config:system} linux)))
  (action
   (diff test.out.expected test.out)))
