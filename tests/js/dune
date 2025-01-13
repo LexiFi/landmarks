@@ -4,10 +4,15 @@
  (libraries landmark))
 
 (rule
- (ignore-stderr
-  (with-stdout-to
-   test.out
-   (run node ./test.bc.js))))
+  (enabled_if (= %{ocaml-config:system} linux))
+  (deps ./test.bc.js)
+  (target test.out)
+  (action
+   (ignore-stderr
+    (with-stdout-to
+     test.out
+     (run node ./test.bc.js))))
+ )
 
 (rule
  (alias runtest)

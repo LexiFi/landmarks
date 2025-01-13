@@ -3,7 +3,7 @@
  (public_name landmarks)
  (no_dynlink)
  (flags
-  (:standard -w +A-30-42-41-40-4 -safe-string -strict-sequence))
+  (:standard -w +A-30-42-41-40-4-70 -safe-string -strict-sequence))
  (foreign_stubs
   (language c)
   (names utils))
