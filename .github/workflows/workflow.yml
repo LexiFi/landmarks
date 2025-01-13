@@ -22,6 +22,13 @@ jobs:
           - 4.10.x
           - 4.09.x
           - 4.08.x
+        include:
+          - os: macos-latest
+            node-version: 20.x
+            ocaml-compiler: 5.2.x
+          - os: windows-latest
+            node-version: 20.x
+            ocaml-compiler: 4.14.x
 
     runs-on: ${{ matrix.os }}
 
