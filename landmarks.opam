@@ -14,7 +14,7 @@ license: "MIT"
 homepage: "https://github.com/LexiFi/landmarks"
 bug-reports: "https://github.com/LexiFi/landmarks/issues"
 depends: [
-  "dune" {>= "2.7"}
+  "dune" {>= "3.16"}
   "ocaml" {>= "4.08"}
   "odoc" {with-doc}
 ]

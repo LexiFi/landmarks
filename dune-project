@@ -1,4 +1,4 @@
-(lang dune 2.7)
+(lang dune 3.16)
 (name landmarks)
 (version 1.5)
 
