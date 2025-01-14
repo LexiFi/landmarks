@@ -196,7 +196,7 @@ tail-recursive calls (and also prevents some polymorphism generalization).
 To get around these problems, it is recommended to use the other provided
 extension around `let ... in` and `let rec ... in`:
 ```ocaml
-let[@landmark] f x1 ... xn = body
+let[@landmark] f x1 ... xk = body
 ```
 which is expanded in :
 ```ocaml
