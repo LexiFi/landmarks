@@ -196,12 +196,12 @@ tail-recursive calls (and also prevents some polymorphism generalization).
 To get around these problems, it is recommended to use the other provided
 extension around `let ... in` and `let rec ... in`:
 ```ocaml
-let[@landmark] f = body
+let[@landmark] f x1 ... xk = body
 ```
 which is expanded in :
 ```ocaml
 let __generated_landmark_2 = Landmark.register "f"
-let f = body
+let f x1 ... xk = body
 let f x1 ... xn =
   Landmark.enter __generated_landmark_2;
   let r =
@@ -211,7 +211,7 @@ let f x1 ... xn =
   r
 ```
 when the arity `n` of `f` is obtained by counting the shallow occurrences
-of `fun ... ->` and `function ... -> ` in `body`. Please note that when using
+of `fun ... ->` and `function ... -> ` in `body` in addition to explicit parameters (`f x1 ... xk`). Please note that when using
 this annotation with let-rec bindings, only entry-point calls will be recorded.
 For instance, in the following piece of code
 ```ocaml
