@@ -1,6 +1,6 @@
-(lang dune 2.7)
+(lang dune 3.16)
 (name landmarks)
-(version 1.4)
+(version 1.5)
 
 (maintainers "Marc Lasson <marc.lasson@lexifi.com>")
 (authors "Marc Lasson <marc.lasson@lexifi.com>")
@@ -31,6 +31,6 @@ landmarks library.")
  (depends
   (ocaml (>= 4.08))
   (ppxlib (>= 0.22))
-  (landmarks (= 1.4))
+  (landmarks (= 1.5))
  )
 )

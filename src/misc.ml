@@ -1,6 +1,6 @@
 (* This file is released under the terms of an MIT-like license.     *)
 (* See the attached LICENSE file.                                    *)
-(* Copyright 2016 by LexiFi.                                         *)
+(* Copyright (C) 2000-2025 LexiFi                                    *)
 
 let group_proj f l =
   let tbl = Hashtbl.create (List.length l) in
@@ -74,4 +74,3 @@ let split c s =
 let starts_with ~prefix x =
   let n = String.length prefix in
   String.length x >= n && prefix = (String.sub x 0 n)
-

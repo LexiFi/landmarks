@@ -1,12 +1,13 @@
 (* This file is released under the terms of an MIT-like license.     *)
 (* See the attached LICENSE file.                                    *)
-(* Copyright 2016 by LexiFi.                                         *)
+(* Copyright (C) 2000-2025 LexiFi                                    *)
 
 module Graph = Graph
 
 (** The main module *)
 
-external clock: unit -> Int64.t = "caml_highres_clock"
+external clock: unit -> (Int64.t [@unboxed]) =
+  "caml_highres_clock" "caml_highres_clock_native" [@@noalloc]
 (** This function is used by the landmark infrastructure to
     measure the number of cycles inside landmarks. *)
 
@@ -26,6 +27,9 @@ val register: ?id:string -> ?location:string -> string -> landmark
     register a landmark twice the second call returns a physically equal
     value to the first call (if you provide [id] the name & location of
     the second call is ignored). *)
+
+val landmark_of_id: string -> landmark option
+(** [landmark_of_id id] return the landmark currently identify by [id]. *)
 
 val enter: landmark -> unit
 (** Begins a landmark block.

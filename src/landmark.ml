@@ -1,8 +1,18 @@
 (* This file is released under the terms of an MIT-like license.     *)
 (* See the attached LICENSE file.                                    *)
-(* Copyright 2016 by LexiFi.                                         *)
+(* Copyright (C) 2000-2025 LexiFi                                    *)
 
-external clock: unit -> Int64.t = "caml_highres_clock"
+external clock: unit -> (Int64.t [@unboxed]) =
+  "caml_highres_clock" "caml_highres_clock_native" [@@noalloc]
+
+(* Alternative implementation of Gc.allocated_bytes which does not allocate *)
+external allocated_bytes: unit -> (Int64.t [@unboxed]) =
+  "allocated_bytes" "allocated_bytes_native" [@@noalloc]
+external allocated_bytes_major: unit -> (Int64.t [@unboxed]) =
+  "allocated_bytes_major" "allocated_bytes_major_native" [@@noalloc]
+
+let allocated_bytes () = Int64.to_int (allocated_bytes ())
+let allocated_bytes_major () = Int64.to_int (allocated_bytes_major ())
 
 exception LandmarkFailure of string
 
@@ -28,7 +38,8 @@ module SparseArray = struct
 
   let reset sparse_array = sparse_array.size <- 0
 
-  let get {keys; data; size} id =
+  let get t id =
+    let {keys; data; size} = t in
     let min = ref 0 in
     let max = ref (size - 1) in
     while !min < !max do
@@ -153,10 +164,11 @@ end
 
 type landmark = {
   id: int;
+  key: landmark_key;
   kind : Graph.kind;
   name: string;
   location: string;
-  user_id: string option;
+
 
   mutable last_parent: node;
   mutable last_son: node;
@@ -180,10 +192,17 @@ and node = {
 
 and floats = {
   mutable time: float;
-  mutable allocated_bytes: float;
-  mutable allocated_bytes_stamp: float;
+  mutable allocated_bytes: int;
+  mutable allocated_bytes_stamp: int;
+  mutable allocated_bytes_major: int;
+  mutable allocated_bytes_major_stamp: int;
   mutable sys_time: float;
   mutable sys_timestamp: float;
+}
+
+and landmark_key = {
+  key: string;
+  landmark: landmark;
 }
 
 and counter = landmark
@@ -192,8 +211,10 @@ and sampler = landmark
 
 let new_floats () = {
   time = 0.0;
-  allocated_bytes = 0.0;
-  allocated_bytes_stamp = 0.0;
+  allocated_bytes = 0;
+  allocated_bytes_stamp = 0;
+  allocated_bytes_major = 0;
+  allocated_bytes_major_stamp = 0;
   sys_time = 0.0;
   sys_timestamp = 0.0
 }
@@ -203,7 +224,7 @@ let rec landmark_root = {
   id = 0;
   name = "ROOT";
   location = __FILE__;
-  user_id = None;
+  key = { key = ""; landmark = landmark_root};
   last_parent = dummy_node;
   last_son = dummy_node;
   last_self = dummy_node;
@@ -220,6 +241,8 @@ and dummy_node = {
   distrib = Stack.dummy Float;
   timestamp = Int64.zero
 }
+
+and dummy_key = { key = ""; landmark = landmark_root}
 
 (** STATE **)
 
@@ -247,30 +270,38 @@ let profiling () = !profiling_ref
 (** REGISTERING **)
 
 let last_landmark_id = ref 1
-let landmarks_of_id = Hashtbl.create 17
-let landmarks_of_user_id = Hashtbl.create 17
+module W = Weak.Make(struct
+    type t = landmark_key
+    let equal (x : landmark_key) (y  : landmark_key) = x.key = y.key
+    let hash (x : landmark_key) = Hashtbl.hash x.key
+  end)
 
-let new_landmark ?user_id ~name ~location ~kind () =
+let landmarks_of_key = W.create 17
+
+let iter_registered_landmarks f =
+  W.iter (fun {landmark; _} -> f landmark) landmarks_of_key
+
+let landmark_of_id user_id =
+  match W.find_opt landmarks_of_key {dummy_key with key = user_id} with
+  | None -> None
+  | Some {landmark; _} -> Some landmark
+
+let new_landmark ~key:key_string ~name ~location ~kind () =
   let id = !last_landmark_id in
   incr last_landmark_id;
-  let res =
+  let rec res =
     {
       id;
       name;
       location;
       kind;
-      user_id;
+      key;
       last_parent = dummy_node;
       last_self = dummy_node;
       last_son = dummy_node;
     }
-  in
-  Hashtbl.add landmarks_of_id id res;
-  begin match user_id with
-  | Some user_id ->
-      Hashtbl.add landmarks_of_user_id user_id res;
-  | None -> ()
-  end;
+  and key = { landmark = res; key = key_string} in
+  W.add landmarks_of_key key;
   res
 
 let node_id_ref = ref 0
@@ -298,55 +329,29 @@ let new_node landmark =
 
 let current_root_node = ref (new_node landmark_root)
 
-let registered_landmarks = ref [landmark_root]
-
-let landmark_of_node ({landmark_id = id; name; location; kind; _} : Graph.node) =
-  if String.length id > 0 && id.[0] = '#' then
-    let user_id = String.sub id 1 (String.length id - 1) in
-    match Hashtbl.find_opt landmarks_of_user_id user_id with
-    | None -> new_landmark ~user_id ~name ~kind ~location ()
-    | Some landmark -> landmark
-  else
-    match int_of_string_opt id with
-    | None ->
-        Printf.eprintf "[PROFILING] Cannot parse landmark id:'%s'\n%!" id;
-        new_landmark ~name ~kind ~location ()
-    | Some id ->
-        match Hashtbl.find_opt landmarks_of_id id with
-        | None ->
-            Printf.eprintf
-              "[PROFILING] Inconsistency: the landmark id:'%d', name:'%s', location:'%s' \
-               has not been registered in the master process.\n%!" id name location;
-            new_landmark ~name ~kind ~location ()
-        | Some landmark ->
-            if landmark.name <> name
-            || landmark.location <> location then begin
-              Printf.eprintf
-                "[PROFILING] Inconsistency: the 'master' landmark '%s' ('%s') \
-                 has the same id (%d) than the 'worker' landmark '%s' ('%s')\n%!"
-                landmark.name landmark.location landmark.id name location;
-              new_landmark ~name ~kind ~location ()
-            end else
-              landmark
+let landmark_of_node ({landmark_id = key; name; location; kind; _} : Graph.node) =
+  match landmark_of_id key with
+  | None -> new_landmark ~key ~name ~kind ~location ()
+  | Some landmark -> landmark
 
 let register_generic ~id ~name ~location ~kind () =
-  let landmark = new_landmark ~user_id:id ~name ~location ~kind () in
-  registered_landmarks := landmark :: !registered_landmarks;
+  let landmark = new_landmark ~key:id ~name ~location ~kind () in
   if !profile_with_debug then
     Printf.eprintf "[Profiling] registering(%s)\n%!" name;
   landmark
 
 let register_generic ~id ~location kind name =
-  match Hashtbl.find_opt landmarks_of_user_id id with
+  match landmark_of_id id with
   | None -> register_generic ~id ~name ~location ~kind ()
   | Some lm -> lm
 
-let register_generic ?id ?location kind name call_stack =
+let register_generic ?id ?location kind name =
   let location =
     match location with
     | Some name -> name
     | None ->
-        let backtrace_slots = Printexc.backtrace_slots call_stack in
+        let callstack = Printexc.get_callstack 5 in
+        let backtrace_slots = Printexc.backtrace_slots callstack in
         match backtrace_slots with
         | Some [||] | None -> "unknown"
         | Some slots ->
@@ -358,30 +363,27 @@ let register_generic ?id ?location kind name call_stack =
   in
   let id =
     match id with
-    | Some id -> id
+    | Some key -> key
     | None -> name^"-"^location
   in
   register_generic ~id ~location kind name
 
 let register ?id ?location name =
-  let call_stack = Printexc.get_callstack 4 in
-  register_generic ?id ?location Graph.Normal name call_stack
+  register_generic ?id ?location Graph.Normal name
 
-let register_counter name =
-  let call_stack = Printexc.get_callstack 4 in
-  register_generic Graph.Counter name call_stack
+let register_counter name = register_generic Graph.Counter name
 
-let register_sampler name =
-  let call_stack = Printexc.get_callstack 4 in
-  register_generic Graph.Sampler name call_stack
+let register_sampler name = register_generic Graph.Sampler name
 
 let current_node_ref = ref !current_root_node
 let cache_miss_ref = ref 0
 
 let stamp_root () =
   !current_root_node.timestamp <- clock ();
-  if !profile_with_allocated_bytes then
-    !current_root_node.floats.allocated_bytes <- Gc.allocated_bytes ();
+  if !profile_with_allocated_bytes then begin
+    !current_root_node.floats.allocated_bytes <- allocated_bytes ();
+    !current_root_node.floats.allocated_bytes_major <- allocated_bytes_major ()
+  end;
   if !profile_with_sys_time then
     !current_root_node.floats.sys_time <- Sys.time ()
 
@@ -391,7 +393,7 @@ let clear_cache () =
     landmark.last_parent <- dummy_node;
     landmark.last_self <- dummy_node;
   in
-  List.iter reset_landmark !registered_landmarks
+  iter_registered_landmarks reset_landmark
 
 type profiling_state = {
   root : node;
@@ -410,6 +412,26 @@ let profiling_stack =
     {root = dummy_node; current = dummy_node; nodes = [{node = dummy_node; recursive = false}]; cache_miss = 0; nodes_len = 1}
   in
   Stack.make Array dummy 7
+
+let reset () =
+  if !profile_with_debug then
+    Printf.eprintf "[Profiling] resetting ...\n%!";
+  (* reset dummy_node *)
+  let floats = !current_root_node.floats in
+  floats.time <- 0.0;
+  floats.allocated_bytes <- 0;
+  floats.sys_time <- 0.0;
+  !current_root_node.calls <- 0;
+  !current_root_node.recursive_calls <- 0;
+  stamp_root ();
+  SparseArray.reset !current_root_node.children;
+  allocated_nodes := [!current_root_node];
+  current_node_ref := !current_root_node;
+  cache_miss_ref := 0;
+  clear_cache ();
+  node_id_ref := 1
+
+let () = reset ()
 
 let push_profiling_state () =
   if !profile_with_debug then
@@ -433,6 +455,7 @@ let push_profiling_state () =
   cache_miss_ref := 0;
   allocated_nodes := [!current_root_node];
   node_id_ref := 1;
+  reset ();
   Stack.push profiling_stack state
 
 let pop_profiling_state () =
@@ -443,26 +466,6 @@ let pop_profiling_state () =
     cache_miss_ref := cache_miss;
     allocated_nodes := List.map (fun {node; recursive} -> if recursive then node.landmark.last_self <- node; node) nodes;
     node_id_ref := nodes_len
-
-let reset () =
-  if !profile_with_debug then
-    Printf.eprintf "[Profiling] resetting ...\n%!";
-  (* reset dummy_node *)
-  let floats = !current_root_node.floats in
-  floats.time <- 0.0;
-  floats.allocated_bytes <- 0.0;
-  floats.sys_time <- 0.0;
-  !current_root_node.calls <- 0;
-  !current_root_node.recursive_calls <- 0;
-  stamp_root ();
-  SparseArray.reset !current_root_node.children;
-  allocated_nodes := [!current_root_node];
-  current_node_ref := !current_root_node;
-  cache_miss_ref := 0;
-  clear_cache ();
-  node_id_ref := 1
-
-let () = reset ()
 
 let unroll_until node =
   while
@@ -537,8 +540,10 @@ let enter landmark =
     current_node_ref := node;
     landmark.last_self <- node;
     node.timestamp <- clock ();
-    if !profile_with_allocated_bytes then
-      node.floats.allocated_bytes_stamp <- Gc.allocated_bytes ();
+    if !profile_with_allocated_bytes then begin
+      node.floats.allocated_bytes_stamp <- allocated_bytes ();
+      node.floats.allocated_bytes_major_stamp <- allocated_bytes_major ();
+    end;
     if !profile_with_sys_time then
       node.floats.sys_timestamp <- Sys.time ()
   end else begin
@@ -567,9 +572,14 @@ let aggregate_stat_for current_node =
   let floats = current_node.floats in
   floats.time <- floats.time
                  +. Int64.(to_float (sub (clock ()) current_node.timestamp));
-  if !profile_with_allocated_bytes then
-    floats.allocated_bytes <- floats.allocated_bytes
-                              +. ((Gc.allocated_bytes ()) -. floats.allocated_bytes_stamp);
+  if !profile_with_allocated_bytes then begin
+    floats.allocated_bytes <-
+      floats.allocated_bytes
+      + (allocated_bytes () - floats.allocated_bytes_stamp);
+    floats.allocated_bytes_major <-
+      floats.allocated_bytes_major
+      + (allocated_bytes_major () - floats.allocated_bytes_major_stamp)
+  end;
   if !profile_with_sys_time then
     floats.sys_time <- floats.sys_time
                        +. (Sys.time () -. floats.sys_timestamp)
@@ -696,18 +706,13 @@ let array_list_map f l =
 
 let export ?(label = "") () =
   let export_node {landmark; id; calls; floats; children; distrib; _} =
-    let {id = landmark_id; user_id; name; location; kind; _} = landmark in
-    let {time; allocated_bytes; sys_time; _} = floats in
+    let {key = { key = landmark_id; _}; name; location; kind; _} = landmark in
+    let {time; allocated_bytes; allocated_bytes_major; sys_time; _} = floats in
     let children =
       List.map (fun ({id;_} : node) -> id) (SparseArray.values children)
     in
-    let landmark_id =
-      match user_id with
-      | None -> string_of_int landmark_id
-      | Some user_id -> "#"^user_id
-    in
     {Graph.landmark_id; id; name; location; calls; time; kind;
-     allocated_bytes; sys_time; children; distrib = Stack.to_floatarray distrib}
+     allocated_bytes; allocated_bytes_major; sys_time; children; distrib = Stack.to_floatarray distrib}
   in
   if !profiling_ref then begin
     aggregate_stat_for !current_root_node;
@@ -731,7 +736,8 @@ let rec merge_branch node graph (imported : Graph.node) =
   let floats = node.floats in
   floats.time <- imported.time +. floats.time;
   floats.sys_time <- imported.sys_time +. floats.sys_time;
-  floats.allocated_bytes <- imported.allocated_bytes +. floats.allocated_bytes;
+  floats.allocated_bytes <- imported.allocated_bytes + floats.allocated_bytes;
+  floats.allocated_bytes_major <- imported.allocated_bytes_major + floats.allocated_bytes_major;
   node.calls <- imported.calls + node.calls;
   Float.Array.iter (Stack.push node.distrib) imported.distrib;
 

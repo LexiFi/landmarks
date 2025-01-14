@@ -1,0 +1,19 @@
+(executable
+ (name test)
+ (modes js)
+ (libraries landmark))
+
+(rule
+  (deps ./test.bc.js)
+  (action
+   (ignore-stderr
+    (with-stdout-to
+     test.out
+     (run node ./test.bc.js))))
+ )
+
+(rule
+ (alias runtest)
+ (enabled_if (>= %{ocaml_version} "4.04"))
+ (action
+  (diff test.out.expected test.out)))

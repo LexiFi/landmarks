@@ -1,5 +1,7 @@
-unreleased
+version 1.5, unreleased
 ------------------------
+* report allocations on major heap (PR #40, @edwinans)
+* fix extra allocations for 'allocation' option (PR #40, @edwinans)
 * add support for `arm64` (M1 mac) (PR #35, @johnyob)
 * add js_of_ocaml support. (PR #36, @mefyl)
 
