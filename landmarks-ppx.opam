@@ -15,6 +15,7 @@ depends: [
   "ocaml" {>= "4.08"}
   "ppxlib" {>= "0.22"}
   "landmarks" {= "1.5"}
+  "js_of_ocaml" {with-test & > "5"}
   "odoc" {with-doc}
 ]
 build: [
