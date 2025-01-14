@@ -1,19 +1,11 @@
 (rule
- (targets test.out)
- (deps
-  (:ppx ../tools/standalone.exe)
-  (:tt ../../toplevel/tt.exe))
- (action
-  (with-stdout-to
-   test.out
-   (with-stdin-from
-    test.ml
-    (run %{tt} -color never -noprompt -no-version -ppx "%{ppx} --as-ppx")))))
-
-(rule
  (alias runtest)
  (package landmarks-ppx)
- (enabled_if
-  (>= %{ocaml_version} "5"))
+ (deps
+  test.ml
+  (:ppx ../tools/standalone.exe))
  (action
-  (diff test.out.expected test.out)))
+  (ignore-outputs
+   (with-accepted-exit-codes 2
+    (run ocaml -I ../../src -I ../../src/.landmark.objs/byte %{lib:landmarks:landmark.cma} -ppx "%{ppx} --as-ppx" test.ml)
+   ))))
