@@ -1,4 +1,4 @@
-version 1.5, unreleased
+version 1.5, 14 jan 2025
 ------------------------
 * report allocations on major heap (PR #40, @edwinans)
 * fix extra allocations for 'allocation' option (PR #40, @edwinans)
