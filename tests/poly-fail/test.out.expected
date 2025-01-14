@@ -1,7 +1,0 @@
-val ok : string * int = ("string", 0)
-Line 4, characters 25-39:
-4 |   in test "string", test (Random.int 1);;
-                             ^^^^^^^^^^^^^^
-Error: This expression has type "int" but an expression was expected of type
-         "string"
-
