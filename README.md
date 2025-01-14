@@ -201,7 +201,7 @@ let[@landmark] f x1 ... xk = body
 which is expanded in :
 ```ocaml
 let __generated_landmark_2 = Landmark.register "f"
-let f x1 ... xn = body
+let f x1 ... xk = body
 let f x1 ... xn =
   Landmark.enter __generated_landmark_2;
   let r =
