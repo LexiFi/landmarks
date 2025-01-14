@@ -20,7 +20,10 @@
     "\| instrumentation of the code may either done by hand, automatically or
     "\| semi-automatically using the ppx pepreprocessor (see landmarks-ppx package).
  )
- (depends (ocaml (>= 4.08)))
+ (depends
+   (ocaml (>= 4.08))
+   (js_of_ocaml (and :with-test (> 5)))
+ )
 )
 
 (package
@@ -32,6 +35,5 @@ landmarks library.")
   (ocaml (>= 4.08))
   (ppxlib (>= 0.22))
   (landmarks (= 1.5))
-  (js_of_ocaml (and :with-test (> 5)))
  )
 )
