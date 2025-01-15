@@ -5,6 +5,7 @@
 
 (rule
   (deps ./test.bc.js)
+  (enabled_if %{bin-available:node})
   (action
    (ignore-stderr
     (with-stdout-to
@@ -15,6 +16,6 @@
 (rule
  (alias runtest)
  (package landmarks)
- (enabled_if (>= %{ocaml_version} "4.04"))
+ (enabled_if (and (>= %{ocaml_version} "4.04") %{bin-available:node}))
  (action
   (diff test.out.expected test.out)))
