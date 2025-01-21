@@ -24,6 +24,7 @@
    (ocaml (>= 4.08))
    (js_of_ocaml (and :with-test (> 5)))
  )
+ (conflicts ocaml-option-bytecode-only)
 )
 
 (package

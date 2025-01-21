@@ -11,7 +11,8 @@
 
 (rule
  (alias runtest)
+ (package landmarks)
  (enabled_if
-  (>= %{ocaml_version} "4.04"))
+  (and (>= %{ocaml_version} "4.04") (= %{ocaml-config:word_size} "64")))
  (action
   (diff test.out.expected test.out)))

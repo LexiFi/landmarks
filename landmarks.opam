@@ -19,6 +19,7 @@ depends: [
   "js_of_ocaml" {with-test & > "5"}
   "odoc" {with-doc}
 ]
+conflicts: ["ocaml-option-bytecode-only"]
 build: [
   ["dune" "subst"] {dev}
   [
