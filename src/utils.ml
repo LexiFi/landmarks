@@ -203,6 +203,35 @@ let new_floats () = {
   sys_timestamp = 0.0
 }
 
+type profile_output =
+  | Silent
+  | Temporary of string option
+  | Channel of out_channel
+
+type textual_option = {threshold : float}
+
+type profile_format =
+  | JSON
+  | Textual of textual_option
+
+type profiling_options = {
+  debug : bool;
+  allocated_bytes: bool;
+  sys_time : bool;
+  recursive : bool;
+  output : profile_output;
+  format : profile_format
+}
+
+let default_options = {
+  debug = false;
+  allocated_bytes = true;
+  sys_time = false;
+  recursive = false;
+  output = Channel stderr;
+  format = Textual {threshold = 1.0};
+}
+
 type profiling_state = {
   root : node;
   nodes: node_info list;

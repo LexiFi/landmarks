@@ -91,6 +91,28 @@ and sampler = landmark
 
 val new_floats : unit -> floats
 
+type profile_output =
+  | Silent
+  | Temporary of string option
+  | Channel of out_channel
+
+type textual_option = {threshold : float}
+
+type profile_format =
+  | JSON
+  | Textual of textual_option
+
+type profiling_options = {
+  debug : bool;
+  allocated_bytes: bool;
+  sys_time : bool;
+  recursive : bool;
+  output : profile_output;
+  format : profile_format
+}
+
+val default_options: profiling_options
+
 type profiling_state = {
   root : node;
   nodes: node_info list;

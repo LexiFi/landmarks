@@ -52,14 +52,14 @@ and dummy_key = { key = ""; landmark = landmark_root}
 
 (** STATE **)
 
-type profile_output =
+type profile_output = Utils.profile_output =
   | Silent
   | Temporary of string option
   | Channel of out_channel
 
-type textual_option = {threshold : float}
+type textual_option = Utils.textual_option = {threshold : float}
 
-type profile_format =
+type profile_format = Utils.profile_format =
   | JSON
   | Textual of textual_option
 
@@ -422,23 +422,17 @@ let unsafe_wrap node f x =
 
 (** PROFILERS **)
 
-type profiling_options = {
+type profiling_options = Utils.profiling_options = {
   debug : bool;
   allocated_bytes: bool;
   sys_time : bool;
   recursive : bool;
-  output : profile_output;
-  format : profile_format
+  output : Utils.profile_output;
+  format : Utils.profile_format
 }
 
-let default_options = {
-  debug = false;
-  allocated_bytes = true;
-  sys_time = false;
-  recursive = false;
-  output = Channel stderr;
-  format = Textual {threshold = 1.0};
-}
+
+let default_options = default_options
 
 let set_profiling_options {debug; allocated_bytes; sys_time; output; format; recursive} =
   profile_with_debug := debug;
