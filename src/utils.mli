@@ -89,7 +89,15 @@ and counter = landmark
 
 and sampler = landmark
 
+module W: Weak.S with type data = landmark_key
+
 val new_floats : unit -> floats
+
+val landmark_root : landmark
+val dummy_node : node
+val dummy_key : landmark_key
+
+val new_node: counter -> bool -> int ref -> node list ref -> node
 
 type profile_output =
   | Silent

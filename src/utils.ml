@@ -193,6 +193,12 @@ and counter = landmark
 
 and sampler = landmark
 
+module W = Weak.Make(struct
+    type t = landmark_key
+    let equal (x : landmark_key) (y  : landmark_key) = x.key = y.key
+    let hash (x : landmark_key) = Hashtbl.hash x.key
+  end)
+
 let new_floats () = {
   time = 0.0;
   allocated_bytes = 0;
@@ -202,6 +208,52 @@ let new_floats () = {
   sys_time = 0.0;
   sys_timestamp = 0.0
 }
+
+let rec landmark_root = {
+  kind = Graph.Root;
+  id = 0;
+  name = "ROOT";
+  location = __FILE__;
+  key = { key = ""; landmark = landmark_root};
+  last_parent = dummy_node;
+  last_son = dummy_node;
+  last_self = dummy_node;
+}
+
+and dummy_node = {
+  landmark = landmark_root;
+  id = 0;
+  children = SparseArray.dummy ();
+  fathers = Stack.dummy Array;
+  floats = new_floats ();
+  calls = 0;
+  recursive_calls = 0;
+  distrib = Stack.dummy Float;
+  timestamp = Int64.zero
+}
+
+and dummy_key = { key = ""; landmark = landmark_root}
+
+let new_node landmark profile_with_debug node_id_ref allocated_nodes =
+  if profile_with_debug then
+    Printf.eprintf "[Profiling] Allocating new node for %s...\n%!" landmark.name;
+  let id = !node_id_ref in
+  incr node_id_ref;
+  let node = {
+    landmark;
+    id;
+
+    fathers = Stack.make Array dummy_node 1;
+    distrib = Stack.make Float 0.0 0;
+    children = SparseArray.make dummy_node 7;
+
+    calls = 0;
+    recursive_calls = 0;
+    timestamp = Int64.zero;
+    floats = new_floats ();
+  } in
+  allocated_nodes := node :: !allocated_nodes;
+  node
 
 type profile_output =
   | Silent
