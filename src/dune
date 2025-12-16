@@ -1,6 +1,7 @@
 (library
  (name landmark)
  (public_name landmarks)
+ (modules landmark landmark_state graph misc utils)
  (no_dynlink)
  (flags
   (:standard -w +A-30-42-41-40-4-70 -safe-string -strict-sequence))
@@ -10,3 +11,19 @@
  (js_of_ocaml (javascript_files utils.js))
  (instrumentation.backend
   (ppx landmarks-ppx)))
+
+(rule
+ (targets landmark_state.ml)
+ (deps landmark_state_ocaml4.ml)
+ (action
+  (copy %{deps} %{targets}))
+ (enabled_if
+  (< %{ocaml_version} 5.0.0)))
+
+(rule
+ (targets landmark_state.ml)
+ (deps landmark_state_ocaml5.ml)
+ (action
+  (copy %{deps} %{targets}))
+ (enabled_if
+  (>= %{ocaml_version} 5.0.0)))

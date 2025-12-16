@@ -4,7 +4,6 @@
 
 open Utils
 
-module Landmark_state = Landmark_state_ocaml4
 open Landmark_state
 
 external clock: unit -> (Int64.t [@unboxed]) =
