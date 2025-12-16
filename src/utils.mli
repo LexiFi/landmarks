@@ -2,6 +2,12 @@
 (* See the attached LICENSE file.                                    *)
 (* Copyright (C) 2000-2025 LexiFi                                    *)
 
+external clock: unit -> (Int64.t [@unboxed]) =
+  "caml_highres_clock" "caml_highres_clock_native" [@@noalloc]
+
+val allocated_bytes: unit -> int
+val allocated_bytes_major: unit -> int
+
 module SparseArray :
 sig
   type 'a t = {
@@ -93,11 +99,8 @@ module W: Weak.S with type data = landmark_key
 
 val new_floats : unit -> floats
 
-val landmark_root : landmark
-val dummy_node : node
-val dummy_key : landmark_key
-
-val new_node: counter -> bool -> int ref -> node list ref -> node
+val new_node:
+  landmark -> node -> bool -> (unit -> int) -> (node -> unit) -> node
 
 type profile_output =
   | Silent
@@ -119,6 +122,15 @@ type profiling_options = {
   format : profile_format
 }
 
+val set_profiling_options : profiling_options -> unit
+val profiling_options : unit -> profiling_options
+val profile_with_debug : unit -> bool
+val profile_with_allocated_bytes : unit -> bool
+val profile_with_sys_time : unit -> bool
+val profile_output : unit -> profile_output
+val profile_format : unit -> profile_format
+val profile_recursive : unit -> bool
+
 val default_options: profiling_options
 
 type profiling_state = {
@@ -133,3 +145,10 @@ and node_info = {
   node: node;
   recursive: bool;
 }
+
+val stamp_root: node -> unit
+val aggregate_stat_for: node -> unit
+val array_list_map: ('a -> 'b) -> 'a list -> 'b array
+val export_node: node -> Graph.node
+
+val unroll_until: node -> (node -> unit) -> node -> unit

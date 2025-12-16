@@ -2,4 +2,4 @@
 (* See the attached LICENSE file.                                    *)
 (* Copyright (C) 2000-2025 LexiFi                                    *)
 
-module Ref : Landmark_state_sig.S
+include Landmark_state_sig.S
