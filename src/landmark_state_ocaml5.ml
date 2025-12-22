@@ -312,10 +312,14 @@ let reset () =
 let clear_cache () =
   clear_cache (get_state ())
 
-let export ~merge ?(label = "") () =
-  let state = get_state () in
+let rec merge_child_state_graphs ~merge state =
   List.iter (
     fun st ->
+      merge_child_state_graphs ~merge st;
       merge state.current_root_node st.graph
-  ) state.child_states;
+  ) state.child_states
+
+let export ~merge ?(label = "") () =
+  let state = get_state () in
+  merge_child_state_graphs ~merge state;
   export state label
