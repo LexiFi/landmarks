@@ -16,7 +16,7 @@
  (targets landmark_state.ml)
  (deps landmark_state_ocaml4.ml)
  (action
-  (copy %{deps} %{targets}))
+  (copy# %{deps} %{targets}))
  (enabled_if
   (< %{ocaml_version} 5.0.0)))
 
@@ -24,6 +24,6 @@
  (targets landmark_state.ml)
  (deps landmark_state_ocaml5.ml)
  (action
-  (copy %{deps} %{targets}))
+  (copy# %{deps} %{targets}))
  (enabled_if
   (>= %{ocaml_version} 5.0.0)))
