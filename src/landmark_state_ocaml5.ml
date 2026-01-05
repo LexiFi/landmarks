@@ -6,7 +6,74 @@ open Utils
 
 module Stack = Utils.Stack
 
-let init_dummies () =
+type nodes = {
+  mutable node_id_ref: int;
+  mutable allocated_nodes: node list;
+}
+
+let init_nodes () = {
+  node_id_ref = 0;
+  allocated_nodes = [];
+}
+
+let get_incr_node_id_ref nodes () =
+  let id = nodes.node_id_ref in
+  nodes.node_id_ref <- id + 1;
+  id
+
+let add_allocated_node nodes node =
+  nodes.allocated_nodes <- node :: nodes.allocated_nodes
+
+type state = {
+  landmark_root: landmark;
+  dummy_node : node;
+  dummy_key: landmark_key;
+
+  nodes: nodes;
+
+  mutable profiling_ref : bool;
+  landmarks_of_key: W.t;
+  mutable cache_miss_ref: int;
+  profiling_stack: (profiling_state, profiling_state array) Stack.t;
+
+  mutable current_root_node : node;
+  mutable current_node_ref : node;
+
+  mutable child_states : state list;
+  (* The states of child domains spawned by the main one *)
+  mutable graph: Graph.graph;
+  (* Used by child states to store their own graphs *)
+
+  mutable registered: bool;
+}
+
+let clear_cache gls =
+  W.iter (
+    fun {landmark; _} ->
+      landmark.last_son <- gls.dummy_node;
+      landmark.last_parent <- gls.dummy_node;
+      landmark.last_self <- gls.dummy_node;
+  ) (gls.landmarks_of_key)
+
+let reset_aux gls =
+  if profile_with_debug () then
+    Printf.eprintf "[Profiling] resetting ...\n%!";
+  let current_root_node = gls.current_root_node in
+  let floats = current_root_node.floats in
+  floats.time <- 0.0;
+  floats.allocated_bytes <- 0;
+  floats.sys_time <- 0.0;
+  current_root_node.calls <- 0;
+  current_root_node.recursive_calls <- 0;
+  stamp_root current_root_node;
+  SparseArray.reset current_root_node.children;
+  gls.nodes.allocated_nodes <- [current_root_node];
+  gls.current_node_ref <- current_root_node;
+  gls.cache_miss_ref <- 0;
+  clear_cache gls;
+  gls.nodes.node_id_ref <- 1
+
+let init_state () =
   let rec landmark_root = {
     kind = Graph.Root;
     id = 0;
@@ -32,93 +99,16 @@ let init_dummies () =
 
   and dummy_key = { key = ""; landmark = landmark_root}
   in
-  landmark_root, dummy_node, dummy_key
 
-let dummies = Domain.DLS.new_key init_dummies
-
-let landmark_root () =
-  let landmark_root, _, _ = Domain.DLS.get dummies in
-  landmark_root
-
-let dummy_node () =
-  let _, dummy_node, _ = Domain.DLS.get dummies in
-  dummy_node
-
-let dummy_key () =
-  let _, _, dummy_key = Domain.DLS.get dummies in
-  dummy_key
-
-type nodes = {
-  mutable node_id_ref: int;
-  mutable allocated_nodes: node list;
-}
-
-let init_nodes () = {
-  node_id_ref = 0;
-  allocated_nodes = [];
-}
-
-let get_incr_node_id_ref nodes () =
-  let id = nodes.node_id_ref in
-  nodes.node_id_ref <- id + 1;
-  id
-
-let add_allocated_node nodes node =
-  nodes.allocated_nodes <- node :: nodes.allocated_nodes
-
-type state = {
-  nodes: nodes;
-
-  mutable profiling_ref : bool;
-  landmarks_of_key: W.t;
-  mutable cache_miss_ref: int;
-  profiling_stack: (profiling_state, profiling_state array) Stack.t;
-
-  mutable current_root_node : node;
-  mutable current_node_ref : node;
-
-  mutable child_states : state list;
-  (* The states of child domains spawned by the main one *)
-  mutable graph: Graph.graph;
-  (* Used by child states to store their own graphs *)
-
-  mutable registered: bool;
-}
-
-let clear_cache gls =
-  let dummy_node = dummy_node () in
-  W.iter (
-    fun {landmark; _} ->
-      landmark.last_son <- dummy_node;
-      landmark.last_parent <- dummy_node;
-      landmark.last_self <- dummy_node;
-  ) (gls.landmarks_of_key)
-
-let reset_aux gls =
-  if profile_with_debug () then
-    Printf.eprintf "[Profiling] resetting ...\n%!";
-  let current_root_node = gls.current_root_node in
-  let floats = current_root_node.floats in
-  floats.time <- 0.0;
-  floats.allocated_bytes <- 0;
-  floats.sys_time <- 0.0;
-  current_root_node.calls <- 0;
-  current_root_node.recursive_calls <- 0;
-  stamp_root current_root_node;
-  SparseArray.reset current_root_node.children;
-  gls.nodes.allocated_nodes <- [current_root_node];
-  gls.current_node_ref <- current_root_node;
-  gls.cache_miss_ref <- 0;
-  (* TODO: ensure that the dummy node of gls is used *)
-  clear_cache gls;
-  gls.nodes.node_id_ref <- 1
-
-let init_state () =
   let nodes = init_nodes () in
   let rootnode =
-    new_node (landmark_root ()) (dummy_node ()) false
+    new_node landmark_root dummy_node false
       (get_incr_node_id_ref nodes) (add_allocated_node nodes);
   in {
+    landmark_root;
+    dummy_node;
+    dummy_key;
+
     nodes;
 
     profiling_ref = false;
@@ -126,7 +116,7 @@ let init_state () =
     cache_miss_ref = 0;
     profiling_stack = (
       let dummy =
-        {root = dummy_node (); current = dummy_node (); nodes = [{node = dummy_node (); recursive = false}]; cache_miss = 0; nodes_len = 1}
+        {root = dummy_node ; current = dummy_node; nodes = [{node = dummy_node; recursive = false}]; cache_miss = 0; nodes_len = 1}
       in
       Stack.make Array dummy 7
     );
@@ -138,10 +128,8 @@ let init_state () =
     registered = false;
   }
 
-let copy_landmark_cache (w: W.t) =
+let copy_landmark_cache dummy_node (w: W.t) =
   let w' = W.create 17 in
-  let dummy_node = dummy_node () in
-  (* TODO: incorrent since it uses the dummy nodes of the parent domain *)
   W.iter (
     fun key ->
       W.add w' {
@@ -161,7 +149,7 @@ let state =
         let child_state =
           { child_state with
             profiling_ref = s.profiling_ref;
-            landmarks_of_key = copy_landmark_cache s.landmarks_of_key }
+            landmarks_of_key = copy_landmark_cache child_state.dummy_node s.landmarks_of_key }
         in
         s.child_states <- child_state :: s.child_states;
         child_state.profiling_ref <- s.profiling_ref;
@@ -198,13 +186,13 @@ let get_exiting_node st =
     Stack.pop st.current_node_ref.fathers
 
 let exit st =
-  let landmark = (* get_landmark_body *) st.current_node_ref.landmark in
+  let landmark = (* get_ds_landmark *) st.current_node_ref.landmark in
   let current_node = st.current_node_ref in
   let last_self = landmark.last_self in
   if last_self.recursive_calls = 0 || profile_recursive () then begin
     mismatch_recovering st landmark;
     if Stack.size current_node.fathers = 1 then begin
-      landmark.last_self <- dummy_node ();
+      landmark.last_self <- st.dummy_node;
       aggregate_stat_for current_node;
     end;
     st.current_node_ref <- (get_exiting_node st)
@@ -252,15 +240,25 @@ let get_state () =
   );
   st
 
+let landmark_root () =
+  (get_state ()).landmark_root
+
+let dummy_node () =
+  (get_state ()).dummy_node
+
+let dummy_key () =
+  (get_state ()).dummy_key
+
 let profiling () = (get_state ()).profiling_ref
 let set_profiling b = (get_state ()).profiling_ref <- b
 let get_landmarks_of_key =
   let initialized = Domain.DLS.new_key (fun () -> false) in
   fun () ->
-    let landmarks_of_key = (get_state ()).landmarks_of_key in
+    let state = get_state () in
+    let landmarks_of_key = state.landmarks_of_key in
     if not (Domain.DLS.get initialized) then (
       Domain.DLS.set initialized true;
-      let dummy_node = dummy_node () in
+      let dummy_node = state.dummy_node in
       W.iter (
         fun key ->
           key.landmark.last_parent <- dummy_node;
@@ -272,8 +270,8 @@ let get_landmarks_of_key =
 
 let add_landmarks_of_key key = W.add (get_state ()).landmarks_of_key key
 
-let get_landmark_body (l: landmark) =
-  let dummy_key = dummy_key () in
+let get_ds_landmark (l: landmark) =
+  let dummy_key = (get_state ()).dummy_key in
   let { landmark; _ } =
     W.find (get_landmarks_of_key ()) { dummy_key with key = l.key.key }
   in
@@ -285,8 +283,8 @@ let get_allocated_nodes () = (get_state ()).nodes.allocated_nodes
 let set_allocated_nodes l = (get_state ()).nodes.allocated_nodes <- l
 
 let new_node landmark =
-  let { nodes; _ } = get_state () in
-  new_node landmark (dummy_node ()) (profile_with_debug ())
+  let { nodes; dummy_node; _ } = get_state () in
+  new_node landmark dummy_node (profile_with_debug ())
     (get_incr_node_id_ref nodes) (add_allocated_node nodes)
 
 

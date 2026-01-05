@@ -42,7 +42,7 @@ let set_profiling b =  profiling_ref := b
 let landmarks_of_key = W.create 17
 let get_landmarks_of_key () = landmarks_of_key
 let add_landmarks_of_key key = W.add landmarks_of_key key
-let get_landmark_body l = l
+let get_ds_landmark l = l
 
 let node_id_ref = ref 0
 let get_node_id_ref () = !node_id_ref

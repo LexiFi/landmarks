@@ -2,12 +2,9 @@
 (* See the attached LICENSE file.                                    *)
 (* Copyright (C) 2000-2025 LexiFi                                    *)
 
-open Utils
+include Utils
 
 open Landmark_state
-
-external clock: unit -> (Int64.t [@unboxed]) =
-  "caml_highres_clock" "caml_highres_clock_native" [@@noalloc]
 
 exception LandmarkFailure of string
 
@@ -199,7 +196,7 @@ let increment ?times counter =
     increment ?times counter
 
 let sample sampler x =
-  let sampler = get_landmark_body sampler in
+  let sampler = get_ds_landmark sampler in
   let node = get_entering_node sampler in
   node.calls <- node.calls + 1;
   Stack.push node.distrib x
@@ -209,7 +206,7 @@ let sample sampler x =
     sample sampler x
 
 let enter landmark =
-  let landmark = get_landmark_body landmark in
+  let landmark = get_ds_landmark landmark in
   let dummy_node = dummy_node () in
   if profile_with_debug () then
     Printf.eprintf "[Profiling] enter%s(%s)\n%!" (if landmark.last_self != dummy_node then " recursive " else "") landmark.name;
@@ -250,7 +247,7 @@ let mismatch_recovering landmark (current_node: node) =
   end
 
 let exit landmark =
-  let landmark = get_landmark_body landmark in
+  let landmark = get_ds_landmark landmark in
   let current_node = get_current_node_ref () in
   if profile_with_debug () then
     Printf.eprintf "[Profiling] exit%s(%s)\n%!" (if landmark.last_self != get_current_node_ref () then " recursive " else "") landmark.name;

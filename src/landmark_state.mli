@@ -13,7 +13,7 @@ val set_profiling : bool -> unit
 
 val get_landmarks_of_key : unit -> W.t
 val add_landmarks_of_key : landmark_key -> unit
-val get_landmark_body: landmark -> landmark
+val get_ds_landmark: landmark -> landmark
 
 val get_node_id_ref : unit -> int
 val set_node_id_ref : int -> unit
