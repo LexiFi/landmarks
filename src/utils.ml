@@ -2,18 +2,6 @@
 (* See the attached LICENSE file.                                    *)
 (* Copyright (C) 2000-2025 LexiFi                                    *)
 
-external clock: unit -> (Int64.t [@unboxed]) =
-  "caml_highres_clock" "caml_highres_clock_native" [@@noalloc]
-
-(* Alternative implementation of Gc.allocated_bytes which does not allocate *)
-external allocated_bytes: unit -> (Int64.t [@unboxed]) =
-  "allocated_bytes" "allocated_bytes_native" [@@noalloc]
-external allocated_bytes_major: unit -> (Int64.t [@unboxed]) =
-  "allocated_bytes_major" "allocated_bytes_major_native" [@@noalloc]
-
-let allocated_bytes () = Int64.to_int (allocated_bytes ())
-let allocated_bytes_major () = Int64.to_int (allocated_bytes_major ())
-
 module SparseArray = struct
   type 'a t = {
     mutable keys : int array;
@@ -158,9 +146,9 @@ module Stack = struct
   let to_floatarray {data; size; _} = Float.Array.sub data 0 size
 end
 
-type landmark = {
+type landmark_body = {
   id: int;
-  key: landmark_key;
+  key: string;
   kind : Graph.kind;
   name: string;
   location: string;
@@ -172,7 +160,7 @@ type landmark = {
 }
 
 and node = {
-  landmark: landmark;
+  landmark: landmark_body;
 
   id: int;
 
@@ -196,21 +184,6 @@ and floats = {
   mutable sys_timestamp: float;
 }
 
-and landmark_key = {
-  key: string;
-  landmark: landmark;
-}
-
-and counter = landmark
-
-and sampler = landmark
-
-module W = Weak.Make(struct
-    type t = landmark_key
-    let equal (x : landmark_key) (y  : landmark_key) = x.key = y.key
-    let hash (x : landmark_key) = Hashtbl.hash x.key
-  end)
-
 let new_floats () = {
   time = 0.0;
   allocated_bytes = 0;
@@ -220,87 +193,6 @@ let new_floats () = {
   sys_time = 0.0;
   sys_timestamp = 0.0
 }
-
-let new_node landmark
-    dummy_node profile_with_debug get_incr_node_id_ref add_allocated_node =
-  if profile_with_debug then
-    Printf.eprintf "[Profiling] Allocating new node for %s...\n%!" landmark.name;
-  let id  = get_incr_node_id_ref () in
-  let node = {
-    landmark;
-    id;
-
-    fathers = Stack.make Array dummy_node 1;
-    distrib = Stack.make Float 0.0 0;
-    children = SparseArray.make dummy_node 7;
-
-    calls = 0;
-    recursive_calls = 0;
-    timestamp = Int64.zero;
-    floats = new_floats ();
-  } in
-  add_allocated_node node;
-  node
-
-type profile_output =
-  | Silent
-  | Temporary of string option
-  | Channel of out_channel
-
-type textual_option = {threshold : float}
-
-type profile_format =
-  | JSON
-  | Textual of textual_option
-
-type profiling_options = {
-  debug : bool;
-  allocated_bytes: bool;
-  sys_time : bool;
-  recursive : bool;
-  output : profile_output;
-  format : profile_format
-}
-
-let default_options = {
-  debug = false;
-  allocated_bytes = true;
-  sys_time = false;
-  recursive = false;
-  output = Channel stderr;
-  format = Textual {threshold = 1.0};
-}
-
-let profile_with_debug = ref false
-let profile_with_allocated_bytes = ref false
-let profile_with_sys_time = ref false
-let profile_output = ref Silent
-let profile_format = ref (Textual {threshold = 1.0})
-let profile_recursive = ref false
-
-let set_profiling_options {debug; allocated_bytes; sys_time; output; format; recursive} =
-  profile_with_debug := debug;
-  profile_with_allocated_bytes := allocated_bytes;
-  profile_with_sys_time := sys_time;
-  profile_output := output;
-  profile_format := format;
-  profile_recursive := recursive
-
-let profiling_options () = {
-  debug = !profile_with_debug;
-  allocated_bytes = !profile_with_allocated_bytes;
-  sys_time = !profile_with_sys_time;
-  recursive = !profile_recursive;
-  output = !profile_output;
-  format = !profile_format
-}
-
-let profile_with_debug () = !profile_with_debug
-let profile_with_allocated_bytes () = !profile_with_allocated_bytes
-let profile_with_sys_time () = !profile_with_sys_time
-let profile_output () = !profile_output
-let profile_format () = !profile_format
-let profile_recursive () = !profile_recursive
 
 type profiling_state = {
   root : node;
@@ -314,52 +206,3 @@ and node_info = {
   node: node;
   recursive: bool;
 }
-
-let stamp_root current_root_node =
-  current_root_node.timestamp <- (clock ());
-  if profile_with_allocated_bytes () then begin
-    current_root_node.floats.allocated_bytes <- allocated_bytes ();
-    current_root_node.floats.allocated_bytes_major <- allocated_bytes_major ()
-  end;
-  if profile_with_sys_time () then
-    current_root_node.floats.sys_time <- Sys.time ()
-
-let aggregate_stat_for current_node =
-  let floats = current_node.floats in
-  floats.time <- floats.time
-                 +. Int64.(to_float (sub (clock ()) current_node.timestamp));
-  if profile_with_allocated_bytes () then begin
-    floats.allocated_bytes <-
-      floats.allocated_bytes
-      + (allocated_bytes () - floats.allocated_bytes_stamp);
-    floats.allocated_bytes_major <-
-      floats.allocated_bytes_major
-      + (allocated_bytes_major () - floats.allocated_bytes_major_stamp)
-  end;
-  if profile_with_sys_time () then
-    floats.sys_time <- floats.sys_time
-                       +. (Sys.time () -. floats.sys_timestamp)
-
-let array_list_map f l =
-  let size = List.length l in
-  match l with
-  | [] -> [||]
-  | hd :: tl ->
-      let res = Array.make size (f hd) in
-      List.iteri (fun k x -> res.(k+1) <- f x) tl; res
-
-let export_node {landmark; id; calls; floats; children; distrib; _} =
-  let {key = { key = landmark_id; _}; name; location; kind; _} = landmark in
-  let {time; allocated_bytes; allocated_bytes_major; sys_time; _} = floats in
-  let children =
-    List.map (fun ({id;_} : node) -> id) (SparseArray.values children)
-  in
-  {Graph.landmark_id; id; name; location; calls; time; kind;
-   allocated_bytes; allocated_bytes_major; sys_time; children; distrib = Stack.to_floatarray distrib}
-
-let unroll_until current_node set_current_node node =
-  while
-    current_node != node
-    && Stack.size current_node.fathers > 0
-    && (set_current_node (Stack.pop current_node.fathers); true)
-  do () done

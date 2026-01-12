@@ -2,12 +2,6 @@
 (* See the attached LICENSE file.                                    *)
 (* Copyright (C) 2000-2025 LexiFi                                    *)
 
-external clock: unit -> (Int64.t [@unboxed]) =
-  "caml_highres_clock" "caml_highres_clock_native" [@@noalloc]
-
-val allocated_bytes: unit -> int
-val allocated_bytes_major: unit -> int
-
 module SparseArray :
 sig
   type 'a t = {
@@ -56,9 +50,9 @@ sig
   val to_floatarray : ('a, floatarray) t -> floatarray
 end
 
-type landmark = {
+type landmark_body = {
   id : int;
-  key : landmark_key;
+  key : string;
   kind : Graph.kind;
   name : string;
   location : string;
@@ -68,7 +62,7 @@ type landmark = {
 }
 
 and node = {
-  landmark : landmark;
+  landmark : landmark_body;
   id : int;
   children : node SparseArray.t;
   fathers : (node, node array) Stack.t;
@@ -89,49 +83,7 @@ and floats = {
   mutable sys_timestamp : float;
 }
 
-and landmark_key = { key : string; landmark : landmark; }
-
-and counter = landmark
-
-and sampler = landmark
-
-module W: Weak.S with type data = landmark_key
-
 val new_floats : unit -> floats
-
-val new_node:
-  landmark -> node -> bool -> (unit -> int) -> (node -> unit) -> node
-
-type profile_output =
-  | Silent
-  | Temporary of string option
-  | Channel of out_channel
-
-type textual_option = {threshold : float}
-
-type profile_format =
-  | JSON
-  | Textual of textual_option
-
-type profiling_options = {
-  debug : bool;
-  allocated_bytes: bool;
-  sys_time : bool;
-  recursive : bool;
-  output : profile_output;
-  format : profile_format
-}
-
-val set_profiling_options : profiling_options -> unit
-val profiling_options : unit -> profiling_options
-val profile_with_debug : unit -> bool
-val profile_with_allocated_bytes : unit -> bool
-val profile_with_sys_time : unit -> bool
-val profile_output : unit -> profile_output
-val profile_format : unit -> profile_format
-val profile_recursive : unit -> bool
-
-val default_options: profiling_options
 
 type profiling_state = {
   root : node;
@@ -145,10 +97,3 @@ and node_info = {
   node: node;
   recursive: bool;
 }
-
-val stamp_root: node -> unit
-val aggregate_stat_for: node -> unit
-val array_list_map: ('a -> 'b) -> 'a list -> 'b array
-val export_node: node -> Graph.node
-
-val unroll_until: node -> (node -> unit) -> node -> unit
