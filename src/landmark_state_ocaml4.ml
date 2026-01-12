@@ -6,6 +6,10 @@ open Utils
 
 module Stack = Utils.Stack
 
+type t = unit
+
+let get_state () = ()
+
 let rec landmark_root = {
   kind = Graph.Root;
   id = 0;
@@ -37,43 +41,43 @@ let dummy_key () = dummy_key
 
 let profiling_ref = ref false
 let profiling () = !profiling_ref
-let set_profiling b =  profiling_ref := b
+let set_profiling () b =  profiling_ref := b
 
 let landmarks_of_key = W.create 17
 let get_landmarks_of_key () = landmarks_of_key
-let add_landmarks_of_key key = W.add landmarks_of_key key
-let get_ds_landmark l = l
+let add_landmarks_of_key () key = W.add landmarks_of_key key
+let get_ds_landmark () l = l
 
 let node_id_ref = ref 0
 let get_node_id_ref () = !node_id_ref
-let set_node_id_ref n = node_id_ref := n
+let set_node_id_ref () n = node_id_ref := n
 
 let allocated_nodes = ref []
 let get_allocated_nodes () = !allocated_nodes
-let set_allocated_nodes l = allocated_nodes := l
+let set_allocated_nodes () l = allocated_nodes := l
 
 let get_incr_node_id_ref () =
   let id = !node_id_ref in
   incr node_id_ref;
   id
 
-let add_allocated_node node =
+let add_allocated_node () node =
   allocated_nodes := node :: !allocated_nodes
 
-let new_node landmark =
-  new_node landmark (dummy_node ()) (profile_with_debug ()) get_incr_node_id_ref add_allocated_node
+let new_node () landmark =
+  new_node landmark (dummy_node ()) (profile_with_debug ()) get_incr_node_id_ref (add_allocated_node ())
 
-let current_root_node = ref (new_node (landmark_root ()))
+let current_root_node = ref (new_node () (landmark_root ()))
 let get_current_root_node () = !current_root_node
-let set_current_root_node node = current_root_node := node
+let set_current_root_node () node = current_root_node := node
 
 let current_node_ref = ref !current_root_node
 let get_current_node_ref () = !current_node_ref
-let set_current_node_ref node = current_node_ref := node
+let set_current_node_ref () node = current_node_ref := node
 
 let cache_miss_ref = ref 0
 let get_cache_miss_ref () = !cache_miss_ref
-let set_cache_miss_ref n = cache_miss_ref := n
+let set_cache_miss_ref () n = cache_miss_ref := n
 
 let profiling_stack =
   let dummy =
@@ -104,11 +108,11 @@ let reset () =
   current_root_node.recursive_calls <- 0;
   stamp_root current_root_node;
   SparseArray.reset current_root_node.children;
-  set_allocated_nodes [current_root_node];
-  set_current_node_ref current_root_node;
-  set_cache_miss_ref 0;
+  set_allocated_nodes () [current_root_node];
+  set_current_node_ref () current_root_node;
+  set_cache_miss_ref () 0;
   clear_cache ();
-  set_node_id_ref 1
+  set_node_id_ref () 1
 
 let export ~merge:_ ?(label = "") () =
   if profiling () then begin

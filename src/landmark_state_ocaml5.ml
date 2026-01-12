@@ -24,7 +24,7 @@ let get_incr_node_id_ref nodes () =
 let add_allocated_node nodes node =
   nodes.allocated_nodes <- node :: nodes.allocated_nodes
 
-type state = {
+type t = {
   landmark_root: landmark;
   dummy_node : node;
   dummy_key: landmark_key;
@@ -39,7 +39,7 @@ type state = {
   mutable current_root_node : node;
   mutable current_node_ref : node;
 
-  mutable child_states : state list;
+  mutable child_states : t list;
   (* The states of child domains spawned by the main one *)
   mutable graph: Graph.graph;
   (* Used by child states to store their own graphs *)
@@ -240,21 +240,15 @@ let get_state () =
   );
   st
 
-let landmark_root () =
-  (get_state ()).landmark_root
+let landmark_root st = st.landmark_root
+let dummy_node st = st.dummy_node
+let dummy_key st = st.dummy_key
 
-let dummy_node () =
-  (get_state ()).dummy_node
-
-let dummy_key () =
-  (get_state ()).dummy_key
-
-let profiling () = (get_state ()).profiling_ref
-let set_profiling b = (get_state ()).profiling_ref <- b
+let profiling st = st.profiling_ref
+let set_profiling st b = st.profiling_ref <- b
 let get_landmarks_of_key =
   let initialized = Domain.DLS.new_key (fun () -> false) in
-  fun () ->
-    let state = get_state () in
+  fun state ->
     let landmarks_of_key = state.landmarks_of_key in
     if not (Domain.DLS.get initialized) then (
       Domain.DLS.set initialized true;
@@ -268,47 +262,41 @@ let get_landmarks_of_key =
     );
     landmarks_of_key
 
-let add_landmarks_of_key key = W.add (get_state ()).landmarks_of_key key
+let add_landmarks_of_key st key = W.add st.landmarks_of_key key
 
-let get_ds_landmark (l: landmark) =
-  let dummy_key = (get_state ()).dummy_key in
+let get_ds_landmark st (l: landmark) =
   let { landmark; _ } =
-    W.find (get_landmarks_of_key ()) { dummy_key with key = l.key.key }
+    W.find (get_landmarks_of_key st) { st.dummy_key with key = l.key.key }
   in
   landmark
 
-let get_node_id_ref () = (get_state ()).nodes.node_id_ref
-let set_node_id_ref n = (get_state ()).nodes.node_id_ref <- n
-let get_allocated_nodes () = (get_state ()).nodes.allocated_nodes
-let set_allocated_nodes l = (get_state ()).nodes.allocated_nodes <- l
+let get_node_id_ref st = st.nodes.node_id_ref
+let set_node_id_ref st n = st.nodes.node_id_ref <- n
+let get_allocated_nodes st = st.nodes.allocated_nodes
+let set_allocated_nodes st l = st.nodes.allocated_nodes <- l
 
-let new_node landmark =
-  let { nodes; dummy_node; _ } = get_state () in
+let new_node { nodes; dummy_node; _ } landmark =
   new_node landmark dummy_node (profile_with_debug ())
     (get_incr_node_id_ref nodes) (add_allocated_node nodes)
 
 
-let get_current_root_node () = (get_state ()).current_root_node
-let set_current_root_node (node: node) =
-  (get_state ()).current_root_node <- node
+let get_current_root_node st = st.current_root_node
+let set_current_root_node st (node: node) =
+  st.current_root_node <- node
 
-let get_current_node_ref () = (get_state ()).current_node_ref
-let set_current_node_ref (node: node) =
-  (get_state ()).current_node_ref <- node
+let get_current_node_ref st = st.current_node_ref
+let set_current_node_ref st (node: node) =
+  st.current_node_ref <- node
 
-let get_cache_miss_ref () = (get_state ()).cache_miss_ref
-let set_cache_miss_ref n = (get_state ()).cache_miss_ref <- n
-let incr_cache_miss_ref () =
-  let state = get_state () in
-  state.cache_miss_ref <- state.cache_miss_ref + 1
-let get_profiling_stack () = (get_state ()).profiling_stack
+let get_cache_miss_ref st = st.cache_miss_ref
+let set_cache_miss_ref st n = st.cache_miss_ref <- n
+let incr_cache_miss_ref st = st.cache_miss_ref <- st.cache_miss_ref + 1
+let get_profiling_stack st = st.profiling_stack
 
 
-let reset () =
-  reset_aux (get_state ())
+let reset = reset_aux
 
-let clear_cache () =
-  clear_cache (get_state ())
+let clear_cache = clear_cache
 
 let rec merge_child_state_graphs ~merge state =
   List.iter (
@@ -317,7 +305,6 @@ let rec merge_child_state_graphs ~merge state =
       merge state.current_root_node st.graph
   ) state.child_states
 
-let export ~merge ?(label = "") () =
-  let state = get_state () in
+let export ~merge ?(label = "") state =
   merge_child_state_graphs ~merge state;
   export state label

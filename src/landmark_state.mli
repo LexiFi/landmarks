@@ -4,37 +4,41 @@
 
 open Utils
 
-val landmark_root : unit -> landmark
-val dummy_node : unit -> node
-val dummy_key : unit -> landmark_key
+type t
 
-val profiling : unit -> bool
-val set_profiling : bool -> unit
+val get_state: unit -> t
 
-val get_landmarks_of_key : unit -> W.t
-val add_landmarks_of_key : landmark_key -> unit
-val get_ds_landmark: landmark -> landmark
+val landmark_root : t -> landmark
+val dummy_node : t -> node
+val dummy_key : t -> landmark_key
 
-val get_node_id_ref : unit -> int
-val set_node_id_ref : int -> unit
-val get_allocated_nodes : unit -> node list
-val set_allocated_nodes : node list -> unit
+val profiling : t -> bool
+val set_profiling : t -> bool -> unit
 
-val new_node : landmark -> node
+val get_landmarks_of_key : t -> W.t
+val add_landmarks_of_key : t -> landmark_key -> unit
+val get_ds_landmark: t -> landmark -> landmark
 
-val get_current_root_node : unit -> node
-val set_current_root_node : node -> unit
-val get_current_node_ref : unit -> node
-val set_current_node_ref : node -> unit
-val get_cache_miss_ref : unit -> int
-val set_cache_miss_ref : int -> unit
+val get_node_id_ref : t -> int
+val set_node_id_ref : t -> int -> unit
+val get_allocated_nodes : t -> node list
+val set_allocated_nodes : t -> node list -> unit
 
-val incr_cache_miss_ref : unit -> unit
+val new_node : t -> landmark -> node
+
+val get_current_root_node : t -> node
+val set_current_root_node : t -> node -> unit
+val get_current_node_ref : t -> node
+val set_current_node_ref : t -> node -> unit
+val get_cache_miss_ref : t -> int
+val set_cache_miss_ref : t -> int -> unit
+
+val incr_cache_miss_ref : t -> unit
 
 val get_profiling_stack :
-  unit ->
+  t ->
   (profiling_state, profiling_state array) Utils.Stack.t
 
-val clear_cache : unit -> unit
-val reset: unit -> unit
-val export : merge:(node -> Graph.graph -> unit) -> ?label:string -> unit -> Graph.graph
+val clear_cache : t -> unit
+val reset: t -> unit
+val export : merge:(node -> Graph.graph -> unit) -> ?label:string -> t -> Graph.graph

@@ -28,22 +28,24 @@ type profile_format = Utils.profile_format =
   | JSON
   | Textual of textual_option
 
-let profiling = profiling
+let profiling () = profiling (get_state ())
 
 (** REGISTERING **)
 
 let last_landmark_id = ref 1
 
 let landmark_of_id user_id =
-  let dummy_key = dummy_key () in
-  match W.find_opt (get_landmarks_of_key ()) {dummy_key with key = user_id} with
+  let st = get_state () in
+  let dummy_key = dummy_key st in
+  match W.find_opt (get_landmarks_of_key st) {dummy_key with key = user_id} with
   | None -> None
   | Some {landmark; _} -> Some landmark
 
 let new_landmark ~key:key_string ~name ~location ~kind () =
   let id = !last_landmark_id in
   incr last_landmark_id;
-  let dummy_node = dummy_node () in
+  let st = get_state () in
+  let dummy_node = dummy_node st in
   let rec res =
     {
       id;
@@ -56,7 +58,7 @@ let new_landmark ~key:key_string ~name ~location ~kind () =
       last_son = dummy_node;
     }
   and key = { landmark = res; key = key_string} in
-  add_landmarks_of_key key;
+  add_landmarks_of_key st key;
   res
 
 let new_node = Landmark_state.new_node
@@ -108,51 +110,55 @@ let register_counter name = register_generic Graph.Counter name
 let register_sampler name = register_generic Graph.Sampler name
 
 let reset () =
-  reset ()
+  reset (get_state ())
 
 let () = reset ()
 
 let push_profiling_state () =
   if profile_with_debug () then
     Printf.eprintf "[Profiling] Push profiling state ....\n%!";
-  let state =
+  let st = get_state () in
+  let profiling_state =
     let node_info (node: node) =
       let recursive = node.landmark.last_self == node in
       { node; recursive }
     in
     {
-      root = get_current_root_node ();
-      nodes = List.map node_info (get_allocated_nodes ());
-      nodes_len = get_node_id_ref ();
-      current = get_current_node_ref ();
-      cache_miss = get_cache_miss_ref ();
+      root = get_current_root_node st;
+      nodes = List.map node_info (get_allocated_nodes st);
+      nodes_len = get_node_id_ref st;
+      current = get_current_node_ref st;
+      cache_miss = get_cache_miss_ref st;
     }
   in
-  clear_cache ();
-  set_current_root_node (new_node (landmark_root ()));
-  set_current_node_ref (get_current_root_node ());
-  set_cache_miss_ref 0;
-  set_allocated_nodes [get_current_root_node ()];
-  set_node_id_ref 1;
+  clear_cache st;
+  set_current_root_node st (new_node st (landmark_root st));
+  set_current_node_ref st (get_current_root_node st);
+  set_cache_miss_ref st 0;
+  set_allocated_nodes st [get_current_root_node st];
+  set_node_id_ref st 1;
   reset ();
-  Stack.push (get_profiling_stack ()) state
+  Stack.push (get_profiling_stack st) profiling_state
 
 let pop_profiling_state () =
-  let profiling_stack = get_profiling_stack () in
+  let profiling_stack = get_profiling_stack (get_state ()) in
   if profiling_stack.size > 0 then
+    let st = get_state () in
     let {root; nodes; nodes_len; current; cache_miss} = Stack.pop profiling_stack in
-    set_current_root_node root;
-    set_current_node_ref current;
-    set_cache_miss_ref cache_miss;
-    set_allocated_nodes (List.map (fun {node; recursive} -> if recursive then node.landmark.last_self <- node; node) nodes);
-    set_node_id_ref nodes_len
+    set_current_root_node st root;
+    set_current_node_ref st current;
+    set_cache_miss_ref st cache_miss;
+    set_allocated_nodes st (List.map (fun {node; recursive} -> if recursive then node.landmark.last_self <- node; node) nodes);
+    set_node_id_ref st nodes_len
 
 let unroll_until node =
-  unroll_until (get_current_node_ref ()) set_current_node_ref node
+  let st = get_state () in
+  unroll_until (get_current_node_ref st) (set_current_node_ref st) node
 
 let landmark_failure msg =
-  unroll_until (get_current_root_node ());
-  if get_current_node_ref () != get_current_root_node () then
+  let st = get_state () in
+  unroll_until (get_current_root_node st);
+  if get_current_node_ref st != get_current_root_node st then
     reset ();
   if profile_with_debug () then
     (Printf.eprintf "Landmark error: %s\n%!" msg; Stdlib.exit 2)
@@ -160,18 +166,19 @@ let landmark_failure msg =
     raise (LandmarkFailure msg)
 
 let get_entering_node ({id;_} as landmark: landmark) =
-  let current_node = get_current_node_ref () in
+  let st = get_state () in
+  let current_node = get_current_node_ref st in
   (* Read the "cache". *)
-  if current_node == landmark.last_parent && landmark.last_son != dummy_node () then
+  if current_node == landmark.last_parent && landmark.last_son != dummy_node st then
     landmark.last_son
   else begin
-    incr_cache_miss_ref ();
+    incr_cache_miss_ref st;
     (* We fetch the son or create it. *)
     let children = current_node.children in
     let son = try
         SparseArray.get children id
       with Not_found ->
-        let son = new_node landmark in
+        let son = new_node st landmark in
         SparseArray.set current_node.children id son;
         son
     in
@@ -196,7 +203,8 @@ let increment ?times counter =
     increment ?times counter
 
 let sample sampler x =
-  let sampler = get_ds_landmark sampler in
+  let st = get_state () in
+  let sampler = get_ds_landmark st sampler in
   let node = get_entering_node sampler in
   node.calls <- node.calls + 1;
   Stack.push node.distrib x
@@ -206,16 +214,17 @@ let sample sampler x =
     sample sampler x
 
 let enter landmark =
-  let landmark = get_ds_landmark landmark in
-  let dummy_node = dummy_node () in
+  let st = get_state () in
+  let landmark = get_ds_landmark st landmark in
+  let dummy_node = dummy_node st in
   if profile_with_debug () then
     Printf.eprintf "[Profiling] enter%s(%s)\n%!" (if landmark.last_self != dummy_node then " recursive " else "") landmark.name;
 
   if landmark.last_self == dummy_node || profile_recursive () then begin
     let node = get_entering_node landmark in
     node.calls <- node.calls + 1;
-    Stack.push node.fathers (get_current_node_ref ());
-    set_current_node_ref node;
+    Stack.push node.fathers (get_current_node_ref st);
+    set_current_node_ref st node;
     landmark.last_self <- node;
     node.timestamp <- clock ();
     if profile_with_allocated_bytes () then begin
@@ -240,25 +249,26 @@ let mismatch_recovering landmark (current_node: node) =
     in
     Printf.eprintf "Warning: %s\n%!" msg;
     unroll_until landmark.last_self;
-    if landmark != (get_current_node_ref ()).landmark then begin
+    if landmark != (get_current_node_ref (get_state ())).landmark then begin
       reset ();
       landmark_failure ("unable to recover from "^msg)
     end
   end
 
 let exit landmark =
-  let landmark = get_ds_landmark landmark in
-  let current_node = get_current_node_ref () in
+  let st = get_state () in
+  let landmark = get_ds_landmark st landmark in
+  let current_node = get_current_node_ref st in
   if profile_with_debug () then
-    Printf.eprintf "[Profiling] exit%s(%s)\n%!" (if landmark.last_self != get_current_node_ref () then " recursive " else "") landmark.name;
+    Printf.eprintf "[Profiling] exit%s(%s)\n%!" (if landmark.last_self != get_current_node_ref st then " recursive " else "") landmark.name;
   let last_self = landmark.last_self in
   if last_self.recursive_calls = 0 || profile_recursive () then begin
     mismatch_recovering landmark current_node;
     if Stack.size current_node.fathers = 1 then begin
-      landmark.last_self <- dummy_node ();
+      landmark.last_self <- dummy_node st;
       aggregate_stat_for current_node;
     end;
-    set_current_node_ref (get_exiting_node current_node)
+    set_current_node_ref st (get_exiting_node current_node)
   end
   else if not (profile_recursive ()) then
     last_self.recursive_calls <- last_self.recursive_calls - 1
@@ -316,11 +326,12 @@ let start_profiling ?(profiling_options = default_options) () =
        | true, false -> "with garbage collection statistics"
        | false, true -> "with system time"
        | false, false -> "");
-  set_profiling true
+  set_profiling (get_state ()) true
 
 let rec exit_until_root () =
-  let current_node_ref = get_current_node_ref () in
-  if current_node_ref != get_current_root_node () then begin
+let st = get_state () in
+  let current_node_ref = get_current_node_ref st in
+  if current_node_ref != get_current_root_node st then begin
     let landmark = current_node_ref.landmark in
     exit landmark;
     exit_until_root ();
@@ -330,12 +341,13 @@ let stop_profiling () =
   if not (profiling ()) then
     failwith "In profiling: cannot stop since profiling is not on-going";
   exit_until_root ();
-  let current_node = get_current_node_ref () in
-  assert (current_node == get_current_root_node ());
+  let st = get_state () in
+  let current_node = get_current_node_ref st in
+  assert (current_node == get_current_root_node st);
   aggregate_stat_for current_node;
   if profile_with_debug () then
     Printf.eprintf "[Profiling] Stop profiling.\n%!";
-  set_profiling false
+  set_profiling st false
 
 (** EXPORTING / IMPORTING SLAVE PROFILINGS **)
 
@@ -359,8 +371,9 @@ let rec merge_branch (node:node) graph (imported : Graph.node) =
     ) children
 
 and new_branch parent graph (imported : Graph.node) =
+  let st = get_state () in
   let landmark = landmark_of_node imported in
-  let node = new_node landmark in
+  let node = new_node st landmark in
   node.calls <- imported.calls;
   let floats = node.floats in
   floats.time <- imported.time;
@@ -376,10 +389,10 @@ let merge_aux node graph =
 let merge (graph : Graph.graph) =
   if profile_with_debug () then
     Printf.eprintf "[Profiling] merging foreign graph\n%!";
-  merge_aux (get_current_root_node ()) graph
+  merge_aux (get_current_root_node (get_state ())) graph
 
 let export ?(label = "") () =
-  export ~merge:merge_aux ~label ()
+  export ~merge:merge_aux ~label (get_state ())
 
 let export_and_reset ?label () =
   let profiling = profiling () in
