@@ -301,7 +301,7 @@ Instrumenting with domains (on OCaml >= 5)
 constraints:
 
 1) Each domain has to run on its separate physical core, notably for correct
-   time measures (which can be done using [ocaml-processor](https://github.com/haesbaert/ocaml-processor) or [domainpc](https://github.com/hra687261/domainpc)).
+   time measures (which can be done using [ocaml-processor](https://github.com/haesbaert/ocaml-processor) or [domainpc](https://github.com/OCamlPro/domainpc)).
 2) Spawned domains have to terminate before the main domain.
 
 Known Issue
