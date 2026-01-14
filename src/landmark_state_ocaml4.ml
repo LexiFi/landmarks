@@ -12,18 +12,6 @@ type t = unit
 
 let landmark_of_landmark_body () l = l
 
-let new_node_ref: (t -> landmark_body -> node) ref =
-  ref (fun _ _ -> failwith "uninitialized function \"new_node_ref\"")
-let export_ref: (t -> string -> Graph.graph) ref =
-  ref (fun _ -> failwith "uninitialized function \"export_ref\"")
-let reset_state_ref: (t -> unit) ref =
-  ref (fun _ -> failwith "uninitialized function \"reset_state_ref\"")
-let stop_profiling_ref: (t -> unit) ref =
-  ref (fun _ -> failwith "uninitialized function \"stop_profiling_ref\"")
-let iter_registered_landmarks: ((landmark -> unit) -> unit) ref =
-  ref (fun _ -> ())
-let get_state () = ()
-
 let rec landmark_root = {
   kind = Graph.Root;
   id = 0;
@@ -49,8 +37,8 @@ and dummy_node = {
 
 let dummy_landmark () = landmark_root
 
-let clear_cache () =
-  !iter_registered_landmarks (
+let clear_cache iter_registered_landmarks () =
+  iter_registered_landmarks (
     fun landmark ->
       landmark.last_son <- dummy_node;
       landmark.last_parent <- dummy_node;
@@ -81,35 +69,15 @@ let get_incr_node_id_ref () =
 let current_root_node = ref (dummy_node ())
 let current_node_ref = ref !current_root_node
 
-let get_current_root_node, get_current_node_ref =
-  let init = ref false in
-  let set_nodes () =
-    current_root_node := !new_node_ref () (landmark_root ());
-    current_node_ref := !current_root_node;
-    init := true
-  in
-  let get_current_root_node () =
-    if not !init then (
-      set_nodes ();
-      !current_root_node)
-    else !current_root_node
-  in
-  let get_current_node_ref () =
-    if not !init
-    then (
-      current_root_node := !new_node_ref () (landmark_root ());
-      current_node_ref := !current_root_node;
-      !current_node_ref
-    )
-    else !current_node_ref
-  in
-  get_current_root_node, get_current_node_ref
+let init ~reset_state:_ ~new_node ~stop_profiling:_ ~export:_ =
+  current_root_node := new_node () (landmark_root ());
+  current_node_ref := !current_root_node;
+  fun () -> ()
 
-let set_current_root_node () node =
-  current_root_node := node
-
-let set_current_node_ref () node =
-  current_node_ref := node
+let get_current_root_node () = !current_root_node
+let get_current_node_ref () = !current_node_ref
+let set_current_root_node () node = current_root_node := node
+let set_current_node_ref () node = current_node_ref := node
 
 let cache_miss_ref = ref 0
 let get_cache_miss_ref () = !cache_miss_ref
@@ -127,5 +95,5 @@ let profiling_stack =
 let incr_cache_miss_ref () = incr cache_miss_ref
 let get_profiling_stack () = profiling_stack
 
-let export ~merge:_ ?(label = "") () =
-  !export_ref () label
+let export ~export ~merge:_ ?(label = "") () =
+  export () label

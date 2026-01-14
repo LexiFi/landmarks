@@ -36,17 +36,6 @@ type t = {
   mutable registered: bool;
 }
 
-let new_node_ref: (t -> landmark_body -> node) ref =
-  ref (fun _ _ -> failwith "uninitialized function \"new_node_ref\"")
-let export_ref: (t -> string -> Graph.graph) ref =
-  ref (fun _ -> failwith "uninitialized function \"export_ref\"")
-let reset_state_ref: (t -> unit) ref =
-  ref (fun _ -> failwith "uninitialized function \"reset_state_ref\"")
-let stop_profiling_ref: (t -> unit) ref =
-  ref (fun _ -> failwith "uninitialized function \"stop_profiling_ref\"")
-let iter_registered_landmarks: ((landmark -> unit) -> unit) ref =
-  ref (fun _ -> ())
-
 let init_nodes () = {
   node_id_ref = 0;
   allocated_nodes = [];
@@ -57,81 +46,82 @@ let get_incr_node_id_ref st =
   st.nodes.node_id_ref <- id + 1;
   id
 
-let init_state () =
-  let rec landmark_root = {
-    kind = Graph.Root;
-    id = 0;
-    name = "ROOT";
-    location = __FILE__;
-    key = "";
-    last_parent = dummy_node;
-    last_son = dummy_node;
-    last_self = dummy_node;
-  }
-  and dummy_node = {
-    landmark = landmark_root;
-    id = 0;
-    children = SparseArray.dummy ();
-    fathers = Stack.dummy Array;
-    floats = new_floats ();
-    calls = 0;
-    recursive_calls = 0;
-    distrib = Stack.dummy Float;
-    timestamp = Int64.zero
-  }
-  in
-  let nodes = init_nodes () in
-  let st = {
-    landmark_root;
-    dummy_node;
-    nodes;
-    profiling_ref = false;
-    cache_miss_ref = 0;
-    profiling_stack = (
-      let dummy = {
-        root = dummy_node;
-        current = dummy_node;
-        nodes = [{node = dummy_node; recursive = false}];
-        cache_miss = 0;
-        nodes_len = 1}
-      in
-      Stack.make Array dummy 7);
-    child_states = [];
-    graph = {nodes = [||]; label = ""; root = 0 };
-    registered = false;
-    (* Temprory *)
-    current_root_node = dummy_node;
-    current_node_ref = dummy_node;
-  }
-  in
-  let root_node = !new_node_ref st landmark_root in
-  { st with current_root_node = root_node; current_node_ref = root_node }
-
-let state =
-  Domain.DLS.new_key
-    ~split_from_parent:(fun s ->
-        let child_state = init_state () in
-        let child_state =
-          { child_state with
-            profiling_ref = s.profiling_ref }
+let init ~reset_state ~new_node ~stop_profiling ~export =
+  let init_state () =
+    let rec landmark_root = {
+      kind = Graph.Root;
+      id = 0;
+      name = "ROOT";
+      location = __FILE__;
+      key = "";
+      last_parent = dummy_node;
+      last_son = dummy_node;
+      last_self = dummy_node;
+    }
+    and dummy_node = {
+      landmark = landmark_root;
+      id = 0;
+      children = SparseArray.dummy ();
+      fathers = Stack.dummy Array;
+      floats = new_floats ();
+      calls = 0;
+      recursive_calls = 0;
+      distrib = Stack.dummy Float;
+      timestamp = Int64.zero
+    }
+    in
+    let nodes = init_nodes () in
+    let st = {
+      landmark_root;
+      dummy_node;
+      nodes;
+      profiling_ref = false;
+      cache_miss_ref = 0;
+      profiling_stack = (
+        let dummy = {
+          root = dummy_node;
+          current = dummy_node;
+          nodes = [{node = dummy_node; recursive = false}];
+          cache_miss = 0;
+          nodes_len = 1}
         in
-        s.child_states <- child_state :: s.child_states;
-        child_state.profiling_ref <- s.profiling_ref;
-        !reset_state_ref child_state;
-        child_state
-      )
-    init_state
-
-let get_state () =
-  let st = Domain.DLS.get state in
-  if not st.registered && not (Domain.is_main_domain ()) then (
-    Domain.at_exit (fun () ->
-        !stop_profiling_ref st;
-        st.graph <- !export_ref st ""
-      );
-    st.registered <- true;
-  );
-  st
+        Stack.make Array dummy 7);
+      child_states = [];
+      graph = {nodes = [||]; label = ""; root = 0 };
+      registered = false;
+      (* Temprory *)
+      current_root_node = dummy_node;
+      current_node_ref = dummy_node;
+    }
+    in
+    let root_node = new_node st landmark_root in
+    { st with current_root_node = root_node; current_node_ref = root_node }
+  in
+  let state =
+    Domain.DLS.new_key
+      ~split_from_parent:(fun s ->
+          let child_state = init_state () in
+          let child_state =
+            { child_state with
+              profiling_ref = s.profiling_ref }
+          in
+          s.child_states <- child_state :: s.child_states;
+          child_state.profiling_ref <- s.profiling_ref;
+          reset_state child_state;
+          child_state
+        )
+      init_state
+  in
+  fun () ->
+    let st = Domain.DLS.get state in
+    if not st.registered && not (Domain.is_main_domain ()) then (
+      Domain.at_exit (fun () ->
+          stop_profiling st;
+          st.graph <- export st ""
+        );
+      st.registered <- true;
+    );
+    st
 
 let dummy_landmark st = Domain.DLS.new_key (fun () -> lazy st.landmark_root)
 (* Only used for search in the weak HashSet, will never be accessed *)
@@ -141,13 +131,12 @@ let dummy_node st = st.dummy_node
 
 let get_ds_landmark _st (l: landmark) = Lazy.force (Domain.DLS.get l)
 
-let landmark_of_landmark_body _st (l: landmark_body): landmark =
+let landmark_of_landmark_body st (l: landmark_body): landmark =
   Domain.DLS.new_key
     ~split_from_parent:(
       fun l ->
         let { id; name; location; kind; key; _ } = Lazy.force l in
-        lazy (
-          let st = get_state () in {
+        lazy ({
             id;
             name;
             location;
@@ -159,8 +148,8 @@ let landmark_of_landmark_body _st (l: landmark_body): landmark =
           }))
     (fun () -> lazy l)
 
-let clear_cache gls =
-  !iter_registered_landmarks (
+let clear_cache iter_registered_landmarks gls: unit =
+  iter_registered_landmarks (
     fun landmark ->
       let landmark = get_ds_landmark () landmark in
       landmark.last_son <- gls.dummy_node;
@@ -193,9 +182,9 @@ let rec merge_child_state_graphs ~merge state =
   List.iter (
     fun st ->
       merge_child_state_graphs ~merge st;
-      merge state.current_root_node st.graph
+      merge st state.current_root_node st.graph
   ) state.child_states
 
-let export ~merge ?(label = "") state =
+let export ~export ~merge ?(label = "") state =
   merge_child_state_graphs ~merge state;
-  !export_ref state label
+  export state label
