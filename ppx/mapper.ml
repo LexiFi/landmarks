@@ -277,10 +277,10 @@ let translate_value_bindings ctx value_binding auto vbs =
   in
   let vbs = List.map (function
       | (vb, None) -> value_binding vb
-      | {pvb_pat; pvb_loc; pvb_expr; _}, Some (arity, _, name, loc, attrs) ->
+      | {pvb_pat; pvb_loc; pvb_expr; pvb_constraint; _}, Some (arity, _, name, loc, attrs) ->
           (* Remove landmark attribute: *)
           let vb =
-            Vb.mk ~attrs ~loc:pvb_loc pvb_pat pvb_expr
+            Vb.mk ~attrs ~loc:pvb_loc ?value_constraint:pvb_constraint pvb_pat pvb_expr
             |> value_binding
           in
           if arity = [] then
