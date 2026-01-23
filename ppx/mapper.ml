@@ -176,26 +176,47 @@ let wrap_landmark ctx landmark loc expr =
 
 let rec arity {pexp_desc; _} =
   match pexp_desc with
-  | Pexp_fun (a, _, _, e) -> a :: arity e
-  | Pexp_function cases ->
-      let max_list l1 l2 =
-        if List.length l1 < List.length l2 then
-          l1
-        else
-          l2
-      in
-      Nolabel :: (List.fold_left
-                    (fun acc {pc_rhs; _} -> max_list (arity pc_rhs) acc)
-                    [] cases)
+  | Pexp_function (params, _, body) ->
+    List.filter_map
+      (function
+        | { pparam_desc = Pparam_val (a, _, _); _ } -> Some a
+        | { pparam_desc = Pparam_newtype _; _ } -> None )
+      params
+    @ body_arity body
   | Pexp_newtype (_, e) -> arity e
   | Pexp_constraint (e, _) -> arity e
   | Pexp_poly (e, _) -> arity e
   | _ -> []
 
-let rec wrap_landmark_method ctx landmark loc ({pexp_desc; _} as expr) =
+and body_arity body =
+  match body with
+  | Pfunction_body e -> arity e
+  | Pfunction_cases (cases, _, _) ->
+    let max_list l1 l2 = if List.length l1 < List.length l2 then l1 else l2 in
+    Nolabel
+    :: List.fold_left
+         (fun acc { pc_rhs; _ } -> max_list (arity pc_rhs) acc)
+         [] cases
+
+let rec wrap_landmark_method ctx landmark loc ({ pexp_desc; _ } as expr) =
   match pexp_desc with
-  | Pexp_fun (label, def, pat, e) ->
-      { expr with pexp_desc = Pexp_fun (label, def, pat, wrap_landmark_method ctx landmark loc e)}
+  | Pexp_function (params, constraint_, Pfunction_body e) ->
+    let body = wrap_landmark_method ctx landmark loc e in
+    { expr with
+      pexp_desc = Pexp_function (params, constraint_, Pfunction_body body)
+    }
+  | Pexp_function ((_ :: _ as params), constraint_, Pfunction_cases (c, l, a))
+    ->
+    let function_ =
+      { expr with
+        pexp_desc = Pexp_function ([], None, Pfunction_cases (c, l, a))
+      ; pexp_loc = l
+      }
+    in
+    let body = wrap_landmark ctx landmark l function_ in
+    { expr with
+      pexp_desc = Pexp_function (params, constraint_, Pfunction_body body)
+    }
   | Pexp_poly (e, typ) ->
       { expr with pexp_desc = Pexp_poly (wrap_landmark_method ctx landmark loc e, typ)}
   | _ -> wrap_landmark ctx landmark loc expr
@@ -256,10 +277,10 @@ let translate_value_bindings ctx value_binding auto vbs =
   in
   let vbs = List.map (function
       | (vb, None) -> value_binding vb
-      | {pvb_pat; pvb_loc; pvb_expr; _}, Some (arity, _, name, loc, attrs) ->
+      | {pvb_pat; pvb_loc; pvb_expr; pvb_constraint; _}, Some (arity, _, name, loc, attrs) ->
           (* Remove landmark attribute: *)
           let vb =
-            Vb.mk ~attrs ~loc:pvb_loc pvb_pat pvb_expr
+            Vb.mk ~attrs ~loc:pvb_loc ?value_constraint:pvb_constraint pvb_pat pvb_expr
             |> value_binding
           in
           if arity = [] then

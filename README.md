@@ -294,6 +294,16 @@ in the landmarks-threads.cm(x)a archive) that prevents non thread-safe
 functions to execute in all threads but the one which started the
 profiling.
 
+Instrumenting with domains (on OCaml >= 5)
+------------------------------------------
+
+*Landmarks* can be used with OCaml domains, but it comes with the following
+constraints:
+
+1) Each domain has to run on its separate physical core, notably for correct
+   time measures (which can be done using [ocaml-processor](https://github.com/haesbaert/ocaml-processor) or [domainpc](https://github.com/OCamlPro/domainpc)).
+2) Spawned domains have to terminate before the main domain.
+
 Known Issue
 -----------
 
