@@ -176,17 +176,26 @@ let wrap_landmark ctx landmark loc expr =
 
 let rec arity {pexp_desc; _} =
   match pexp_desc with
-  | Pexp_fun (a, _, _, e) -> a :: arity e
-  | Pexp_function cases ->
-      let max_list l1 l2 =
-        if List.length l1 < List.length l2 then
-          l1
-        else
-          l2
-      in
-      Nolabel :: (List.fold_left
-                    (fun acc {pc_rhs; _} -> max_list (arity pc_rhs) acc)
-                    [] cases)
+  | Pexp_function (param_list, _, body) ->
+    let body_arity =
+      match body with
+      | Pfunction_body e -> arity e
+      | Pfunction_cases (cases, _, _) ->
+        let max_list l1 l2 =
+          if List.length l1 < List.length l2 then
+            l1
+          else
+            l2
+        in
+        Nolabel :: (List.fold_left
+                      (fun acc {pc_rhs; _} -> max_list (arity pc_rhs) acc)
+                      [] cases)
+    in
+    List.fold_right (fun param acc ->
+      match param.pparam_desc with
+      | Pparam_val (arg_label, _, _) -> arg_label :: acc
+      | Pparam_newtype _ -> acc
+    ) param_list body_arity
   | Pexp_newtype (_, e) -> arity e
   | Pexp_constraint (e, _) -> arity e
   | Pexp_poly (e, _) -> arity e
@@ -194,8 +203,9 @@ let rec arity {pexp_desc; _} =
 
 let rec wrap_landmark_method ctx landmark loc ({pexp_desc; _} as expr) =
   match pexp_desc with
-  | Pexp_fun (label, def, pat, e) ->
-      { expr with pexp_desc = Pexp_fun (label, def, pat, wrap_landmark_method ctx landmark loc e)}
+  | Pexp_function (param_list, tc_opt, Pfunction_body e) ->
+      { expr with pexp_desc = Pexp_function (param_list, tc_opt,
+        Pfunction_body (wrap_landmark_method ctx landmark loc e)) }
   | Pexp_poly (e, typ) ->
       { expr with pexp_desc = Pexp_poly (wrap_landmark_method ctx landmark loc e, typ)}
   | _ -> wrap_landmark ctx landmark loc expr
@@ -256,10 +266,10 @@ let translate_value_bindings ctx value_binding auto vbs =
   in
   let vbs = List.map (function
       | (vb, None) -> value_binding vb
-      | {pvb_pat; pvb_loc; pvb_expr; _}, Some (arity, _, name, loc, attrs) ->
+      | {pvb_pat; pvb_loc; pvb_expr; pvb_constraint; _}, Some (arity, _, name, loc, attrs) ->
           (* Remove landmark attribute: *)
           let vb =
-            Vb.mk ~attrs ~loc:pvb_loc pvb_pat pvb_expr
+            Vb.mk ~attrs ~loc:pvb_loc ?value_constraint:pvb_constraint pvb_pat pvb_expr
             |> value_binding
           in
           if arity = [] then

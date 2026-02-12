@@ -34,7 +34,7 @@
 landmarks library.")
  (depends
   (ocaml (>= 4.08))
-  (ppxlib (>= 0.22))
+  (ppxlib (>= 0.36))
   (landmarks (= 1.5))
  )
 )
