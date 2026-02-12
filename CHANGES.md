@@ -1,3 +1,7 @@
+working version
+---------------
+* adapt to ppxlib 0.36.0 (PR #45, @brandonzstride)
+
 version 1.5, 14 jan 2025
 ------------------------
 * report allocations on major heap (PR #40, @edwinans)
