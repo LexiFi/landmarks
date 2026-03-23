@@ -182,7 +182,7 @@ let rec arity {pexp_desc; _} =
       | Pfunction_body e -> arity e
       | Pfunction_cases (cases, _, _) ->
         let max_list l1 l2 =
-          if List.length l1 < List.length l2 then
+          if List.compare_lengths l1 l2 > 0 then
             l1
           else
             l2
