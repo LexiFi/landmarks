@@ -43,6 +43,8 @@ let error loc code =
     | `Payload_not_an_expression -> "payload is not an expression"
     | `Provide_a_name -> "this landmark annotation requires a name argument"
     | `Poly_optional_arg -> "cannot support a polymorphic optional argument"
+    | `Shadowed_module ->
+      "cannot unpack a module with the same name as another unpacked module"
   in
   Location.Error.raise (Location.Error.make ~loc ~sub:[]
                           (Printf.sprintf "ppx_landmark: %s" (message code)))
@@ -182,14 +184,25 @@ let wrap_landmark ctx landmark loc expr =
       let f (_none : 'a. 'a option) : unit = ()
     An eta-expansion without the annotation will no longer have a polymorphic
     parameter.
+  - Module unpacking and package type constraints so that module-dependent
+    functions can type check. Like polymorphic parameters, they cannot be
+    inferred. When a polymorphic parameter follows and depends on the unpacked
+    module, we do not substitute a new name into the type; instead, modules
+    keep their original name during eta expansion and thus must be unique.
+    e.g.
+      let f (module M : S) (f : 'a. 'a -> 'a M.t) (module M : S) = ...
+    The second module M will shadow the first, and this is disallowed. But
+    the first module M is used in the type of f, so it should not be renamed.
 *)
 type param =
   | Param_newtype of string
   | Param_val of { label : arg_label ; poly_annot : core_type option }
+  | Param_module of
+    { label : arg_label ; unpack : pattern ; ptyp : core_type option }
 
 let is_empty_arity arity =
   not (List.exists (function
-    | Param_val _ -> true
+    | Param_val _ | Param_module _ -> true
     | Param_newtype _ -> false
   ) arity)
 
@@ -225,6 +238,29 @@ let rec arity {pexp_desc; _} =
           | Optional _ -> error param.pparam_loc `Poly_optional_arg
           | _ -> Param_val { label ; poly_annot = Some typ } :: acc
           end
+      | Pparam_val (Optional _ as label, _, (
+            { ppat_desc = Ppat_constraint ({ ppat_desc = Ppat_unpack _ ; _ }, _) ; _ }
+          | { ppat_desc = Ppat_unpack _ ; _ }
+        )) ->
+        (* If a module argument is optional, then it can be non-static, and
+          hence it does not need to be unpacked at all. Also, there is no
+          syntax for labelled modular explicits, so packing this is fine. *)
+         Param_val { label ; poly_annot = None } :: acc
+      | Pparam_val (label, _, { ppat_desc = Ppat_constraint (
+          ({ ppat_desc = Ppat_unpack _ ; _ } as unpack),
+          ({ ptyp_desc = Ptyp_package _ ; _ } as ptyp)
+        ) ; _ }) ->
+          (* Between OCaml 5.4 and 5.5, this will be migrated up to a module-
+            dependent function unless the `unpack` pattern has a magic attribute
+            saying to preserve the ppat constraint, thus keeping this as a first
+            class module instead of a module-dependent function. *)
+          Param_module { label ; unpack ; ptyp = Some ptyp } :: acc
+      | Pparam_val (label, _, ({ ppat_desc = Ppat_unpack _ ; _ } as unpack)) ->
+          (* In case the module is type-annotated in a constraint on the let-
+            binding but not annotated here (on the parameter), we must still
+            unpack/repack it during eta-expansion because it may be for a
+            module-dependent function. *)
+          Param_module { label ; unpack ; ptyp = None } :: acc
       | Pparam_val (label, _, _) ->
         Param_val { label ; poly_annot = None } :: acc
       | Pparam_newtype { txt; _} ->
@@ -245,14 +281,27 @@ let rec wrap_landmark_method ctx landmark loc ({pexp_desc; _} as expr) =
   | _ -> wrap_landmark ctx landmark loc expr
 
 let eta_expand f t n =
+  let module H = Hashtbl.Make (String) in
+  let tbl = H.create (List.length n) in
   let vars =
-    List.mapi (fun k x -> (x, Printf.sprintf "__x%d" k)) n
+    List.mapi (fun k x ->
+      match x with
+      | Param_module { unpack = { ppat_desc =
+          Ppat_unpack { txt = (Some s) ; loc }; _}; _} ->
+        (* do not give a fresh name to unpacked modules *)
+        if H.mem tbl s then error loc `Shadowed_module;
+        H.add tbl s ();
+        (x, s)
+      | _ -> (x, Printf.sprintf "__x%d" k)) n
   in
   let rec app acc = function
     | [] -> acc
     | (Param_newtype _, _) :: tl -> app acc tl
     | (Param_val { label = l ; _ }, x) :: tl ->
       app (Exp.apply acc [l, Exp.ident (mknoloc (Lident x))]) tl
+    | (Param_module { label = l ; _ }, x) :: tl ->
+      let packed = Exp.pack (Mod.ident (mknoloc (Lident x))) in
+      app (Exp.apply acc [l, packed]) tl
   in
   let rec lam = function
     | [] -> f (app t vars)
@@ -266,6 +315,16 @@ let eta_expand f t n =
         | None -> var_pat
       in
       Exp.fun_ l None typed_pat (lam tl)
+    | (Param_module { label = l ; unpack ; ptyp }, x) :: tl ->
+      let unpack_pat =
+        Pat.unpack ~attrs:unpack.ppat_attributes (mknoloc (Some x))
+      in
+      let constrained =
+        match ptyp with
+        | Some typ -> Pat.constraint_ unpack_pat typ
+        | None -> unpack_pat
+      in
+      Exp.fun_ l None constrained (lam tl)
   in
   lam vars
 

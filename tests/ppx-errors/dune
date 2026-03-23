@@ -8,7 +8,7 @@
    test.out
    (with-stdin-from
     test.ml
-    (run %{tt} -color never -noprompt -no-version -ppx "%{ppx} --as-ppx")))))
+    (run %{tt} -color never -noprompt -no-version -noinit -ppx "%{ppx} --as-ppx")))))
 
 (rule
  (alias runtest)
