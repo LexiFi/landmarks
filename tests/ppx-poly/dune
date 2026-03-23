@@ -1,0 +1,27 @@
+
+(executable
+ (name test)
+ (libraries landmark)
+ (preprocess
+  (pps ppx_landmarks --auto))
+ (enabled_if
+  (>= %{ocaml_version} "5.5")))
+
+(rule
+ (enabled_if
+  (>= %{ocaml_version} "5.5"))
+ (action
+  (with-stdout-to
+   test.out
+   (setenv
+    "OCAML_LANDMARKS"
+    "format=json,output=\"callgraph.json\""
+    (run ./test.exe)))))
+
+(rule
+ (alias runtest)
+ (package landmarks-ppx)
+ (enabled_if
+  (>= %{ocaml_version} "5.5"))
+ (action
+  (diff test.out.expected test.out)))
