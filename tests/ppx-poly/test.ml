@@ -147,3 +147,12 @@ let opt8
   : (module X : S) -> ?m:(module S) -> int -> int X.t
   = fun (module X) ?m:((module M) = (module X)) i ->
   X.return (M.a + i)
+
+(*
+  Modular explicit arguments can be labelled.
+  First-class module arguments can be optional and depend on labelled
+  modular explicit arguments.
+*)
+let test_labelled_explicit ~m:(module M : S)
+  ?m2:((module M2) : (module S) = (module M)) b : int M.t =
+  M.return (M2.a + b)

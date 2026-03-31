@@ -244,7 +244,7 @@ let rec arity {pexp_desc; _} =
         )) ->
         (* If a module argument is optional, then it can be non-static, and
           hence it does not need to be unpacked at all. Also, there is no
-          syntax for labelled modular explicits, so packing this is fine. *)
+          syntax for optional modular explicits, so packing this is fine. *)
          Param_val { label ; poly_annot = None } :: acc
       | Pparam_val (label, _, { ppat_desc = Ppat_constraint (
           ({ ppat_desc = Ppat_unpack _ ; _ } as unpack),
