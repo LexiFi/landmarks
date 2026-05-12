@@ -42,6 +42,9 @@ let error loc code =
     | `Payload_not_a_string -> "payload is not a string"
     | `Payload_not_an_expression -> "payload is not an expression"
     | `Provide_a_name -> "this landmark annotation requires a name argument"
+    | `Poly_optional_arg -> "cannot support a polymorphic optional argument"
+    | `Shadowed_module ->
+      "cannot unpack a module with the same name as another unpacked module"
   in
   Location.Error.raise (Location.Error.make ~loc ~sub:[]
                           (Printf.sprintf "ppx_landmark: %s" (message code)))
@@ -173,6 +176,35 @@ let wrap_landmark ctx landmark loc expr =
          (Some expr)
       )
 
+(*
+  Parameters for the eta-expanded functions that wrap the original definitions.
+  - Newtypes to be (possibly) used in annotations.
+  - Polymorphic annotations because they cannot be inferred.
+    e.g.
+      let f (_none : 'a. 'a option) : unit = ()
+    An eta-expansion without the annotation will no longer have a polymorphic
+    parameter.
+  - Module unpacking and package type constraints so that module-dependent
+    functions can type check. Like polymorphic parameters, they cannot be
+    inferred. When a polymorphic parameter follows and depends on the unpacked
+    module, we do not substitute a new name into the type; instead, modules
+    keep their original name during eta expansion and thus must be unique.
+    e.g.
+      let f (module M : S) (f : 'a. 'a -> 'a M.t) (module M : S) = ...
+    The second module M will shadow the first, and this is disallowed. But
+    the first module M is used in the type of f, so it should not be renamed.
+*)
+type param =
+  | Param_newtype of string
+  | Param_val of { label : arg_label ; poly_annot : core_type option }
+  | Param_module of
+    { label : arg_label ; unpack : pattern ; ptyp : core_type option }
+
+let is_empty_arity arity =
+  not (List.exists (function
+    | Param_val _ | Param_module _ -> true
+    | Param_newtype _ -> false
+  ) arity)
 
 let rec arity {pexp_desc; _} =
   match pexp_desc with
@@ -182,19 +214,57 @@ let rec arity {pexp_desc; _} =
       | Pfunction_body e -> arity e
       | Pfunction_cases (cases, _, _) ->
         let max_list l1 l2 =
-          if List.length l1 < List.length l2 then
+          if List.compare_lengths l1 l2 > 0 then
             l1
           else
             l2
         in
-        Nolabel :: (List.fold_left
-                      (fun acc {pc_rhs; _} -> max_list (arity pc_rhs) acc)
-                      [] cases)
+        let param = Param_val { label = Nolabel ; poly_annot = None } in
+        param :: List.fold_left (fun acc {pc_rhs; _} ->
+          max_list (arity pc_rhs) acc
+        ) [] cases
     in
     List.fold_right (fun param acc ->
       match param.pparam_desc with
-      | Pparam_val (arg_label, _, _) -> arg_label :: acc
-      | Pparam_newtype _ -> acc
+      | Pparam_val (label, _, { ppat_desc = Ppat_constraint (
+          _, ({ ptyp_desc = Ptyp_poly _ ; _ } as typ)
+        ) ; _ }) ->
+          (* Function parameters can be polymorphic since OCaml 5.5.
+            Before 5.5, this case is never reached. A polymorphic argument
+            may have default value in its annotation, which will not compile
+            after the renaming during eta-expansion if it depends on the
+            arguments that come before. *)
+          begin match label with
+          | Optional _ -> error param.pparam_loc `Poly_optional_arg
+          | _ -> Param_val { label ; poly_annot = Some typ } :: acc
+          end
+      | Pparam_val (Optional _ as label, _, (
+            { ppat_desc = Ppat_constraint ({ ppat_desc = Ppat_unpack _ ; _ }, _) ; _ }
+          | { ppat_desc = Ppat_unpack _ ; _ }
+        )) ->
+        (* If a module argument is optional, then it can be non-static, and
+          hence it does not need to be unpacked at all. Also, there is no
+          syntax for optional modular explicits, so packing this is fine. *)
+         Param_val { label ; poly_annot = None } :: acc
+      | Pparam_val (label, _, { ppat_desc = Ppat_constraint (
+          ({ ppat_desc = Ppat_unpack _ ; _ } as unpack),
+          ({ ptyp_desc = Ptyp_package _ ; _ } as ptyp)
+        ) ; _ }) ->
+          (* Between OCaml 5.4 and 5.5, this will be migrated up to a module-
+            dependent function unless the `unpack` pattern has a magic attribute
+            saying to preserve the ppat constraint, thus keeping this as a first
+            class module instead of a module-dependent function. *)
+          Param_module { label ; unpack ; ptyp = Some ptyp } :: acc
+      | Pparam_val (label, _, ({ ppat_desc = Ppat_unpack _ ; _ } as unpack)) ->
+          (* In case the module is type-annotated in a constraint on the let-
+            binding but not annotated here (on the parameter), we must still
+            unpack/repack it during eta-expansion because it may be for a
+            module-dependent function. *)
+          Param_module { label ; unpack ; ptyp = None } :: acc
+      | Pparam_val (label, _, _) ->
+        Param_val { label ; poly_annot = None } :: acc
+      | Pparam_newtype { txt; _} ->
+        Param_newtype txt :: acc
     ) param_list body_arity
   | Pexp_newtype (_, e) -> arity e
   | Pexp_constraint (e, _) -> arity e
@@ -211,16 +281,50 @@ let rec wrap_landmark_method ctx landmark loc ({pexp_desc; _} as expr) =
   | _ -> wrap_landmark ctx landmark loc expr
 
 let eta_expand f t n =
+  let module H = Hashtbl.Make (String) in
+  let tbl = H.create (List.length n) in
   let vars =
-    List.mapi (fun k x -> (x, Printf.sprintf "__x%d" k)) n
+    List.mapi (fun k x ->
+      match x with
+      | Param_module { unpack = { ppat_desc =
+          Ppat_unpack { txt = (Some s) ; loc }; _}; _} ->
+        (* do not give a fresh name to unpacked modules *)
+        if H.mem tbl s then error loc `Shadowed_module;
+        H.add tbl s ();
+        (x, s)
+      | _ -> (x, Printf.sprintf "__x%d" k)) n
   in
   let rec app acc = function
     | [] -> acc
-    | (l,x) :: tl -> app (Exp.apply acc [l, Exp.ident (mknoloc (Lident x))]) tl
+    | (Param_newtype _, _) :: tl -> app acc tl
+    | (Param_val { label = l ; _ }, x) :: tl ->
+      app (Exp.apply acc [l, Exp.ident (mknoloc (Lident x))]) tl
+    | (Param_module { label = l ; _ }, x) :: tl ->
+      let packed = Exp.pack (Mod.ident (mknoloc (Lident x))) in
+      app (Exp.apply acc [l, packed]) tl
   in
   let rec lam = function
     | [] -> f (app t vars)
-    | (l,x) :: tl -> Exp.fun_ l None (Pat.var (mknoloc x)) (lam tl)
+    | (Param_newtype newtype_name, _) :: tl ->
+      Exp.newtype (mknoloc newtype_name) (lam tl)
+    | (Param_val { label = l ; poly_annot }, x) :: tl ->
+      let var_pat = Pat.var (mknoloc x) in
+      let typed_pat =
+        match poly_annot with
+        | Some typ -> Pat.constraint_ var_pat typ
+        | None -> var_pat
+      in
+      Exp.fun_ l None typed_pat (lam tl)
+    | (Param_module { label = l ; unpack ; ptyp }, x) :: tl ->
+      let unpack_pat =
+        Pat.unpack ~attrs:unpack.ppat_attributes (mknoloc (Some x))
+      in
+      let constrained =
+        match ptyp with
+        | Some typ -> Pat.constraint_ unpack_pat typ
+        | None -> unpack_pat
+      in
+      Exp.fun_ l None constrained (lam tl)
   in
   lam vars
 
@@ -243,7 +347,7 @@ let translate_value_bindings ctx value_binding auto vbs =
            when not_a_constant pvb_expr ->
              let arity = arity pvb_expr in
              let from_names arity fun_name landmark_name =
-               if auto && arity = [] then
+               if auto && is_empty_arity arity then
                  (vb, None)
                else
                  (vb, Some (arity, fun_name, landmark_name, pvb_loc, attr))
@@ -272,16 +376,16 @@ let translate_value_bindings ctx value_binding auto vbs =
             Vb.mk ~attrs ~loc:pvb_loc ?value_constraint:pvb_constraint pvb_pat pvb_expr
             |> value_binding
           in
-          if arity = [] then
+          if is_empty_arity arity then
             { vb with pvb_expr = wrap_landmark ctx name loc vb.pvb_expr}
           else
             vb) vbs_arity_name
   in
   let new_vbs = filter_map (function
-      | (_, Some (_ :: _ as arity, fun_name, landmark_name, loc, _)) ->
+      | ({pvb_constraint;_}, Some (_ :: _ as arity, fun_name, landmark_name, loc, attrs)) ->
           let ident = Exp.ident (mknoloc (Lident fun_name)) in
           let expr = eta_expand (wrap_landmark ctx landmark_name loc) ident arity in
-          Some (Vb.mk (Pat.var (mknoloc fun_name)) expr)
+          Some (Vb.mk ~attrs ?value_constraint:pvb_constraint (Pat.var (mknoloc fun_name)) expr)
       | _ -> None) vbs_arity_name
   in
   vbs, new_vbs

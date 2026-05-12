@@ -22,4 +22,10 @@ Line 3, characters 2-24:
 3 |   let[@landmark] _ = 2+2 in ();;
       ^^^^^^^^^^^^^^^^^^^^^^
 Error: ppx_landmark: this landmark annotation requires a name argument
+module type S = sig type 'a t val a : int val return : 'a -> 'a t end
+Line 3, characters 57-58:
+3 | let[@landmark] shadow ((module M) : (module S)) ((module M) : (module S)) =
+                                                             ^
+Error: ppx_landmark: cannot unpack a module with the same name as another
+       unpacked module
 
