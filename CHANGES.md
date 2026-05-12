@@ -1,5 +1,8 @@
 working version
 ---------------
+
+version 1.6, 12 may 2026
+------------------------
 * adapt to ppxlib 0.36.0 (PR #45, @brandonzstride)
 
 version 1.5, 14 jan 2025
