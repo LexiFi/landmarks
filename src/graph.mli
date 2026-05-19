@@ -106,13 +106,3 @@ val output: ?threshold:float -> out_channel -> graph -> unit
 
 val output_json: out_channel -> graph -> unit
 (** Output a JSON representation of a call graph on an out_channel. *)
-
-module Speedscope : sig
-  val export_to_channel : out_channel -> graph -> unit
-  (** Write a Speedscope-format sampled profile to [out_channel].
-
-      If [sys_time] was collected during profiling the weights are in seconds;
-      otherwise raw CPU-cycle counts are used with unit "none".
-
-      The resulting JSON can be opened directly at {{: https://www.speedscope.app } speedscope.app}. *)
-end

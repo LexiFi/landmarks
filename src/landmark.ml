@@ -17,6 +17,7 @@ let allocated_bytes_major () = Int64.to_int (allocated_bytes_major ())
 exception LandmarkFailure of string
 
 module Graph = Graph
+module Speedscope = Speedscope
 
 module SparseArray = struct
   type 'a t = {
@@ -785,7 +786,7 @@ let exit_hook () =
     | Channel out, JSON ->
         Graph.output_json out cg
     | Channel out, Speedscope ->
-        Graph.Speedscope.export_to_channel out cg
+        Speedscope.export_to_channel out cg
     | Temporary temp_dir, format ->
         let tmp_file, oc =
           Filename.open_temp_file ?temp_dir "profile_at_exit" ".tmp"
@@ -796,7 +797,7 @@ let exit_hook () =
         (match format with
          | Textual {threshold} -> Graph.output ~threshold oc cg
          | JSON -> Graph.output_json oc cg
-         | Speedscope -> Graph.Speedscope.export_to_channel oc cg);
+         | Speedscope -> Speedscope.export_to_channel oc cg);
         close_out oc
   end
 

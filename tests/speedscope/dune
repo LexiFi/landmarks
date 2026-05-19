@@ -1,3 +1,19 @@
 (executable
  (name example)
+ (libraries landmark)
+ (preprocess
+  (pps ppx_landmarks)))
+
+(executable
+ (name test)
  (libraries landmark))
+
+(rule
+ (with-stdout-to test.out
+  (run ./test.exe)))
+
+(rule
+ (alias runtest)
+ (package landmarks)
+ (action
+  (diff test.out.expected test.out)))

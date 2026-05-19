@@ -1,18 +1,19 @@
 (* Speedscope file-format types.
-   Schema: https://www.speedscope.app/file-format-schema.json
-   Docs:   https://github.com/jlfwong/speedscope/wiki/Importing-from-custom-sources
+   Schema:      https://www.speedscope.app/file-format-schema.json
+   Spec (TS):   https://github.com/jlfwong/speedscope/blob/main/src/lib/file-format-spec.ts
+   Import docs: https://github.com/jlfwong/speedscope/wiki/Importing-from-custom-sources
 
    To regenerate speedscope_fmt.ml and speedscope_fmt.mli from this file:
      atdml speedscope_fmt.atd
 *)
 
 type value_unit = [
-  | Bytes        <json name "bytes">
-  | Microseconds <json name "microseconds">
-  | Milliseconds <json name "milliseconds">
-  | Nanoseconds  <json name "nanoseconds">
-  | None_        <json name "none">
-  | Seconds      <json name "seconds">
+  | Bytes        <json name="bytes">
+  | Microseconds <json name="microseconds">
+  | Milliseconds <json name="milliseconds">
+  | Nanoseconds  <json name="nanoseconds">
+  | None_        <json name="none">
+  | Seconds      <json name="seconds">
 ]
 
 type frame = {
@@ -26,26 +27,29 @@ type frame = {
    evented profiles.  The "type" field is the discriminator used by
    Speedscope for the profile union and must always be "sampled". *)
 type sampled_profile = {
-  type_       <json name "type">       : string;
+  type_       <json name="type">       : string;
   name                                 : string;
-  unit_       <json name "unit">       : value_unit;
-  start_value <json name "startValue"> : float;
-  end_value   <json name "endValue">   : float;
+  unit        <json name="unit">       : value_unit;
+  start_value <json name="startValue"> : float;
+  end_value   <json name="endValue">   : float;
   samples                              : int list list;
   weights                              : float list;
 }
 
-type shared = {
+(* The "shared" section of a Speedscope file.
+   "shared" is a reserved word in ATD, hence the name profile_shared here;
+   the JSON key is "shared" via the annotation on the file_format field below. *)
+type profile_shared = {
   frames : frame list;
 }
 
 (* "$schema" uses a JSON name annotation because "$" is not a valid
    OCaml identifier character. *)
 type file_format = {
-  dollar_schema        <json name "$schema">           : string;
-  ?name                                                : string option;
-  ?exporter                                            : string option;
-  ?active_profile_index <json name "activeProfileIndex"> : int option;
-  profiles                                             : sampled_profile list;
-  shared                                               : shared;
+  schema               <json name="$schema">             : string;
+  ?name                                                  : string option;
+  ?exporter                                              : string option;
+  ?active_profile_index <json name="activeProfileIndex"> : int option;
+  profiles                                               : sampled_profile list;
+  shared               <json name="shared">              : profile_shared;
 }
