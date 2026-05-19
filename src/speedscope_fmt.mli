@@ -1,5 +1,6 @@
 (* Auto-generated from "speedscope_fmt.atd" by atdml. *)
 
+(** Unit in which all profile values are expressed. *)
 type value_unit =
   | Bytes
   | Microseconds
@@ -23,12 +24,36 @@ end
 
 type sampled_profile = {
   type_: string;
+  (**
+     Type of profile. Used as a discriminator in the profile union to
+     future-proof the file format. For sampled profiles, always 'sampled'.
+  *)
   name: string;
-  unit: value_unit;
+  (**
+     Name of the profile. Typically a filename for the source of the
+     profile.
+  *)
+  unit: value_unit;  (** Unit in which all values in this profile are expressed. *)
   start_value: float;
+  (**
+     The starting value of the profile. Typically a timestamp. All event
+     values are displayed relative to startValue.
+  *)
   end_value: float;
+  (**
+     The final value of the profile. Must be >= startValue. Useful when the
+     recorded profile extends past the last event.
+  *)
   samples: int list list;
+  (**
+     List of stacks. Each stack is a list of indices into the shared frames
+     array.
+  *)
   weights: float list;
+  (**
+     Weight of the sample at the corresponding index. Must have the same
+     length as samples.
+  *)
 }
 
 val create_sampled_profile : type_:string -> name:string -> unit:value_unit -> start_value:float -> end_value:float -> samples:int list list -> weights:float list -> unit -> sampled_profile
@@ -68,6 +93,7 @@ module Frame : sig
   val to_json : t -> string
 end
 
+(** Data shared between profiles. *)
 type profile_shared = {
   frames: frame list;
 }
@@ -90,10 +116,23 @@ end
 type file_format = {
   schema: string;
   name: string option;
+  (**
+     The name of the contained profile group. If omitted, the viewer uses
+     the filename.
+  *)
   exporter: string option;
+  (**
+     The name of the program that exported this profile. Not consumed by
+     speedscope, but useful for debugging. Recommended format:
+     name\@version.
+  *)
   active_profile_index: int option;
-  profiles: sampled_profile list;
-  shared: profile_shared;
+  (**
+     Index into the profiles array to display on load. Defaults to the
+     first profile if omitted.
+  *)
+  profiles: sampled_profile list;  (** List of profile definitions. *)
+  shared: profile_shared;  (** Data shared between profiles. *)
 }
 
 val create_file_format : schema:string -> ?name:string -> ?exporter:string -> ?active_profile_index:int -> profiles:sampled_profile list -> shared:profile_shared -> unit -> file_format
