@@ -128,37 +128,13 @@ module Value_unit = struct
 end
 
 type sampled_profile = {
-  type_: string;
-  (**
-     Type of profile. Used as a discriminator in the profile union to
-     future-proof the file format. For sampled profiles, always 'sampled'.
-  *)
-  name: string;
-  (**
-     Name of the profile. Typically a filename for the source of the
-     profile.
-  *)
+  type_: string;  (** Profile type discriminator; always 'sampled'. *)
+  name: string;  (** Name of the profile. Typically a filename. *)
   unit: value_unit;  (** Unit in which all values in this profile are expressed. *)
-  start_value: float;
-  (**
-     The starting value of the profile. Typically a timestamp. All event
-     values are displayed relative to startValue.
-  *)
-  end_value: float;
-  (**
-     The final value of the profile. Must be >= startValue. Useful when the
-     recorded profile extends past the last event.
-  *)
-  samples: int list list;
-  (**
-     List of stacks. Each stack is a list of indices into the shared frames
-     array.
-  *)
-  weights: float list;
-  (**
-     Weight of the sample at the corresponding index. Must have the same
-     length as samples.
-  *)
+  start_value: float;  (** The starting value. All values are relative to this. *)
+  end_value: float;  (** The final value. Must be >= startValue. *)
+  samples: int list list;  (** List of stacks; each is a list of frame indices. *)
+  weights: float list;  (** Weight of each sample. Same length as samples. *)
 }
 
 let create_sampled_profile ~type_ ~name ~unit ~start_value ~end_value ~samples ~weights () : sampled_profile =
@@ -361,22 +337,9 @@ end
 
 type file_format = {
   schema: string;
-  name: string option;
-  (**
-     The name of the contained profile group. If omitted, the viewer uses
-     the filename.
-  *)
-  exporter: string option;
-  (**
-     The name of the program that exported this profile. Not consumed by
-     speedscope, but useful for debugging. Recommended format:
-     name\@version.
-  *)
-  active_profile_index: int option;
-  (**
-     Index into the profiles array to display on load. Defaults to the
-     first profile if omitted.
-  *)
+  name: string option;  (** Profile group name. Defaults to the filename if omitted. *)
+  exporter: string option;  (** Exporter name. Not consumed. Format: name\@version. *)
+  active_profile_index: int option;  (** Index into profiles to display on load. Defaults to 0. *)
   profiles: sampled_profile list;  (** List of profile definitions. *)
   shared: profile_shared;  (** Data shared between profiles. *)
 }
