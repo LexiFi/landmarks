@@ -1,5 +1,8 @@
 working version
 ---------------
+* add Speedscope export format: set `format=speedscope` in `OCAML_LANDMARKS`
+  to write a sampled flame-graph profile openable at https://www.speedscope.app
+  (combine with `time` for second-precision weights)
 
 version 1.6, 12 may 2026
 ------------------------
