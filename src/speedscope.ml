@@ -1,3 +1,7 @@
+(*
+   Export to the Speedscope format
+*)
+
 let schema_url = "https://www.speedscope.app/file-format-schema.json"
 let exporter_name = "landmarks"
 
