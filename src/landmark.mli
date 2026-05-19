@@ -92,6 +92,7 @@ type textual_option = {threshold : float}
 type profile_format =
   | JSON (** Easily parsable export format. *)
   | Textual of textual_option (** Console friendly output; nodes below the threshold (0.0 <= threshold <= 100.0) are not displayed in the callgraph. *)
+  | Speedscope (** Sampled profile in the Speedscope file format, openable at {{: https://www.speedscope.app } speedscope.app}.  Enable [sys_time] in {! profiling_options} for second-precision weights; otherwise weights are in raw CPU cycles. *)
 
 (** The profiling options control the behavior of the landmark infrastructure. *)
 type profiling_options = {

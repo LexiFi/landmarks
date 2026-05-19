@@ -1,0 +1,51 @@
+(* Speedscope file-format types.
+   Schema: https://www.speedscope.app/file-format-schema.json
+   Docs:   https://github.com/jlfwong/speedscope/wiki/Importing-from-custom-sources
+
+   To regenerate speedscope_fmt.ml and speedscope_fmt.mli from this file:
+     atdml speedscope_fmt.atd
+*)
+
+type value_unit = [
+  | Bytes        <json name "bytes">
+  | Microseconds <json name "microseconds">
+  | Milliseconds <json name "milliseconds">
+  | Nanoseconds  <json name "nanoseconds">
+  | None_        <json name "none">
+  | Seconds      <json name "seconds">
+]
+
+type frame = {
+  name : string;
+  ?file : string option;
+  ?line : int option;
+  ?col  : int option;
+}
+
+(* We only export sampled profiles; the Speedscope format also supports
+   evented profiles.  The "type" field is the discriminator used by
+   Speedscope for the profile union and must always be "sampled". *)
+type sampled_profile = {
+  type_       <json name "type">       : string;
+  name                                 : string;
+  unit_       <json name "unit">       : value_unit;
+  start_value <json name "startValue"> : float;
+  end_value   <json name "endValue">   : float;
+  samples                              : int list list;
+  weights                              : float list;
+}
+
+type shared = {
+  frames : frame list;
+}
+
+(* "$schema" uses a JSON name annotation because "$" is not a valid
+   OCaml identifier character. *)
+type file_format = {
+  dollar_schema        <json name "$schema">           : string;
+  ?name                                                : string option;
+  ?exporter                                            : string option;
+  ?active_profile_index <json name "activeProfileIndex"> : int option;
+  profiles                                             : sampled_profile list;
+  shared                                               : shared;
+}

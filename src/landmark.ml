@@ -256,6 +256,7 @@ type textual_option = {threshold : float}
 type profile_format =
   | JSON
   | Textual of textual_option
+  | Speedscope
 
 let profiling_ref = ref false
 let profile_with_debug = ref false
@@ -783,6 +784,8 @@ let exit_hook () =
         Graph.output ~threshold out cg
     | Channel out, JSON ->
         Graph.output_json out cg
+    | Channel out, Speedscope ->
+        Graph.Speedscope.export_to_channel out cg
     | Temporary temp_dir, format ->
         let tmp_file, oc =
           Filename.open_temp_file ?temp_dir "profile_at_exit" ".tmp"
@@ -792,7 +795,8 @@ let exit_hook () =
         flush stdout;
         (match format with
          | Textual {threshold} -> Graph.output ~threshold oc cg
-         | JSON -> Graph.output_json oc cg);
+         | JSON -> Graph.output_json oc cg
+         | Speedscope -> Graph.Speedscope.export_to_channel oc cg);
         close_out oc
   end
 
@@ -843,6 +847,7 @@ let parse_env_options s =
         | _ -> format := Textual {threshold = 1.0};
         end
     | [ "format"; "json" ] -> format := JSON;
+    | [ "format"; "speedscope" ] -> format := Speedscope
     | [ "format"; unknown ] -> invalid_for "format" unknown
     | [ "output"; "stderr" ] -> output := Channel stderr
     | [ "output"; "stdout" ] -> output := Channel stdout

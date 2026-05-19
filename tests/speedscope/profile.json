@@ -1,0 +1,31 @@
+{
+  "$schema": "https://www.speedscope.app/file-format-schema.json",
+  "name": "./_build/default/tests/speedscope/example.exe",
+  "exporter": "landmarks",
+  "profiles": [
+    {
+      "type": "sampled",
+      "name": "./_build/default/tests/speedscope/example.exe",
+      "unit": "seconds",
+      "startValue": 0.0,
+      "endValue": 0.25488900000000003,
+      "samples": [ [ 0 ], [ 0, 1 ], [ 0, 2 ], [ 0, 2, 3 ] ],
+      "weights": [
+        0.014163000000000064, 0.138753, 3.0000000000030003e-06,
+        0.10196999999999998
+      ]
+    }
+  ],
+  "shared": {
+    "frames": [
+      { "name": "main", "file": "tests/speedscope/example.ml", "line": 17 },
+      { "name": "sort", "file": "tests/speedscope/example.ml", "line": 15 },
+      {
+        "name": "compute",
+        "file": "tests/speedscope/example.ml",
+        "line": 16
+      },
+      { "name": "fib", "file": "tests/speedscope/example.ml", "line": 14 }
+    ]
+  }
+}
