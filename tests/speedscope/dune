@@ -25,9 +25,11 @@
  (action
   (diff test.out.expected test.out)))
 
+; Check out _build/default/tests/speedscope/profile.speedscope
+; and upload it to https://www.speedscope.app/ to view the graph
 (rule
  (alias runtest)
  (package landmarks-exports)
  (action
-  (setenv "OCAML_LANDMARKS" "format=speedscope,output=/dev/null,time"
+  (setenv "OCAML_LANDMARKS" "format=speedscope,output=profile.speedscope,time"
    (run ./example.exe))))
