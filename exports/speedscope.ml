@@ -2,6 +2,8 @@
    Export to the Speedscope format
 *)
 
+open Landmark
+
 let schema_url = "https://www.speedscope.app/file-format-schema.json"
 let exporter_name = "landmarks"
 
@@ -65,7 +67,7 @@ let collect_samples ~use_sys_time (graph : Graph.graph) frame_idx =
   aux [] (Graph.root graph);
   List.rev !samples, List.rev !weights
 
-let export_to_channel oc (graph : Graph.graph) =
+let exporter oc (graph : Graph.graph) =
   let frames, frame_idx = make_frames graph in
   let use_sys_time =
     Array.exists (fun (n : Graph.node) -> n.sys_time > 0.0) graph.nodes

@@ -1,12 +1,19 @@
 (executable
  (name example)
- (libraries landmark)
+ (libraries
+   landmark
+   landmarks_exports
+ )
  (preprocess
   (pps ppx_landmarks)))
 
 (executable
  (name test)
- (libraries landmark))
+ (libraries
+   landmark
+   landmarks_exports
+ )
+)
 
 (rule
  (with-stdout-to test.out

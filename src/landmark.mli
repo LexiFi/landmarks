@@ -3,7 +3,6 @@
 (* Copyright (C) 2000-2025 LexiFi                                    *)
 
 module Graph = Graph
-module Speedscope = Speedscope
 
 (** The main module *)
 
@@ -93,6 +92,7 @@ type textual_option = {threshold : float}
 type profile_format =
   | JSON (** Easily parsable export format. *)
   | Textual of textual_option (** Console friendly output; nodes below the threshold (0.0 <= threshold <= 100.0) are not displayed in the callgraph. *)
+  | Custom (** User-defined export *)
   | Speedscope
   (** Sampled profile in the Speedscope file format, openable at
       {{: https://www.speedscope.app } speedscope.app}.
@@ -161,3 +161,30 @@ val pop_profiling_state: unit -> unit
 
 external raise : exn -> 'a = "%raise"
 (** This a redefinition of [Stdlib.raise] to allow generated code to work with -no-stdlib.*)
+
+(** {3 Runtime initialization} *)
+
+type exporter = out_channel -> Graph.graph -> unit
+
+(**/**)
+(* Register extra exporters.
+   Only the landmarks-exports library should call these functions.
+
+   To register a custom exporter, call {!register_custom_exporter} instead.
+
+   The list of valid exporter names is fixed and determined by what's
+   implemented in the landmarks-exports companion library.
+*)
+val register_speedscope_exporter : exporter -> unit
+(**/**)
+
+(** Set the exporter named [custom]. *)
+val register_custom_exporter : exporter -> unit
+
+(** Check the value of the [OCAML_LANDMARKS] library. In particular,
+    this checks the validity of the exporter specified with the
+    [format] option.
+
+    This function is normally called via [Landmarks_exports.init ()].
+*)
+val init : unit -> unit

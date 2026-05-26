@@ -47,4 +47,6 @@ let[@landmark] main () =
   run lst;
   ignore (summarise lst)
 
-let () = main ()
+let () =
+  Landmarks_exports.init ();
+  main ()

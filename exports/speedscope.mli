@@ -5,7 +5,7 @@
     for the annotated format specification.
 *)
 
-val export_to_channel : out_channel -> Graph.graph -> unit
+val exporter : out_channel -> Landmark.Graph.graph -> unit
 (** Write a Speedscope sampled profile to [out_channel].
 
     If [sys_time] was collected during profiling, weights are in seconds;

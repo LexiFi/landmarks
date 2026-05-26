@@ -1,0 +1,8 @@
+(library
+ (name landmarks_exports)
+ (public_name landmarks-exports)
+ (libraries
+   landmarks
+   yojson
+ )
+)

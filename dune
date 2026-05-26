@@ -1,0 +1,4 @@
+(env
+ ; '_' targets any profile
+ (_
+  (flags (:standard -w +A-30-42-41-40-4-70 -safe-string -strict-sequence))))

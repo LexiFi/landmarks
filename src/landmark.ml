@@ -17,7 +17,6 @@ let allocated_bytes_major () = Int64.to_int (allocated_bytes_major ())
 exception LandmarkFailure of string
 
 module Graph = Graph
-module Speedscope = Speedscope
 
 module SparseArray = struct
   type 'a t = {
@@ -257,7 +256,8 @@ type textual_option = {threshold : float}
 type profile_format =
   | JSON
   | Textual of textual_option
-  | Speedscope
+  | Custom (* user-defined *)
+  | Speedscope (* registered by landmarks-exports *)
 
 let profiling_ref = ref false
 let profile_with_debug = ref false
@@ -698,6 +698,30 @@ let stop_profiling () =
 
 (** EXPORTING / IMPORTING SLAVE PROFILINGS **)
 
+let warning s =
+  Printf.eprintf "[LANDMARKS] %s.\n%!" s
+
+type exporter = out_channel -> Graph.graph -> unit
+
+(* The current value of the 'custom' exporter *)
+let custom_exporter : exporter ref =
+  ref (fun _oc _graph ->
+    warning "Missing 'custom' exporter. \
+             You must register one with Landmark.register_custom_exporter")
+
+(* Exporters registered by the landmarks-exports library *)
+let speedscope_exporter : exporter ref =
+  ref (fun _oc _graph ->
+    warning "Missing 'speedscope' exporter. \
+             You must register it with Landmarks_exports.init"
+  )
+
+let register_custom_exporter ex =
+  custom_exporter := ex
+
+let register_speedscope_exporter ex =
+  speedscope_exporter := ex
+
 let array_list_map f l =
   let size = List.length l in
   match l with
@@ -785,8 +809,10 @@ let exit_hook () =
         Graph.output ~threshold out cg
     | Channel out, JSON ->
         Graph.output_json out cg
+    | Channel out, Custom ->
+        !custom_exporter out cg
     | Channel out, Speedscope ->
-        Speedscope.export_to_channel out cg
+        !speedscope_exporter out cg
     | Temporary temp_dir, format ->
         let tmp_file, oc =
           Filename.open_temp_file ?temp_dir "profile_at_exit" ".tmp"
@@ -797,7 +823,8 @@ let exit_hook () =
         (match format with
          | Textual {threshold} -> Graph.output ~threshold oc cg
          | JSON -> Graph.output_json oc cg
-         | Speedscope -> Speedscope.export_to_channel oc cg);
+         | Custom -> !custom_exporter oc cg
+         | Speedscope -> !speedscope_exporter oc cg);
         close_out oc
   end
 
@@ -814,9 +841,6 @@ let parse_env_options s =
   let allocated_bytes = ref false in
   let split_trim c s =
     List.map String.trim (Misc.split c s)
-  in
-  let warning s =
-    eprintf "[LANDMARKS] %s.\n%!" s
   in
   let parse_option s =
     let invalid_for opt given =
@@ -890,10 +914,13 @@ let parse_env_options s =
   {debug = !debug; allocated_bytes = !allocated_bytes; sys_time = !sys_time;
    output = !output; format = !format; recursive = !recursive}
 
-let () = match Sys.getenv "OCAML_LANDMARKS" with
+let init () =
+  match Sys.getenv "OCAML_LANDMARKS" with
   | exception Not_found -> ()
   | str ->
       try start_profiling ~profiling_options:(parse_env_options str) ()
       with Exit -> ()
+
+let () = init ()
 
 external raise : exn -> 'a = "%raise"

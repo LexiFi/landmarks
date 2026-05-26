@@ -22,7 +22,6 @@
  )
  (depends
    (ocaml (>= 4.08))
-   (yojson (>= 1.6))
    (js_of_ocaml (and :with-test (> 5)))
  )
  (conflicts ocaml-option-bytecode-only)
@@ -37,5 +36,16 @@ landmarks library.")
   (ocaml (>= 4.08))
   (ppxlib (>= 0.36))
   (landmarks (= 1.6))
+ )
+)
+
+(package
+ (name landmarks-exports)
+ (synopsis "Additional export formats for the Landmarks profiling library")
+ (description
+   "You must invoke 'Landmarks_exports.init ()' to register the exporters.")
+ (depends
+  (landmarks (= :version))
+  (yojson (>= 3.0.0))
  )
 )
