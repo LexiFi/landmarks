@@ -180,11 +180,3 @@ val register_speedscope_exporter : exporter -> unit
 
 (** Set the exporter named [custom]. *)
 val register_custom_exporter : exporter -> unit
-
-(** Check the value of the [OCAML_LANDMARKS] library. In particular,
-    this checks the validity of the exporter specified with the
-    [format] option.
-
-    This function is normally called via [Landmarks_exports.init ()].
-*)
-val init : unit -> unit

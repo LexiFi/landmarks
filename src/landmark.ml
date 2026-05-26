@@ -915,12 +915,11 @@ let parse_env_options s =
    output = !output; format = !format; recursive = !recursive}
 
 let init () =
-  if not !profiling_ref then
-    match Sys.getenv "OCAML_LANDMARKS" with
-    | exception Not_found -> ()
-    | str ->
-        try start_profiling ~profiling_options:(parse_env_options str) ()
-        with Exit -> ()
+  match Sys.getenv "OCAML_LANDMARKS" with
+  | exception Not_found -> ()
+  | str ->
+      try start_profiling ~profiling_options:(parse_env_options str) ()
+      with Exit -> ()
 
 let () = init ()
 

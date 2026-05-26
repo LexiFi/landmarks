@@ -3,7 +3,6 @@
 *)
 
 let init () =
-  Landmark.register_speedscope_exporter Speedscope.exporter;
-  Landmark.init ()
+  Landmark.register_speedscope_exporter Speedscope.exporter
 
 let speedscope_exporter = Speedscope.exporter
