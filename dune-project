@@ -18,7 +18,7 @@
     "Landmarks is a simple profiling library for OCaml. It provides \
      primitives to measure time spent in portion of instrumented code. \
      The instrumentation of the code may either done by hand, automatically \
-     or semi-automatically using the ppx pepreprocessor (see landmarks-ppx \
+     or semi-automatically using the ppx preprocessor (see landmarks-ppx \
      package)."
  )
  (depends
