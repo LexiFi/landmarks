@@ -3,7 +3,7 @@ opam-version: "2.0"
 version: "1.6"
 synopsis: "Additional export formats for the Landmarks profiling library"
 description:
-  "You must invoke 'Landmarks_exports.init ()' to register the exporters."
+  "This provides export to the Speedscope format and possibly more formats in the future."
 maintainer: ["Marc Lasson <marc.lasson@lexifi.com>"]
 authors: ["Marc Lasson <marc.lasson@lexifi.com>"]
 license: "MIT"

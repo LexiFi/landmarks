@@ -92,12 +92,9 @@ type textual_option = {threshold : float}
 type profile_format =
   | JSON (** Easily parsable export format. *)
   | Textual of textual_option (** Console friendly output; nodes below the threshold (0.0 <= threshold <= 100.0) are not displayed in the callgraph. *)
-  | Custom (** User-defined export *)
-  | Speedscope
-  (** Sampled profile in the Speedscope file format, openable at
-      {{: https://www.speedscope.app } speedscope.app}.
-      Enable [sys_time] in {!profiling_options} for second-precision
-      weights; otherwise weights are in raw CPU cycles. *)
+  | External of string (** Other exporter that must be registered with
+                           {!register_external_exporter} by the time
+                           it's invoked. *)
 
 (** The profiling options control the behavior of the landmark infrastructure. *)
 type profiling_options = {
@@ -166,17 +163,9 @@ external raise : exn -> 'a = "%raise"
 
 type exporter = out_channel -> Graph.graph -> unit
 
-(**/**)
-(* Register extra exporters.
-   Only the landmarks-exports library should call these functions.
+(** Register an extra exporter.
 
-   To register a custom exporter, call {!register_custom_exporter} instead.
-
-   The list of valid exporter names is fixed and determined by what's
-   implemented in the landmarks-exports companion library.
+    The exporter to use  is specified by the [format] value in the [OCAML_LANDMARKS]
+    environment variable.
 *)
-val register_speedscope_exporter : exporter -> unit
-(**/**)
-
-(** Set the exporter named [custom]. *)
-val register_custom_exporter : exporter -> unit
+val register_exporter : string -> exporter -> unit

@@ -17,9 +17,7 @@
      $ OCAML_LANDMARKS=format=speedscope,output=profile.json,time myprog
 v}
 *)
-val init : unit -> unit
+val register : unit -> unit
 
-(**/**)
-(* For testing *)
+(** Export to the Speedscope format *)
 val speedscope_exporter : Landmark.exporter
-(**/**)

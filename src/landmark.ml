@@ -256,8 +256,7 @@ type textual_option = {threshold : float}
 type profile_format =
   | JSON
   | Textual of textual_option
-  | Custom (* user-defined *)
-  | Speedscope (* registered by landmarks-exports *)
+  | External of string
 
 let profiling_ref = ref false
 let profile_with_debug = ref false
@@ -703,24 +702,33 @@ let warning s =
 
 type exporter = out_channel -> Graph.graph -> unit
 
-(* The current value of the 'custom' exporter *)
-let custom_exporter : exporter ref =
-  ref (fun _oc _graph ->
-    warning "Missing 'custom' exporter. \
-             You must register one with Landmark.register_custom_exporter")
+let external_exporters : (string, exporter) Hashtbl.t = Hashtbl.create 10
 
-(* Exporters registered by the landmarks-exports library *)
-let speedscope_exporter : exporter ref =
-  ref (fun _oc _graph ->
-    warning "Missing 'speedscope' exporter. \
-             You must register it with Landmarks_exports.init"
-  )
+let register_exporter format_name exporter =
+  if Hashtbl.mem external_exporters format_name then
+    warning (Printf.sprintf
+               "Multiple registration of an exporter named %S" format_name);
+  Hashtbl.replace external_exporters format_name exporter
 
-let register_custom_exporter ex =
-  custom_exporter := ex
+let get_format_names () =
+  Hashtbl.fold (fun name _f acc -> name :: acc)
+    external_exporters
+    ["json"; "textual"]
+  |> List.sort String.compare
 
-let register_speedscope_exporter ex =
-  speedscope_exporter := ex
+let invoke_external_exporter format_name oc graph =
+  match Hashtbl.find_opt external_exporters format_name with
+  | None ->
+      warning (
+        Printf.sprintf
+          "Missing exporter for 'format=%s'. \
+           Make sure %S was registered with Landmark.register_exporter. \
+           Available formats are: %s."
+          format_name format_name
+          (String.concat ", " (get_format_names ()))
+      )
+  | Some exporter ->
+      exporter oc graph
 
 let array_list_map f l =
   let size = List.length l in
@@ -809,10 +817,8 @@ let exit_hook () =
         Graph.output ~threshold out cg
     | Channel out, JSON ->
         Graph.output_json out cg
-    | Channel out, Custom ->
-        !custom_exporter out cg
-    | Channel out, Speedscope ->
-        !speedscope_exporter out cg
+    | Channel out, External name ->
+        invoke_external_exporter name out cg
     | Temporary temp_dir, format ->
         let tmp_file, oc =
           Filename.open_temp_file ?temp_dir "profile_at_exit" ".tmp"
@@ -823,8 +829,7 @@ let exit_hook () =
         (match format with
          | Textual {threshold} -> Graph.output ~threshold oc cg
          | JSON -> Graph.output_json oc cg
-         | Custom -> !custom_exporter oc cg
-         | Speedscope -> !speedscope_exporter oc cg);
+         | External name -> invoke_external_exporter name oc cg);
         close_out oc
   end
 
@@ -872,8 +877,9 @@ let parse_env_options s =
         | _ -> format := Textual {threshold = 1.0};
         end
     | [ "format"; "json" ] -> format := JSON;
-    | [ "format"; "speedscope" ] -> format := Speedscope
-    | [ "format"; unknown ] -> invalid_for "format" unknown
+    | [ "format"; other ] ->
+        (* a exporter will have to be registered *)
+        format := External other
     | [ "output"; "stderr" ] -> output := Channel stderr
     | [ "output"; "stdout" ] -> output := Channel stdout
     | [ "output"; temporary ] when Misc.starts_with ~prefix:"temporary" temporary ->

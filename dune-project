@@ -15,10 +15,11 @@
  (name landmarks)
  (synopsis "A simple profiling library")
  (description
-    "\| Landmarks is a simple profiling library for OCaml. It provides
-    "\| primitives to measure time spent in portion of instrumented code. The
-    "\| instrumentation of the code may either done by hand, automatically or
-    "\| semi-automatically using the ppx pepreprocessor (see landmarks-ppx package).
+    "Landmarks is a simple profiling library for OCaml. It provides \
+     primitives to measure time spent in portion of instrumented code. \
+     The instrumentation of the code may either done by hand, automatically \
+     or semi-automatically using the ppx pepreprocessor (see landmarks-ppx \
+     package)."
  )
  (depends
    (ocaml (>= 4.08))
@@ -43,7 +44,8 @@ landmarks library.")
  (name landmarks-exports)
  (synopsis "Additional export formats for the Landmarks profiling library")
  (description
-   "You must invoke 'Landmarks_exports.init ()' to register the exporters.")
+   "This provides export to the Speedscope format and possibly more formats \
+    in the future.")
  (depends
   (landmarks (= :version))
   (yojson (>= 3.0.0))
