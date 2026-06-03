@@ -1,7 +1,7 @@
 ; A library for exporting profiling data to various formats
 (library
- (name landmarks_exports)
- (public_name landmarks-exports)
+ (name landmarks_speedscope)
+ (public_name landmarks_speedscope)
  (libraries
    landmarks
    yojson
