@@ -6,4 +6,5 @@
    landmarks
    yojson
  )
+ (library_flags -linkall)
 )
