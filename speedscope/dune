@@ -6,5 +6,6 @@
    landmarks
    yojson
  )
+ ; Force linking and evaluation of this library's modules
  (library_flags -linkall)
 )

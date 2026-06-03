@@ -722,10 +722,8 @@ let invoke_external_exporter format_name oc graph =
       warning (
         Printf.sprintf
           "Missing exporter for 'format=%s'. \
-           Make sure %S is registered via Landmark.register_exporter \
-           or Landmarks_exports.register. \
            Available formats are: %s"
-          format_name format_name
+          format_name
           (String.concat ", " (get_format_names ()))
       )
   | Some exporter ->

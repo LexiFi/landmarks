@@ -12,4 +12,8 @@ val exporter : out_channel -> Landmark.Graph.graph -> unit
     otherwise raw CPU-cycle counts are used with unit "none".
 
     The resulting JSON can be opened at
-    {{: https://www.speedscope.app } speedscope.app}. *)
+    {{: https://www.speedscope.app } speedscope.app}.
+
+    This exporter is automatically registered with the Landmarks library
+    to provide support for [format=speedscope].
+*)

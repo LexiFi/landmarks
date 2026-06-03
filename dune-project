@@ -41,7 +41,7 @@ landmarks library.")
 )
 
 (package
- (name landmarks-exports)
+ (name landmarks_speedscope)
  (synopsis "Additional export formats for the Landmarks profiling library")
  (description
    "This provides export to the Speedscope format and possibly more formats \

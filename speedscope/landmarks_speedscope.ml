@@ -99,3 +99,7 @@ let exporter oc (graph : Graph.graph) =
   Yojson.Safe.pretty_to_channel ~std:true oc
     (Speedscope_fmt.yojson_of_file_format file);
   output_char oc '\n'
+
+(* This relies on the [-linkall] flag passed with [-a] when building
+   the library to ensure the registration takes place. *)
+let () = Landmark.register_exporter "speedscope" exporter

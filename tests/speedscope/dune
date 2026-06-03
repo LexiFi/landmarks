@@ -2,7 +2,7 @@
  (name example)
  (libraries
    landmark
-   landmarks_exports
+   landmarks_speedscope
  )
  (preprocess
   (pps ppx_landmarks)))
@@ -11,7 +11,7 @@
  (name test)
  (libraries
    landmark
-   landmarks_exports
+   landmarks_speedscope
  )
 )
 
@@ -29,7 +29,7 @@
 ; and upload it to https://www.speedscope.app/ to view the graph
 (rule
  (alias runtest)
- (package landmarks-exports)
+ (package landmarks_speedscope)
  (action
   (setenv "OCAML_LANDMARKS" "format=speedscope,output=profile.speedscope,time"
    (run ./example.exe))))

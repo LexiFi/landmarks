@@ -19,4 +19,4 @@ let () =
   let foo  = make_node 1 Normal "foo" "test.ml:10" 5 0.50 [] in
   let bar  = make_node 2 Normal "bar" "test.ml:20" 3 0.25 [] in
   let graph = graph_of_nodes ~label:"test" [root; foo; bar] in
-  Landmarks_exports.speedscope_exporter stdout graph
+  Landmarks_speedscope.exporter stdout graph
