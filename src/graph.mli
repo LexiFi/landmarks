@@ -73,7 +73,8 @@ val path_dfs: (bool -> node list -> node -> unit) ->
 val dfs: (node list -> node -> bool) ->
   (node list -> node -> unit) -> graph -> unit
 (** A specialization of [path_dfs] that does not need to read the visited flag.
-    The returned values of the first function tells whether or not the traversal    should continue visiting the children of the current node. *)
+    The returned values of the first function tells whether or not the
+    traversal should continue visiting the children of the current node. *)
 
 (** {3 Utility functions } *)
 
