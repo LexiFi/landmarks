@@ -45,7 +45,7 @@ let collect_samples ~use_sys_time (graph : Graph.graph) frame_idx =
     (fun ancestors (node : Graph.node) ->
        match node.kind with
        | Root -> true
-       | Counter | Graph.Sampler -> false
+       | Counter | Sampler -> false
        | Normal ->
            let fidx = Hashtbl.find frame_idx node.landmark_id in
            let child_list = Graph.children graph node in
@@ -60,7 +60,7 @@ let collect_samples ~use_sys_time (graph : Graph.graph) frame_idx =
                  (fun (a : Graph.node) ->
                     match a.kind with
                     | Normal -> Some (Hashtbl.find frame_idx a.landmark_id)
-                    | Counter | Root -> None)
+                    | Root | Counter | Sampler -> None)
                  ancestors
              in
              samples := List.rev stack :: !samples;
