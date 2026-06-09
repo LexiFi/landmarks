@@ -11,7 +11,7 @@ let () =
     ~profiling_options:{default_options with format = JSON} ();
   enter main;
   Printf.printf "%d\n%!" (fib 7);
-  Landmark.exit main;
+  exit main;
   if profiling () then begin
     let open Landmark.Graph in
     let cg = export () in
