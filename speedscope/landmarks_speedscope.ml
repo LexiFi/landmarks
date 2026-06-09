@@ -40,31 +40,35 @@ let make_frames (graph : Graph.graph) =
 let collect_samples ~use_sys_time (graph : Graph.graph) frame_idx =
   let samples = ref [] in
   let weights = ref [] in
-  let visited = Hashtbl.create 16 in
   let node_time (n : Graph.node) = if use_sys_time then n.sys_time else n.time in
-  let rec aux stack (node : Graph.node) =
-    if not (Hashtbl.mem visited node.id) then begin
-      Hashtbl.add visited node.id ();
-      match node.kind with
-      | Graph.Root ->
-          List.iter (aux stack) (Graph.children graph node)
-      | Graph.Counter | Graph.Sampler -> ()
-      | Graph.Normal ->
-          let fidx = Hashtbl.find frame_idx node.landmark_id in
-          let stack' = fidx :: stack in    (* maintained reversed; reversed on emit *)
-          let child_list = Graph.children graph node in
-          let child_time =
-            List.fold_left (fun acc c -> acc +. node_time c) 0.0 child_list
-          in
-          let self_time = node_time node -. child_time in
-          if self_time > 0.0 then begin
-            samples := List.rev stack' :: !samples;
-            weights := self_time :: !weights
-          end;
-          List.iter (aux stack') child_list
-    end
-  in
-  aux [] (Graph.root graph);
+  Graph.dfs
+    (fun ancestors (node : Graph.node) ->
+       match node.kind with
+       | Root -> true
+       | Counter | Graph.Sampler -> false
+       | Normal ->
+           let fidx = Hashtbl.find frame_idx node.landmark_id in
+           let child_list = Graph.children graph node in
+           let child_time =
+             List.fold_left (fun acc c -> acc +. node_time c) 0.0 child_list
+           in
+           let self_time = node_time node -. child_time in
+           if self_time > 0.0 then begin
+             let stack =
+               fidx ::
+               List.filter_map
+                 (fun (a : Graph.node) ->
+                    match a.kind with
+                    | Normal -> Some (Hashtbl.find frame_idx a.landmark_id)
+                    | Counter | Root -> None)
+                 ancestors
+             in
+             samples := List.rev stack :: !samples;
+             weights := self_time :: !weights
+           end;
+           true)
+    (fun _ _ -> ())
+    graph;
   List.rev !samples, List.rev !weights
 
 let exporter oc (graph : Graph.graph) =
