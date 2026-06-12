@@ -3,9 +3,9 @@ working version
 * add Speedscope export format: set `format=speedscope` in `OCAML_LANDMARKS`
   to write a sampled flame-graph profile openable at https://www.speedscope.app
   (combine with `time` for second-precision weights). It is available
-  via a new landmarks-exports library.
+  via a new `landmarks-speedscope` library.
 * add custom export format: set `format=custom` in `OCAML_LANDMARKS`
-  and register your exporter using `Landmark.register_custom_exporter`.
+  and register your exporter using `Landmark.register_exporter`.
 
 version 1.6, 12 may 2026
 ------------------------

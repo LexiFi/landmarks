@@ -253,7 +253,7 @@ This variable is parsed as a comma-separated list of items of the form
 
     * `format` with possible arguments: `textual` (default), `json`,
       or `speedscope`. `speedscope` requires the extra package
-      `landmarks-exports`.
+      `landmarks-speedscope`.
       It controls the output format of the profiling: a console-friendly
       representation, a JSON encoding of the callgraph, or a
       [Speedscope](https://www.speedscope.app) sampled profile (combine with
