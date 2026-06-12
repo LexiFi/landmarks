@@ -6,15 +6,14 @@ let rec fib n =
     (fun n -> if n <= 1 then 1 else fib (n - 1) + fib (n - 2)) n
 
 let () =
-  let open Landmark in
-  start_profiling
-    ~profiling_options:{default_options with format = JSON} ();
-  enter main;
+  Landmark.start_profiling
+    ~profiling_options:{Landmark.default_options with format = JSON} ();
+  Landmark.enter main;
   Printf.printf "%d\n%!" (fib 7);
-  exit main;
-  if profiling () then begin
+  Landmark.exit main;
+  if Landmark.profiling () then begin
     let open Landmark.Graph in
-    let cg = export () in
+    let cg = Landmark.export () in
     let agg = aggregate_landmarks cg in
     let all_nodes = nodes agg in
     assert ((root cg).time > 0.);

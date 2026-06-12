@@ -251,9 +251,13 @@ This variable is parsed as a comma-separated list of items of the form
 
 * When loading an instrumented program (at runtime):
 
-    * `format` with possible arguments: `textual` (default) or `json`. It controls
-      the output format of the profiling which is either a console friendly
-      representation or json encoding of the callgraph.
+    * `format` with possible arguments: `textual` (default), `json`,
+      or `speedscope`. `speedscope` requires the extra package
+      `landmarks-speedscope`.
+      It controls the output format of the profiling: a console-friendly
+      representation, a JSON encoding of the callgraph, or a
+      [Speedscope](https://www.speedscope.app) sampled profile (combine with
+      `time` for second-precision weights, otherwise weights are in CPU cycles).
 
     * `threshold` with a number between 0.0 and 100.0 as argument (default: 1.0). If the threshold is not zero the textual output will hide nodes in the callgraph below this threshold (in percent of time of their parent). This option is meaningless for other formats.
 

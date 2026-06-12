@@ -1,0 +1,22 @@
+{
+  "$schema": "https://www.speedscope.app/file-format-schema.json",
+  "name": "test",
+  "exporter": "landmarks",
+  "profiles": [
+    {
+      "type": "sampled",
+      "name": "test",
+      "unit": "none",
+      "startValue": 0.0,
+      "endValue": 0.75,
+      "samples": [ [ 0 ], [ 1 ] ],
+      "weights": [ 0.5, 0.25 ]
+    }
+  ],
+  "shared": {
+    "frames": [
+      { "name": "foo", "file": "test.ml", "line": 10 },
+      { "name": "bar", "file": "test.ml", "line": 20 }
+    ]
+  }
+}

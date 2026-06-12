@@ -92,6 +92,9 @@ type textual_option = {threshold : float}
 type profile_format =
   | JSON (** Easily parsable export format. *)
   | Textual of textual_option (** Console friendly output; nodes below the threshold (0.0 <= threshold <= 100.0) are not displayed in the callgraph. *)
+  | External of string (** Other exporter that must be registered with
+                           {!register_external_exporter} by the time
+                           it's invoked. *)
 
 (** The profiling options control the behavior of the landmark infrastructure. *)
 type profiling_options = {
@@ -155,3 +158,14 @@ val pop_profiling_state: unit -> unit
 
 external raise : exn -> 'a = "%raise"
 (** This a redefinition of [Stdlib.raise] to allow generated code to work with -no-stdlib.*)
+
+(** {3 Runtime initialization} *)
+
+type exporter = out_channel -> Graph.graph -> unit
+
+(** Register an extra exporter.
+
+    The exporter to use  is specified by the [format] value in the [OCAML_LANDMARKS]
+    environment variable.
+*)
+val register_exporter : string -> exporter -> unit
