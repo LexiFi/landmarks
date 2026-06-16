@@ -1,3 +1,8 @@
+; -noinit prevents the toplevel from reading ~/.ocamlinit. Without it, users
+; whose ~/.ocamlinit contains the standard opam-generated "#use \"topfind\""
+; line would see the "Findlib has been successfully loaded..." banner printed
+; to stdout, causing a diff against test.out.expected. The -noinit flag has
+; been available since OCaml 4.02, so it is safe to use unconditionally here.
 (rule
  (targets test.out)
  (deps
@@ -8,7 +13,8 @@
    test.out
    (with-stdin-from
     test.ml
-    (run %{tt} -color never -noprompt -no-version -ppx "%{ppx} --as-ppx")))))
+    (run %{tt} -color never -noprompt -no-version -noinit
+         -ppx "%{ppx} --as-ppx")))))
 
 (rule
  (alias runtest)
