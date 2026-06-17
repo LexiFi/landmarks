@@ -1,0 +1,11 @@
+; A library for exporting profiling data to various formats
+(library
+ (name landmarks_speedscope)
+ (public_name landmarks-speedscope)
+ (libraries
+   landmarks
+   yojson
+ )
+ ; Force linking and evaluation of this library's modules
+ (library_flags -linkall)
+)

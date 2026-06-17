@@ -1,6 +1,6 @@
 (lang dune 3.16)
 (name landmarks)
-(version 1.5)
+(version 1.6)
 
 (maintainers "Marc Lasson <marc.lasson@lexifi.com>")
 (authors "Marc Lasson <marc.lasson@lexifi.com>")
@@ -15,10 +15,11 @@
  (name landmarks)
  (synopsis "A simple profiling library")
  (description
-    "\| Landmarks is a simple profiling library for OCaml. It provides
-    "\| primitives to measure time spent in portion of instrumented code. The
-    "\| instrumentation of the code may either done by hand, automatically or
-    "\| semi-automatically using the ppx pepreprocessor (see landmarks-ppx package).
+    "Landmarks is a simple profiling library for OCaml. It provides \
+     primitives to measure time spent in portion of instrumented code. \
+     The instrumentation of the code may either done by hand, automatically \
+     or semi-automatically using the ppx preprocessor (see landmarks-ppx \
+     package)."
  )
  (depends
    (ocaml (>= 4.08))
@@ -35,6 +36,18 @@ landmarks library.")
  (depends
   (ocaml (>= 4.08))
   (ppxlib (>= 0.36))
-  (landmarks (= 1.5))
+  (landmarks (= 1.6))
+ )
+)
+
+(package
+ (name landmarks-speedscope)
+ (synopsis "Additional export formats for the Landmarks profiling library")
+ (description
+   "This provides export to the Speedscope format and possibly more formats \
+    in the future.")
+ (depends
+  (landmarks (= :version))
+  (yojson (>= 3.0.0))
  )
 )

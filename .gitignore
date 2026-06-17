@@ -2,3 +2,6 @@ _build
 .merlin
 *.install
 admin/website
+
+# Speedscope demo
+/profile.speedscope
