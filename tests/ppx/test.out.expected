@@ -28,6 +28,7 @@ Test.M.mod_lm0
 Test.M.mod_lm1
 Test.M.mod_lm2
 Test.M.mod_lm3
+Test.arity_should_be_2
 Test.fib
 Test.immediate
 Test.incl_lm0

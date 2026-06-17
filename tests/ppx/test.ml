@@ -10,7 +10,7 @@ and[@landmark] odd = function
 and even0 = true
 and[@landmark] odd0 = false
 
-let[@landmark] arity3 = function
+let[@landmark] arity_should_be_2 = function
   | `A -> fun a -> (fun () b -> a b) ()
   | `B -> fun a b -> a b
 
@@ -103,7 +103,7 @@ let () =
     let compute () =
       ignore (fib 10);
       ignore (next_prime 12345678);
-      ignore (arity3 `A (fun x -> x))[@warning "-5"]
+      ignore (arity_should_be_2 `A (fun x -> x))[@warning "-5"]
     in
 
     compute ();

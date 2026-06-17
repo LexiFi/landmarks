@@ -213,15 +213,15 @@ let rec arity {pexp_desc; _} =
       match body with
       | Pfunction_body e -> arity e
       | Pfunction_cases (cases, _, _) ->
-        let max_list l1 l2 =
-          if List.compare_lengths l1 l2 > 0 then
+        let min_list l1 l2 =
+          if List.compare_lengths l1 l2 < 0 then
             l1
           else
             l2
         in
         let param = Param_val { label = Nolabel ; poly_annot = None } in
         param :: List.fold_left (fun acc {pc_rhs; _} ->
-          max_list (arity pc_rhs) acc
+          min_list (arity pc_rhs) acc
         ) [] cases
     in
     List.fold_right (fun param acc ->

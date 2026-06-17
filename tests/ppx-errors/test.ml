@@ -27,7 +27,8 @@ let[@landmark] shadow ((module M) : (module S)) ((module M) : (module S)) =
   M.a;;
 
 (* This code is only valid after 5.5. The error is on the second module M. *)
-(* let[@landmark] shadow_poly (module M : S)
+let[@landmark] shadow_poly (module M : S)
     (f : 'a. 'a -> 'a M.t) (module M : S) =
-  f 0, M.return (f true);; *)
+  f 0, M.return (f true);;
 
+let[@landmark] poly_opt ?(id : 'a.'a -> 'a = Fun.id) x = id x
