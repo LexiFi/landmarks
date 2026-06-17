@@ -13,7 +13,7 @@
 
    {v
      atdml speedscope_fmt.atd
-     
+
    v}
 *)
 
@@ -470,4 +470,3 @@ module File_format = struct
   let of_json = file_format_of_json
   let to_json = json_of_file_format
 end
-

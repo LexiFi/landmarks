@@ -12,7 +12,7 @@
 
    {v
      atdml speedscope_fmt.atd
-     
+
    v}
 *)
 
@@ -165,4 +165,3 @@ module File_format : sig
   val of_json : string -> t
   val to_json : t -> string
 end
-
