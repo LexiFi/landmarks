@@ -233,7 +233,13 @@ let rec arity {pexp_desc; _} =
             Before 5.5, this case is never reached. A polymorphic argument
             may have default value in its annotation, which will not compile
             after the renaming during eta-expansion if it depends on the
-            arguments that come before. *)
+            arguments that come before.
+
+            Example: let f ?(id : 'a. 'a -> 'a = Fun.id) x = id x
+
+            Note optional polymorphic arguments are also rejected by
+            the type checker, so we are not missing any "correct" code
+            by rejecting them in the PPX as well. *)
           begin match label with
           | Optional _ -> error param.pparam_loc `Poly_optional_arg
           | _ -> Param_val { label ; poly_annot = Some typ } :: acc
