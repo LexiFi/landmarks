@@ -1,5 +1,6 @@
 working version
 ---------------
+* add support for OCaml 5.5 syntax in the PPX (PR #47, @brandonzstride)
 * add Speedscope export format: set `format=speedscope` in `OCAML_LANDMARKS`
   to write a sampled flame-graph profile openable at https://www.speedscope.app
   (combine with `time` for second-precision weights). It is available
