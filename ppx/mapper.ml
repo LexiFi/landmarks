@@ -312,14 +312,17 @@ let eta_expand f t n =
             (x, s)
         | _ -> (x, Printf.sprintf "__x%d" k)) n
   in
-  let rec app acc = function
-    | [] -> acc
-    | (Param_newtype _, _) :: tl -> app acc tl
-    | (Param_val { label = l ; _ }, x) :: tl ->
-        app (Exp.apply acc [l, Exp.ident (mknoloc (Lident x))]) tl
-    | (Param_module { label = l ; _ }, x) :: tl ->
-        let packed = Exp.pack (Mod.ident (mknoloc (Lident x))) in
-        app (Exp.apply acc [l, packed]) tl
+  let app acc vars =
+    let args = filter_map (function
+        | (Param_newtype _, _) -> None
+        | (Param_val { label = l ; _ }, x) ->
+            Some (l, Exp.ident (mknoloc (Lident x)))
+        | (Param_module { label = l ; _ }, x) ->
+            let packed = Exp.pack (Mod.ident (mknoloc (Lident x))) in
+            Some (l, packed)
+      ) vars
+    in
+    if args = [] then acc else Exp.apply acc args
   in
 
   let body = f (app t vars) in

@@ -41,7 +41,7 @@ let g ?x ~y z = ((f x) + y) + z
 let g ?x:__x0 ~y:__x1 __x2 =
   Landmark.enter __generated_landmark__002_;
   (let r =
-     try ((g ?x:__x0) ~y:__x1) __x2
+     try g ?x:__x0 ~y:__x1 __x2
      with | e -> (Landmark.exit __generated_landmark__002_; Landmark.raise e) in
    Landmark.exit __generated_landmark__002_; r)[@@ocaml.warning "-32-16"]
   [@@inline ]
@@ -60,7 +60,7 @@ let _ =
   let _f __x0 __x1 __x2 =
     Landmark.enter __generated_landmark__004_;
     (let r =
-       try ((_f __x0) __x1) __x2
+       try _f __x0 __x1 __x2
        with
        | e -> (Landmark.exit __generated_landmark__004_; Landmark.raise e) in
      Landmark.exit __generated_landmark__004_; r)[@@inline ] in
