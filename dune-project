@@ -48,6 +48,7 @@ landmarks library.")
     in the future.")
  (depends
   (landmarks (= :version))
+  (landmarks-ppx (and (= :version) :with-test))
   (yojson (>= 3.0.0))
  )
 )
