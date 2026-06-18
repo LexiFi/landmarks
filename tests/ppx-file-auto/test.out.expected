@@ -36,6 +36,7 @@ let f __x0 =
      try f __x0
      with | e -> (Landmark.exit __generated_landmark__001_; Landmark.raise e) in
    Landmark.exit __generated_landmark__001_; r)[@@ocaml.warning "-32"]
+  [@@inline ]
 let g ?x ~y z = ((f x) + y) + z
 let g ?x:__x0 ~y:__x1 __x2 =
   Landmark.enter __generated_landmark__002_;
@@ -43,6 +44,7 @@ let g ?x:__x0 ~y:__x1 __x2 =
      try ((g ?x:__x0) ~y:__x1) __x2
      with | e -> (Landmark.exit __generated_landmark__002_; Landmark.raise e) in
    Landmark.exit __generated_landmark__002_; r)[@@ocaml.warning "-32"]
+  [@@inline ]
 module T = struct type t =
                     | A  end
 let f x : T.t= A[@@attribute_on_f ]
@@ -52,7 +54,7 @@ let f __x0 =
      try f __x0
      with | e -> (Landmark.exit __generated_landmark__003_; Landmark.raise e) in
    Landmark.exit __generated_landmark__003_; r)[@@ocaml.warning "-32"]
-  [@@attribute_on_f ]
+  [@@inline ]
 let _ =
   let _f x y : T.t -> _= function | A -> x in
   let _f __x0 __x1 __x2 =
@@ -61,7 +63,7 @@ let _ =
        try ((_f __x0) __x1) __x2
        with
        | e -> (Landmark.exit __generated_landmark__004_; Landmark.raise e) in
-     Landmark.exit __generated_landmark__004_; r) in
+     Landmark.exit __generated_landmark__004_; r)[@@inline ] in
   let _f x : T.t= A in
   let _f __x0 =
     Landmark.enter __generated_landmark__005_;
@@ -69,7 +71,7 @@ let _ =
        try _f __x0
        with
        | e -> (Landmark.exit __generated_landmark__005_; Landmark.raise e) in
-     Landmark.exit __generated_landmark__005_; r) in
+     Landmark.exit __generated_landmark__005_; r)[@@inline ] in
   ()
 class o =
   object (_ : < x: T.t   ;.. > )

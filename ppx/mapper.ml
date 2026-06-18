@@ -360,6 +360,9 @@ let rec name_of_pattern pat =
   | Ppat_constraint (pat, _) -> name_of_pattern pat
   | _ -> None
 
+let inline_attribute =
+  { attr_name = mknoloc "inline"; attr_payload = PStr []; attr_loc = Location.none }
+
 let translate_value_bindings ctx value_binding auto vbs =
   let vbs_arity_name =
     List.map
@@ -403,10 +406,10 @@ let translate_value_bindings ctx value_binding auto vbs =
             vb) vbs_arity_name
   in
   let new_vbs = filter_map (function
-      | ({pvb_constraint;_}, Some (_ :: _ as arity, fun_name, landmark_name, loc, attrs)) ->
+      | ({pvb_constraint;_}, Some (_ :: _ as arity, fun_name, landmark_name, loc, _attrs)) ->
           let ident = Exp.ident (mknoloc (Lident fun_name)) in
           let expr = eta_expand (wrap_landmark ctx landmark_name loc) ident arity in
-          Some (Vb.mk ~attrs ?value_constraint:pvb_constraint (Pat.var (mknoloc fun_name)) expr)
+          Some (Vb.mk ~attrs:[inline_attribute] ?value_constraint:pvb_constraint (Pat.var (mknoloc fun_name)) expr)
       | _ -> None) vbs_arity_name
   in
   vbs, new_vbs
