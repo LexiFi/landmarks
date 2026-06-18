@@ -91,17 +91,20 @@ class o =
        Landmark.exit __generated_landmark__007_; r)
     method f x y : T.t=
       Landmark.enter __generated_landmark__008_;
-      (let r =
+      (let r : T.t =
          try if x && y then A else A
          with
          | e -> (Landmark.exit __generated_landmark__008_; Landmark.raise e) in
        Landmark.exit __generated_landmark__008_; r)
-    method g =
-      Landmark.enter __generated_landmark__009_;
-      (let r =
-         try fun x y : unit -> T.t-> function | () -> if x && y then A else A
-         with
-         | e -> (Landmark.exit __generated_landmark__009_; Landmark.raise e) in
-       Landmark.exit __generated_landmark__009_; r)
+    method g x y : unit -> T.t=
+      function
+      | () ->
+          (Landmark.enter __generated_landmark__009_;
+           (let r =
+              try if x && y then A else A
+              with
+              | e ->
+                  (Landmark.exit __generated_landmark__009_; Landmark.raise e) in
+            Landmark.exit __generated_landmark__009_; r))
   end
 let () = Landmark.exit __generated_landmark__010_

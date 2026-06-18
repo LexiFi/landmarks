@@ -134,11 +134,16 @@ let raise_ident = "Landmark.raise"
 
 let unit = Exp.construct (mknoloc (Longident.parse "()")) None
 
-let wrap_landmark ctx landmark loc expr =
+let wrap_landmark ?ret_type ctx landmark loc expr =
   let generate landmark =
+    let r_pat =
+      match ret_type with
+      | Some typ -> Pat.constraint_ (Pat.var (mknoloc "r")) typ
+      | None -> Pat.var (mknoloc "r")
+    in
     Exp.sequence (enter_landmark landmark)
       (Exp.let_ Nonrecursive
-         [Vb.mk (Pat.var (mknoloc "r"))
+         [Vb.mk r_pat
             (Exp.try_ expr
                [Exp.case (Pat.var (mknoloc "e"))
                   (Exp.sequence
@@ -272,9 +277,22 @@ let rec arity {pexp_desc; _} =
 
 let rec wrap_landmark_method ctx landmark loc ({pexp_desc; _} as expr) =
   match pexp_desc with
-  | Pexp_function (param_list, tc_opt, Pfunction_body e) ->
-      { expr with pexp_desc = Pexp_function (param_list, tc_opt,
-                                             Pfunction_body (wrap_landmark_method ctx landmark loc e)) }
+  | Pexp_function (param_list, tc_opt, e) ->
+      let body =
+        match e with
+        | Pfunction_body e ->
+            let ret_type =
+              match tc_opt with
+              | Some (Pconstraint typ) -> Some typ
+              | _ -> None
+            in
+            Pfunction_body (wrap_landmark ?ret_type ctx landmark loc e)
+        | Pfunction_cases (cases, closed, partial) ->
+            Pfunction_cases (List.map (fun {pc_lhs; pc_guard; pc_rhs} ->
+                { pc_lhs; pc_guard; pc_rhs = wrap_landmark ctx landmark loc pc_rhs }
+              ) cases, closed, partial)
+      in
+      { expr with pexp_desc = Pexp_function (param_list, tc_opt, body) }
   | Pexp_poly (e, typ) ->
       { expr with pexp_desc = Pexp_poly (wrap_landmark_method ctx landmark loc e, typ)}
   | _ -> wrap_landmark ctx landmark loc expr
