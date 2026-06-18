@@ -1,0 +1,125 @@
+let __generated_landmark__001_ =
+  Landmark.register ~id:"ad0280311b486e71f0c77df82f413e7a"
+    ~location:"test.ml:1" "Test.f"
+and __generated_landmark__002_ =
+  Landmark.register ~id:"94ce63b73c1f78fc2c48c8219b907a5f"
+    ~location:"test.ml:3" "Test.g"
+and __generated_landmark__003_ =
+  Landmark.register ~id:"cb5f8f2ee6b52fb0dafd8a17b08bf8c9"
+    ~location:"test.ml:9" "Test.f"
+and __generated_landmark__004_ =
+  Landmark.register ~id:"4954ac5ded0c7d5bd4b0b484f5b55e38"
+    ~location:"test.ml:12" "Test._f"
+and __generated_landmark__005_ =
+  Landmark.register ~id:"7cec6cc9c85aa20e37ff5698be1184f6"
+    ~location:"test.ml:13" "Test._f"
+and __generated_landmark__006_ =
+  Landmark.register ~id:"6f6b4e54ce7cd78349ea6da240032099"
+    ~location:"test.ml:17" "Test.x"
+and __generated_landmark__007_ =
+  Landmark.register ~id:"7369631e4d02d6f43f37f4e3caf42198"
+    ~location:"test.ml:18" "Test.y"
+and __generated_landmark__008_ =
+  Landmark.register ~id:"ba3ae02252e2806c3e145e1d008c30be"
+    ~location:"test.ml:19" "Test.f"
+and __generated_landmark__009_ =
+  Landmark.register ~id:"9a4fccadbb25e0df5b91040797a8a4dc"
+    ~location:"test.ml:20" "Test.g"
+and __generated_landmark__010_ =
+  Landmark.register ~id:"099ea59bd1f1e691b44ef8b3a98c95de"
+    ~location:"test.ml:1" "load(test)"
+let () = Landmark.enter __generated_landmark__010_
+let f x = x + 1
+include
+  struct
+    [@@@ocaml.warning "-32"]
+    let f __x0 =
+      Landmark.enter __generated_landmark__001_;
+      (let r =
+         try f __x0
+         with
+         | e -> (Landmark.exit __generated_landmark__001_; Landmark.raise e) in
+       Landmark.exit __generated_landmark__001_; r)
+  end
+let g ?x ~y z = ((f x) + y) + z
+include
+  struct
+    [@@@ocaml.warning "-32"]
+    let g ?x:__x0 =
+      fun ~y:__x1 ->
+        fun __x2 ->
+          Landmark.enter __generated_landmark__002_;
+          (let r =
+             try ((g ?x:__x0) ~y:__x1) __x2
+             with
+             | e ->
+                 (Landmark.exit __generated_landmark__002_; Landmark.raise e) in
+           Landmark.exit __generated_landmark__002_; r)
+  end
+module T = struct type t =
+                    | A  end
+let f x : T.t= A[@@attribute_on_f ]
+include
+  struct
+    [@@@ocaml.warning "-32"]
+    let f __x0 =
+      Landmark.enter __generated_landmark__003_;
+      (let r =
+         try f __x0
+         with
+         | e -> (Landmark.exit __generated_landmark__003_; Landmark.raise e) in
+       Landmark.exit __generated_landmark__003_; r)[@@attribute_on_f ]
+  end
+let _ =
+  let _f x y : T.t -> _= function | A -> x in
+  let _f __x0 =
+    fun __x1 ->
+      fun __x2 ->
+        Landmark.enter __generated_landmark__004_;
+        (let r =
+           try ((_f __x0) __x1) __x2
+           with
+           | e ->
+               (Landmark.exit __generated_landmark__004_; Landmark.raise e) in
+         Landmark.exit __generated_landmark__004_; r) in
+  let _f x : T.t= A in
+  let _f __x0 =
+    Landmark.enter __generated_landmark__005_;
+    (let r =
+       try _f __x0
+       with
+       | e -> (Landmark.exit __generated_landmark__005_; Landmark.raise e) in
+     Landmark.exit __generated_landmark__005_; r) in
+  ()
+class o =
+  object (_ : < x: T.t   ;.. > )
+    method x =
+      Landmark.enter __generated_landmark__006_;
+      (let r =
+         try A
+         with
+         | e -> (Landmark.exit __generated_landmark__006_; Landmark.raise e) in
+       Landmark.exit __generated_landmark__006_; r)
+    method y : T.t=
+      Landmark.enter __generated_landmark__007_;
+      (let r =
+         try A
+         with
+         | e -> (Landmark.exit __generated_landmark__007_; Landmark.raise e) in
+       Landmark.exit __generated_landmark__007_; r)
+    method f x y : T.t=
+      Landmark.enter __generated_landmark__008_;
+      (let r =
+         try if x && y then A else A
+         with
+         | e -> (Landmark.exit __generated_landmark__008_; Landmark.raise e) in
+       Landmark.exit __generated_landmark__008_; r)
+    method g =
+      Landmark.enter __generated_landmark__009_;
+      (let r =
+         try fun x y : unit -> T.t-> function | () -> if x && y then A else A
+         with
+         | e -> (Landmark.exit __generated_landmark__009_; Landmark.raise e) in
+       Landmark.exit __generated_landmark__009_; r)
+  end
+let () = Landmark.exit __generated_landmark__010_

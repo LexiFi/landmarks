@@ -7,6 +7,5 @@ let[@landmark] f ~x1 c =
 let[@landmark] g : type t. t -> t = fun x -> x
 let[@landmark "h"] h : type t. t -> t = fun x -> x
 
-(* Keep attributes to silence warnings on eta-expansion, too *)
 let[@landmark] e ?(b = false) ~x ~y = b || x = y
 [@@warning "-16"] (* turns off unerasable optional arg warning *)

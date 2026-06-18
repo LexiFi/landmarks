@@ -76,16 +76,16 @@ let anonM ((module _) : (module S)) x = x * 2
 let rec mapM
   : type a b. (module M : S) -> (a -> b M.t) -> a list -> b list M.t
   = fun (module M) f ls ->
-  let open M in
+  (let open M in
   match ls with
   | [] -> return []
   | a :: tl ->
     let* rest = mapM (module M) f tl in
     let* b = f a in
-    return (b :: rest)
+    return (b :: rest))[@ocaml.warning "-44"]
 
 let mapM' (module M : S) (f : 'a -> 'b M.t) (ls : 'a list) : 'b list M.t =
-  let open M in
+  (let open M in
   let rec map = function
     | [] -> return []
     | a :: tl ->
@@ -93,7 +93,7 @@ let mapM' (module M : S) (f : 'a -> 'b M.t) (ls : 'a list) : 'b list M.t =
       let* b = f a in
       return (b :: rest)
   in
-  map ls
+  map ls)[@ocaml.warning "-44"]
 
 (* some other modular explicits test taken from OCaml's typing-modular-explicits *)
 module type Typ = sig type t end
@@ -110,11 +110,11 @@ let opt1 (module X : S) ?(a : int = X.a) (f : int -> bool) : bool = f a
   but following "fun", it is not type constrained. Hence, during eta-expansion,
   we must maintain the unpacking of all module arguments in case they are
   for modular explicits. *)
-let opt2
+let[@ocaml.warning "-60"] opt2
   : (module X : S) -> ?_m:(module S) -> 'a -> 'a
   = fun (module X) ?(_m: (module S) option) x -> x
 
-module O : sig
+module _ : sig
   [@@@warning "-32"]
   val f : ?m:(module S) -> int -> int
   val f' : (module S) -> ?m:(module S) -> int -> int
@@ -127,7 +127,8 @@ end = struct
   let f' (n : (module S)) ?(m=n) x = let module M = (val m) in M.a + x
 end
 
-let opt3 (module X : S) ?(_m : (module S) option) x = x
+
+let[@ocaml.warning "-60"] opt3 (module X : S) ?(_m : (module S) option) x = x
 
 let opt4 : ?_m:int -> 'a -> 'a = fun ?(_m : int option) x -> x
 
