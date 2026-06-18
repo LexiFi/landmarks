@@ -45,16 +45,13 @@ let g ?x ~y z = ((f x) + y) + z
 include
   struct
     [@@@ocaml.warning "-32"]
-    let g ?x:__x0 =
-      fun ~y:__x1 ->
-        fun __x2 ->
-          Landmark.enter __generated_landmark__002_;
-          (let r =
-             try ((g ?x:__x0) ~y:__x1) __x2
-             with
-             | e ->
-                 (Landmark.exit __generated_landmark__002_; Landmark.raise e) in
-           Landmark.exit __generated_landmark__002_; r)
+    let g ?x:__x0 ~y:__x1 __x2 =
+      Landmark.enter __generated_landmark__002_;
+      (let r =
+         try ((g ?x:__x0) ~y:__x1) __x2
+         with
+         | e -> (Landmark.exit __generated_landmark__002_; Landmark.raise e) in
+       Landmark.exit __generated_landmark__002_; r)
   end
 module T = struct type t =
                     | A  end
@@ -72,16 +69,13 @@ include
   end
 let _ =
   let _f x y : T.t -> _= function | A -> x in
-  let _f __x0 =
-    fun __x1 ->
-      fun __x2 ->
-        Landmark.enter __generated_landmark__004_;
-        (let r =
-           try ((_f __x0) __x1) __x2
-           with
-           | e ->
-               (Landmark.exit __generated_landmark__004_; Landmark.raise e) in
-         Landmark.exit __generated_landmark__004_; r) in
+  let _f __x0 __x1 __x2 =
+    Landmark.enter __generated_landmark__004_;
+    (let r =
+       try ((_f __x0) __x1) __x2
+       with
+       | e -> (Landmark.exit __generated_landmark__004_; Landmark.raise e) in
+     Landmark.exit __generated_landmark__004_; r) in
   let _f x : T.t= A in
   let _f __x0 =
     Landmark.enter __generated_landmark__005_;

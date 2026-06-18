@@ -41,7 +41,7 @@ let error loc code =
     | `Provide_a_name -> "this landmark annotation requires a name argument"
     | `Poly_optional_arg -> "cannot support a polymorphic optional argument"
     | `Shadowed_module ->
-      "cannot unpack a module with the same name as another unpacked module"
+        "cannot unpack a module with the same name as another unpacked module"
   in
   Location.Error.raise (Location.Error.make ~loc ~sub:[]
                           (Printf.sprintf "ppx_landmark: %s" (message code)))
@@ -191,80 +191,80 @@ type param =
   | Param_newtype of string
   | Param_val of { label : arg_label ; poly_annot : core_type option }
   | Param_module of
-    { label : arg_label ; unpack : pattern ; ptyp : core_type option }
+      { label : arg_label ; unpack : pattern ; ptyp : core_type option }
 
 let is_empty_arity arity =
   not (List.exists (function
-    | Param_val _ | Param_module _ -> true
-    | Param_newtype _ -> false
-  ) arity)
+      | Param_val _ | Param_module _ -> true
+      | Param_newtype _ -> false
+    ) arity)
 
 let rec arity {pexp_desc; _} =
   match pexp_desc with
   | Pexp_function (param_list, _, body) ->
-    let body_arity =
-      match body with
-      | Pfunction_body e -> arity e
-      | Pfunction_cases (cases, _, _) ->
-        let min_list l1 l2 =
-          if List.compare_lengths l1 l2 < 0 then
-            l1
-          else
-            l2
-        in
-        let param = Param_val { label = Nolabel ; poly_annot = None } in
-        param :: List.fold_left (fun acc {pc_rhs; _} ->
-          min_list (arity pc_rhs) acc
-        ) [] cases
-    in
-    List.fold_right (fun param acc ->
-      match param.pparam_desc with
-      | Pparam_val (label, _, { ppat_desc = Ppat_constraint (
-          _, ({ ptyp_desc = Ptyp_poly _ ; _ } as typ)
-        ) ; _ }) ->
-          (* Function parameters can be polymorphic since OCaml 5.5.
-            Before 5.5, this case is never reached. A polymorphic argument
-            may have default value in its annotation, which will not compile
-            after the renaming during eta-expansion if it depends on the
-            arguments that come before.
+      let body_arity =
+        match body with
+        | Pfunction_body e -> arity e
+        | Pfunction_cases (cases, _, _) ->
+            let min_list l1 l2 =
+              if List.compare_lengths l1 l2 < 0 then
+                l1
+              else
+                l2
+            in
+            let param = Param_val { label = Nolabel ; poly_annot = None } in
+            param :: List.fold_left (fun acc {pc_rhs; _} ->
+                min_list (arity pc_rhs) acc
+              ) [] cases
+      in
+      List.fold_right (fun param acc ->
+          match param.pparam_desc with
+          | Pparam_val (label, _, { ppat_desc = Ppat_constraint (
+              _, ({ ptyp_desc = Ptyp_poly _ ; _ } as typ)
+            ) ; _ }) ->
+              (* Function parameters can be polymorphic since OCaml 5.5.
+                 Before 5.5, this case is never reached. A polymorphic argument
+                 may have default value in its annotation, which will not compile
+                 after the renaming during eta-expansion if it depends on the
+                 arguments that come before.
 
-            Example: let f ?(id : 'a. 'a -> 'a = Fun.id) x = id x
+                 Example: let f ?(id : 'a. 'a -> 'a = Fun.id) x = id x
 
-            Note optional polymorphic arguments are also rejected by
-            the type checker, so we are not missing any "correct" code
-            by rejecting them in the PPX as well. *)
-          begin match label with
-          | Optional _ -> error param.pparam_loc `Poly_optional_arg
-          | _ -> Param_val { label ; poly_annot = Some typ } :: acc
-          end
-      | Pparam_val (Optional _ as label, _, (
-            { ppat_desc = Ppat_constraint ({ ppat_desc = Ppat_unpack _ ; _ }, _) ; _ }
-          | { ppat_desc = Ppat_unpack _ ; _ }
-        )) ->
-        (* If a module argument is optional, then it can be non-static, and
-          hence it does not need to be unpacked at all. Also, there is no
-          syntax for optional modular explicits, so packing this is fine. *)
-         Param_val { label ; poly_annot = None } :: acc
-      | Pparam_val (label, _, { ppat_desc = Ppat_constraint (
-          ({ ppat_desc = Ppat_unpack _ ; _ } as unpack),
-          ({ ptyp_desc = Ptyp_package _ ; _ } as ptyp)
-        ) ; _ }) ->
-          (* Between OCaml 5.4 and 5.5, this will be migrated up to a module-
-            dependent function unless the `unpack` pattern has a magic attribute
-            saying to preserve the ppat constraint, thus keeping this as a first
-            class module instead of a module-dependent function. *)
-          Param_module { label ; unpack ; ptyp = Some ptyp } :: acc
-      | Pparam_val (label, _, ({ ppat_desc = Ppat_unpack _ ; _ } as unpack)) ->
-          (* In case the module is type-annotated in a constraint on the let-
-            binding but not annotated here (on the parameter), we must still
-            unpack/repack it during eta-expansion because it may be for a
-            module-dependent function. *)
-          Param_module { label ; unpack ; ptyp = None } :: acc
-      | Pparam_val (label, _, _) ->
-        Param_val { label ; poly_annot = None } :: acc
-      | Pparam_newtype { txt; _} ->
-        Param_newtype txt :: acc
-    ) param_list body_arity
+                 Note optional polymorphic arguments are also rejected by
+                 the type checker, so we are not missing any "correct" code
+                 by rejecting them in the PPX as well. *)
+              begin match label with
+              | Optional _ -> error param.pparam_loc `Poly_optional_arg
+              | _ -> Param_val { label ; poly_annot = Some typ } :: acc
+              end
+          | Pparam_val (Optional _ as label, _, (
+              { ppat_desc = Ppat_constraint ({ ppat_desc = Ppat_unpack _ ; _ }, _) ; _ }
+            | { ppat_desc = Ppat_unpack _ ; _ }
+            )) ->
+              (* If a module argument is optional, then it can be non-static, and
+                 hence it does not need to be unpacked at all. Also, there is no
+                 syntax for optional modular explicits, so packing this is fine. *)
+              Param_val { label ; poly_annot = None } :: acc
+          | Pparam_val (label, _, { ppat_desc = Ppat_constraint (
+              ({ ppat_desc = Ppat_unpack _ ; _ } as unpack),
+              ({ ptyp_desc = Ptyp_package _ ; _ } as ptyp)
+            ) ; _ }) ->
+              (* Between OCaml 5.4 and 5.5, this will be migrated up to a module-
+                 dependent function unless the `unpack` pattern has a magic attribute
+                 saying to preserve the ppat constraint, thus keeping this as a first
+                 class module instead of a module-dependent function. *)
+              Param_module { label ; unpack ; ptyp = Some ptyp } :: acc
+          | Pparam_val (label, _, ({ ppat_desc = Ppat_unpack _ ; _ } as unpack)) ->
+              (* In case the module is type-annotated in a constraint on the let-
+                 binding but not annotated here (on the parameter), we must still
+                 unpack/repack it during eta-expansion because it may be for a
+                 module-dependent function. *)
+              Param_module { label ; unpack ; ptyp = None } :: acc
+          | Pparam_val (label, _, _) ->
+              Param_val { label ; poly_annot = None } :: acc
+          | Pparam_newtype { txt; _} ->
+              Param_newtype txt :: acc
+        ) param_list body_arity
   | Pexp_newtype (_, e) -> arity e
   | Pexp_constraint (e, _) -> arity e
   | Pexp_poly (e, _) -> arity e
@@ -274,7 +274,7 @@ let rec wrap_landmark_method ctx landmark loc ({pexp_desc; _} as expr) =
   match pexp_desc with
   | Pexp_function (param_list, tc_opt, Pfunction_body e) ->
       { expr with pexp_desc = Pexp_function (param_list, tc_opt,
-        Pfunction_body (wrap_landmark_method ctx landmark loc e)) }
+                                             Pfunction_body (wrap_landmark_method ctx landmark loc e)) }
   | Pexp_poly (e, typ) ->
       { expr with pexp_desc = Pexp_poly (wrap_landmark_method ctx landmark loc e, typ)}
   | _ -> wrap_landmark ctx landmark loc expr
@@ -284,48 +284,70 @@ let eta_expand f t n =
   let tbl = H.create (List.length n) in
   let vars =
     List.mapi (fun k x ->
-      match x with
-      | Param_module { unpack = { ppat_desc =
-          Ppat_unpack { txt = (Some s) ; loc }; _}; _} ->
-        (* do not give a fresh name to unpacked modules *)
-        if H.mem tbl s then error loc `Shadowed_module;
-        H.add tbl s ();
-        (x, s)
-      | _ -> (x, Printf.sprintf "__x%d" k)) n
+        match x with
+        | Param_module { unpack = { ppat_desc =
+                                      Ppat_unpack { txt = (Some s) ; loc }; _}; _} ->
+            (* do not give a fresh name to unpacked modules *)
+            if H.mem tbl s then error loc `Shadowed_module;
+            H.add tbl s ();
+            (x, s)
+        | _ -> (x, Printf.sprintf "__x%d" k)) n
   in
   let rec app acc = function
     | [] -> acc
     | (Param_newtype _, _) :: tl -> app acc tl
     | (Param_val { label = l ; _ }, x) :: tl ->
-      app (Exp.apply acc [l, Exp.ident (mknoloc (Lident x))]) tl
+        app (Exp.apply acc [l, Exp.ident (mknoloc (Lident x))]) tl
     | (Param_module { label = l ; _ }, x) :: tl ->
-      let packed = Exp.pack (Mod.ident (mknoloc (Lident x))) in
-      app (Exp.apply acc [l, packed]) tl
+        let packed = Exp.pack (Mod.ident (mknoloc (Lident x))) in
+        app (Exp.apply acc [l, packed]) tl
   in
-  let rec lam = function
-    | [] -> f (app t vars)
-    | (Param_newtype newtype_name, _) :: tl ->
-      Exp.newtype (mknoloc newtype_name) (lam tl)
-    | (Param_val { label = l ; poly_annot }, x) :: tl ->
-      let var_pat = Pat.var (mknoloc x) in
-      let typed_pat =
-        match poly_annot with
-        | Some typ -> Pat.constraint_ var_pat typ
-        | None -> var_pat
-      in
-      Exp.fun_ l None typed_pat (lam tl)
-    | (Param_module { label = l ; unpack ; ptyp }, x) :: tl ->
-      let unpack_pat =
-        Pat.unpack ~attrs:unpack.ppat_attributes (mknoloc (Some x))
-      in
-      let constrained =
-        match ptyp with
-        | Some typ -> Pat.constraint_ unpack_pat typ
-        | None -> unpack_pat
-      in
-      Exp.fun_ l None constrained (lam tl)
+
+  let body = f (app t vars) in
+  let has_value_param =
+    List.exists (function
+        | (Param_val _ | Param_module _), _ -> true
+        | (Param_newtype _), _ -> false
+      ) vars
   in
-  lam vars
+  if has_value_param then
+    let params =
+      List.map (fun (param, x) ->
+          let pparam_desc =
+            match param with
+            | Param_newtype newtype_name ->
+                Pparam_newtype (mknoloc newtype_name)
+            | Param_val { label = l ; poly_annot } ->
+                let var_pat = Pat.var (mknoloc x) in
+                let typed_pat =
+                  match poly_annot with
+                  | Some typ -> Pat.constraint_ var_pat typ
+                  | None -> var_pat
+                in
+                Pparam_val (l, None, typed_pat)
+            | Param_module { label = l ; unpack ; ptyp } ->
+                let unpack_pat =
+                  Pat.unpack ~attrs:unpack.ppat_attributes (mknoloc (Some x))
+                in
+                let constrained =
+                  match ptyp with
+                  | Some typ -> Pat.constraint_ unpack_pat typ
+                  | None -> unpack_pat
+                in
+                Pparam_val (l, None, constrained)
+          in
+          { pparam_loc = Location.none; pparam_desc }
+        ) vars
+    in
+    { body with pexp_desc = Pexp_function (params, None, Pfunction_body body) }
+  else
+    List.fold_right (fun (param, _) acc ->
+        match param with
+        | Param_newtype newtype_name ->
+            Exp.newtype (mknoloc newtype_name) acc
+        | Param_val _ | Param_module _ ->
+            acc
+      ) vars body
 
 let rec not_a_constant expr = match expr.pexp_desc with
   | Pexp_constant _ | Pexp_ident _ -> false
@@ -427,10 +449,10 @@ let mapper =
                                    attr_loc = Location.none}
                   in
                   let include_wrapper = new_vbs
-                                        |> Str.value Nonrecursive
-                                        |> fun x -> Mod.structure [warning_off; x]
-                                                    |> Incl.mk
-                                                    |> Str.include_
+                    |> Str.value Nonrecursive
+                    |> fun x -> Mod.structure [warning_off; x]
+                    |> Incl.mk
+                    |> Str.include_
                   in
                   auto, include_wrapper :: str :: acc
             | sti ->
