@@ -29,7 +29,7 @@
 ; and upload it to https://www.speedscope.app/ to view the graph.
 ;
 ; To update the copy of this file that we keep for documentation purposes, run:
-; $ cp ../../_build/default/tests/speedscope/profile.speedscope .
+; $ cp ../../_build/default/tests/speedscope/profile.speedscope.json .
 ;
 (rule
  (alias runtest)

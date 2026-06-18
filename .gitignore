@@ -4,4 +4,4 @@ _build
 admin/website
 
 # Speedscope demo
-/profile.speedscope
+/profile.speedscope.json
