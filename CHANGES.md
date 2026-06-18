@@ -1,5 +1,9 @@
-version 1.7, 17 jun 2026
+version 1.7, 19 jun 2026
 ------------------------
+* stabilize PPX-generated landmark ids across OCaml versions, simplify generated code, and stop auto-instrumenting object methods
+  to avoid type errors (PR #53, @mlasson).
+* add file-based PPX non-regression tests for generated code (PR #53,
+  @mlasson).
 * add support for OCaml 5.5 syntax in the PPX (PR #47, @brandonzstride)
 * add Speedscope export format: set `format=speedscope` in `OCAML_LANDMARKS`
   to write a sampled flame-graph profile openable at https://www.speedscope.app

@@ -1,0 +1,27 @@
+let __generated_landmark__001_ =
+  Landmark.register ~id:"ad0280311b486e71f0c77df82f413e7a"
+    ~location:"test.ml:1" "Test.named"
+and __generated_landmark__002_ =
+  Landmark.register ~id:"94ce63b73c1f78fc2c48c8219b907a5f"
+    ~location:"test.ml:6" "Test.M.h"
+let f x = x + 1
+let f __x0 =
+  Landmark.enter __generated_landmark__001_;
+  (let r =
+     try f __x0
+     with | e -> (Landmark.exit __generated_landmark__001_; Landmark.raise e) in
+   Landmark.exit __generated_landmark__001_; r)[@@ocaml.warning "-32-16"]
+  [@@inline ]
+let g y = f y
+module M =
+  struct
+    let h z = z * 2
+    let h __x0 =
+      Landmark.enter __generated_landmark__002_;
+      (let r =
+         try h __x0
+         with
+         | e -> (Landmark.exit __generated_landmark__002_; Landmark.raise e) in
+       Landmark.exit __generated_landmark__002_; r)[@@ocaml.warning "-32-16"]
+      [@@inline ]
+  end

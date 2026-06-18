@@ -12,6 +12,7 @@ bug-reports: "https://github.com/LexiFi/landmarks/issues"
 depends: [
   "dune" {>= "3.16"}
   "landmarks" {= version}
+  "landmarks-ppx" {= version & with-test}
   "yojson" {>= "3.0.0"}
   "odoc" {with-doc}
 ]
