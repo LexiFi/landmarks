@@ -485,16 +485,16 @@ let mapper =
       in
       List.rev results, (auto, ctx)
 
-    method! class_field class_field ((auto, ctx) as acc) =
+    method! class_field class_field ((_auto, ctx) as acc) =
       match class_field with
       | { pcf_desc = Pcf_method (loc, privat, Cfk_concrete (flag, expr)); pcf_loc; pcf_attributes; _ } ->
           begin
             let landmark =
-              match filter_map (get_payload "landmark") pcf_attributes, auto with
-              | [Some landmark_name], _ -> Some landmark_name
-              | [None], _ | _, true -> Some (Constant loc.txt)
-              | [], false -> None
-              | _ :: _ :: _, _ -> error pcf_loc `Too_many_attributes
+              match filter_map (get_payload "landmark") pcf_attributes with
+              | [Some landmark_name] -> Some landmark_name
+              | [None] -> Some (Constant loc.txt)
+              | [] -> None
+              | _ :: _ :: _ -> error pcf_loc `Too_many_attributes
             in
             match landmark with
             | None ->
