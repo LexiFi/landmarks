@@ -29,9 +29,6 @@ let mkloc txt loc =
 let mknoloc txt =
   mkloc txt !Ast_helper.default_loc
 
-let digest x =
-  Digest.to_hex (Digest.string (Marshal.to_string x []))
-
 let error loc code =
   let open Printf in
   let message = function
@@ -49,8 +46,6 @@ let error loc code =
   Location.Error.raise (Location.Error.make ~loc ~sub:[]
                           (Printf.sprintf "ppx_landmark: %s" (message code)))
 
-let landmark_hash = ref ""
-let landmark_id = ref 0
 let landmarks_to_register = ref []
 
 let has_name key {attr_name = {txt; _}; _} = txt = key
@@ -127,12 +122,10 @@ let register_constant_landmark ?id name location =
   register_landmark ?id (Exp.constant (Const.string name)) location
 
 let new_landmark landmark_name loc =
-  incr landmark_id;
-  let id = Printf.sprintf "%s_%d" !landmark_hash !landmark_id in
-  let landmark = "__generated_landmark_" ^ id in
+  let landmark = Ppxlib.gen_symbol ~prefix:"__generated_landmark" () in
   let landmark_location = string_of_loc loc in
   landmarks_to_register :=
-    (landmark, landmark_name, landmark_location, id) :: !landmarks_to_register;
+    (landmark, landmark_name, landmark_location, Digest.to_hex (Digest.string (loc.loc_start.pos_fname^landmark))) :: !landmarks_to_register;
   landmark
 
 let qualified ctx name = String.concat "." (List.rev (name :: ctx))
@@ -161,7 +154,7 @@ let wrap_landmark ctx landmark loc expr =
       let landmark = new_landmark landmark_name loc in
       generate landmark
   | Dynamic expression ->
-      let landmark = Printf.sprintf "__dynamic_landmark__%s" !landmark_hash in
+      let landmark = Ppxlib.gen_symbol ~prefix:"__dynamic_landmark" () in
       (Exp.ifthenelse
          (Exp.apply (var "Landmark.profiling") [Nolabel, unit])
          (Exp.let_ Nonrecursive
@@ -563,8 +556,6 @@ let toplevel_mapper auto =
 
     method! structure l =
       match l with [] -> [] | l ->
-        assert (!landmark_hash = "");
-        landmark_hash := digest l;
         let disable, l = has_disable l in
         if disable then l else begin
           let first_loc = (List.hd l).pstr_loc in
