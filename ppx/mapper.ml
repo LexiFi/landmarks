@@ -448,7 +448,7 @@ let mapper =
                 if new_vbs = [] then auto, str :: acc
                 else
                   let warning_off =
-                    {attr_name = mknoloc "ocaml.warning"; attr_payload = payload_of_string "-32";
+                    {attr_name = mknoloc "ocaml.warning"; attr_payload = payload_of_string "-32-16";
                      attr_loc = Location.none}
                   in
                   let new_vbs =

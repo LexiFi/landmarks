@@ -10,7 +10,7 @@ let f __x0 =
   (let r =
      try f __x0
      with | e -> (Landmark.exit __generated_landmark__001_; Landmark.raise e) in
-   Landmark.exit __generated_landmark__001_; r)[@@ocaml.warning "-32"]
+   Landmark.exit __generated_landmark__001_; r)[@@ocaml.warning "-32-16"]
   [@@inline ]
 let g y = f y
 module M =
@@ -22,6 +22,6 @@ module M =
          try h __x0
          with
          | e -> (Landmark.exit __generated_landmark__002_; Landmark.raise e) in
-       Landmark.exit __generated_landmark__002_; r)[@@ocaml.warning "-32"]
+       Landmark.exit __generated_landmark__002_; r)[@@ocaml.warning "-32-16"]
       [@@inline ]
   end

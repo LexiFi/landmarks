@@ -35,7 +35,7 @@ let f __x0 =
   (let r =
      try f __x0
      with | e -> (Landmark.exit __generated_landmark__001_; Landmark.raise e) in
-   Landmark.exit __generated_landmark__001_; r)[@@ocaml.warning "-32"]
+   Landmark.exit __generated_landmark__001_; r)[@@ocaml.warning "-32-16"]
   [@@inline ]
 let g ?x ~y z = ((f x) + y) + z
 let g ?x:__x0 ~y:__x1 __x2 =
@@ -43,7 +43,7 @@ let g ?x:__x0 ~y:__x1 __x2 =
   (let r =
      try ((g ?x:__x0) ~y:__x1) __x2
      with | e -> (Landmark.exit __generated_landmark__002_; Landmark.raise e) in
-   Landmark.exit __generated_landmark__002_; r)[@@ocaml.warning "-32"]
+   Landmark.exit __generated_landmark__002_; r)[@@ocaml.warning "-32-16"]
   [@@inline ]
 module T = struct type t =
                     | A  end
@@ -53,7 +53,7 @@ let f __x0 =
   (let r =
      try f __x0
      with | e -> (Landmark.exit __generated_landmark__003_; Landmark.raise e) in
-   Landmark.exit __generated_landmark__003_; r)[@@ocaml.warning "-32"]
+   Landmark.exit __generated_landmark__003_; r)[@@ocaml.warning "-32-16"]
   [@@inline ]
 let _ =
   let _f x y : T.t -> _= function | A -> x in
