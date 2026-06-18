@@ -15,6 +15,7 @@ let auto = ref default_auto
 let remove = ref default_remove
 let threads = ref default_threads
 
+[@@@ocaml.warning "-44"]
 open Ppxlib
 
 open Ast_helper
