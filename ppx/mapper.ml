@@ -445,16 +445,15 @@ let mapper =
                 if new_vbs = [] then auto, str :: acc
                 else
                   let warning_off =
-                    Str.attribute {attr_name = mknoloc "ocaml.warning"; attr_payload = payload_of_string "-32";
-                                   attr_loc = Location.none}
+                    {attr_name = mknoloc "ocaml.warning"; attr_payload = payload_of_string "-32";
+                     attr_loc = Location.none}
                   in
-                  let include_wrapper = new_vbs
-                    |> Str.value Nonrecursive
-                    |> fun x -> Mod.structure [warning_off; x]
-                    |> Incl.mk
-                    |> Str.include_
+                  let new_vbs =
+                    List.map (fun vb ->
+                        { vb with pvb_attributes = warning_off :: vb.pvb_attributes }
+                      ) new_vbs
                   in
-                  auto, include_wrapper :: str :: acc
+                  auto, Str.value Nonrecursive new_vbs :: str :: acc
             | sti ->
                 let sti, _ = super # structure_item sti (auto, ctx) in
                 auto, sti :: acc) (auto, []) l

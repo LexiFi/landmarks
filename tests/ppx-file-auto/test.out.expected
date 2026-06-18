@@ -30,43 +30,29 @@ and __generated_landmark__010_ =
     ~location:"test.ml:1" "load(test)"
 let () = Landmark.enter __generated_landmark__010_
 let f x = x + 1
-include
-  struct
-    [@@@ocaml.warning "-32"]
-    let f __x0 =
-      Landmark.enter __generated_landmark__001_;
-      (let r =
-         try f __x0
-         with
-         | e -> (Landmark.exit __generated_landmark__001_; Landmark.raise e) in
-       Landmark.exit __generated_landmark__001_; r)
-  end
+let f __x0 =
+  Landmark.enter __generated_landmark__001_;
+  (let r =
+     try f __x0
+     with | e -> (Landmark.exit __generated_landmark__001_; Landmark.raise e) in
+   Landmark.exit __generated_landmark__001_; r)[@@ocaml.warning "-32"]
 let g ?x ~y z = ((f x) + y) + z
-include
-  struct
-    [@@@ocaml.warning "-32"]
-    let g ?x:__x0 ~y:__x1 __x2 =
-      Landmark.enter __generated_landmark__002_;
-      (let r =
-         try ((g ?x:__x0) ~y:__x1) __x2
-         with
-         | e -> (Landmark.exit __generated_landmark__002_; Landmark.raise e) in
-       Landmark.exit __generated_landmark__002_; r)
-  end
+let g ?x:__x0 ~y:__x1 __x2 =
+  Landmark.enter __generated_landmark__002_;
+  (let r =
+     try ((g ?x:__x0) ~y:__x1) __x2
+     with | e -> (Landmark.exit __generated_landmark__002_; Landmark.raise e) in
+   Landmark.exit __generated_landmark__002_; r)[@@ocaml.warning "-32"]
 module T = struct type t =
                     | A  end
 let f x : T.t= A[@@attribute_on_f ]
-include
-  struct
-    [@@@ocaml.warning "-32"]
-    let f __x0 =
-      Landmark.enter __generated_landmark__003_;
-      (let r =
-         try f __x0
-         with
-         | e -> (Landmark.exit __generated_landmark__003_; Landmark.raise e) in
-       Landmark.exit __generated_landmark__003_; r)[@@attribute_on_f ]
-  end
+let f __x0 =
+  Landmark.enter __generated_landmark__003_;
+  (let r =
+     try f __x0
+     with | e -> (Landmark.exit __generated_landmark__003_; Landmark.raise e) in
+   Landmark.exit __generated_landmark__003_; r)[@@ocaml.warning "-32"]
+  [@@attribute_on_f ]
 let _ =
   let _f x y : T.t -> _= function | A -> x in
   let _f __x0 __x1 __x2 =
