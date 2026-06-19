@@ -298,17 +298,22 @@ let rec wrap_landmark_method ctx landmark loc ({pexp_desc; _} as expr) =
       { expr with pexp_desc = Pexp_poly (wrap_landmark_method ctx landmark loc e, typ)}
   | _ -> wrap_landmark ctx landmark loc expr
 
+module HashString = Hashtbl.Make(struct
+    type t = string
+    let equal = String.equal
+    let hash = Hashtbl.hash
+  end)
+
 let eta_expand f t n =
-  let module H = Hashtbl.Make (String) in
-  let tbl = H.create (List.length n) in
+  let tbl = HashString.create (List.length n) in
   let vars =
     List.mapi (fun k x ->
         match x with
         | Param_module { unpack = { ppat_desc =
                                       Ppat_unpack { txt = (Some s) ; loc }; _}; _} ->
             (* do not give a fresh name to unpacked modules *)
-            if H.mem tbl s then error loc `Shadowed_module;
-            H.add tbl s ();
+            if HashString.mem tbl s then error loc `Shadowed_module;
+            HashString.add tbl s ();
             (x, s)
         | _ -> (x, Printf.sprintf "__x%d" k)) n
   in
