@@ -10,6 +10,6 @@ test:
 .PHONY: speedscope-demo
 speedscope-demo:
 	dune build tests/speedscope/example.exe
-	OCAML_LANDMARKS="format=speedscope,output=profile.speedscope,time" \
+	OCAML_LANDMARKS="format=speedscope,output=profile.speedscope.json,time" \
 	  ./_build/default/tests/speedscope/example.exe
-	@echo "👉 Upload profile.speedscope at https://www.speedscope.app/"
+	@echo "👉 Upload profile.speedscope.json at https://www.speedscope.app/"

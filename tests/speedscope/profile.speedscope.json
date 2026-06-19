@@ -1,0 +1,73 @@
+{
+  "$schema": "https://www.speedscope.app/file-format-schema.json",
+  "name": "./example.exe",
+  "exporter": "landmarks",
+  "profiles": [
+    {
+      "type": "sampled",
+      "name": "./example.exe",
+      "unit": "seconds",
+      "startValue": 0.0,
+      "endValue": 0.07841400000000001,
+      "samples": [
+        [ 0 ],
+        [ 0, 1 ],
+        [ 0, 1, 2 ],
+        [ 0, 3 ],
+        [ 0, 3, 4 ],
+        [ 0, 3, 4, 5 ],
+        [ 0, 3, 6 ],
+        [ 0, 7 ]
+      ],
+      "weights": [
+        8.000000000008001e-06, 0.056542, 0.007664, 4.000000000004e-06,
+        1.000000000001e-06, 0.013241000000000003, 0.0005649999999999961,
+        0.00038900000000000046
+      ]
+    }
+  ],
+  "shared": {
+    "frames": [
+      {
+        "name": "Example.main",
+        "file": "tests/speedscope/example.ml",
+        "line": 45
+      },
+      {
+        "name": "Example.prepare",
+        "file": "tests/speedscope/example.ml",
+        "line": 30
+      },
+      {
+        "name": "Example.make_input",
+        "file": "tests/speedscope/example.ml",
+        "line": 27
+      },
+      {
+        "name": "Example.run",
+        "file": "tests/speedscope/example.ml",
+        "line": 38
+      },
+      {
+        "name": "Example.phase_a",
+        "file": "tests/speedscope/example.ml",
+        "line": 33
+      },
+      {
+        "name": "Example.fib",
+        "file": "tests/speedscope/example.ml",
+        "line": 24
+      },
+      {
+        "name": "Example.phase_b",
+        "file": "tests/speedscope/example.ml",
+        "line": 35
+      },
+      {
+        "name": "Example.summarise",
+        "file": "tests/speedscope/example.ml",
+        "line": 42
+      }
+    ]
+  }
+}
