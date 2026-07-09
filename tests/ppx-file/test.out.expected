@@ -1,9 +1,12 @@
-let __generated_landmark__001_ =
-  Landmark.register ~id:"ad0280311b486e71f0c77df82f413e7a"
-    ~location:"test.ml:1" "Test.named"
-and __generated_landmark__002_ =
-  Landmark.register ~id:"94ce63b73c1f78fc2c48c8219b907a5f"
-    ~location:"test.ml:6" "Test.M.h"
+open
+  struct
+    let __generated_landmark__001_ =
+      Landmark.register ~id:"ad0280311b486e71f0c77df82f413e7a"
+        ~location:"test.ml:1" "Test.named"
+    and __generated_landmark__002_ =
+      Landmark.register ~id:"94ce63b73c1f78fc2c48c8219b907a5f"
+        ~location:"test.ml:6" "Test.M.h"
+  end
 let f x = x + 1
 let f __x0 =
   Landmark.enter __generated_landmark__001_;
