@@ -96,8 +96,14 @@ let rec filter_map f = function
       | Some x -> x :: (filter_map f tl)
       | None -> filter_map f tl
 
+let rec normalize_filename fname =
+  if String.starts_with ~prefix:"./" fname then
+    normalize_filename (String.sub fname 2 (String.length fname - 2))
+  else
+    fname
+
 let string_of_loc (l : Location.t) =
-  let file = l.loc_start.pos_fname in
+  let file = normalize_filename l.loc_start.pos_fname in
   let line = l.loc_start.pos_lnum in
   Printf.sprintf "%s:%d" file line
 
@@ -125,8 +131,9 @@ let register_constant_landmark ?id name location =
 let new_landmark landmark_name loc =
   let landmark = Ppxlib.gen_symbol ~prefix:"__generated_landmark" () in
   let landmark_location = string_of_loc loc in
+  let fname = normalize_filename loc.loc_start.pos_fname in
   landmarks_to_register :=
-    (landmark, landmark_name, landmark_location, Digest.to_hex (Digest.string (loc.loc_start.pos_fname^landmark))) :: !landmarks_to_register;
+    (landmark, landmark_name, landmark_location, Digest.to_hex (Digest.string (fname^landmark))) :: !landmarks_to_register;
   landmark
 
 let qualified ctx name = String.concat "." (List.rev (name :: ctx))
