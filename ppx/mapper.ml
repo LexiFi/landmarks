@@ -628,6 +628,9 @@ let toplevel_mapper auto =
                        (register_constant_landmark ~id landmark_name landmark_location))
                     (List.rev !landmarks_to_register))
             in
+            let open_landmarks =
+              Str.open_ (Opn.mk ~loc:first_loc (Mod.structure ~loc:first_loc [landmarks]))
+            in
             match lm with
             | Some lm ->
                 let begin_load =
@@ -640,8 +643,8 @@ let toplevel_mapper auto =
                     [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None)
                        (exit_landmark lm)]
                 in
-                landmarks :: (begin_load :: l @ [exit_load])
+                open_landmarks :: (begin_load :: l @ [exit_load])
             | None ->
-                landmarks :: l
+                open_landmarks :: l
         end
   end
