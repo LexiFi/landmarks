@@ -47,7 +47,14 @@ let error loc code =
   Location.Error.raise (Location.Error.make ~loc ~sub:[]
                           (Printf.sprintf "ppx_landmark: %s" (message code)))
 
+module HashString = Hashtbl.Make(struct
+    type t = string
+    let equal = String.equal
+    let hash = Hashtbl.hash
+  end)
+
 let landmarks_to_register = ref []
+let generated_landmark_ids = HashString.create 17
 
 let has_name key {attr_name = {txt; _}; _} = txt = key
 
@@ -128,12 +135,37 @@ let register_landmark ?id name location =
 let register_constant_landmark ?id name location =
   register_landmark ?id (Exp.constant (Const.string name)) location
 
+let reserve_landmark_id key =
+  let rec reserve collision =
+    let key =
+      if collision = 0 then key
+      else Printf.sprintf "%s:%d" key collision
+    in
+    let id = Digest.to_hex (Digest.string key) in
+    if HashString.mem generated_landmark_ids id then
+      reserve (collision + 1)
+    else begin
+      HashString.add generated_landmark_ids id ();
+      id
+    end
+  in
+  reserve 0
+
+let landmark_id loc =
+  let input_name =
+    normalize_filename !Ocaml_common.Location.input_name
+  in
+  let pos = loc.loc_start in
+  let source_name = normalize_filename pos.pos_fname in
+  reserve_landmark_id
+    (Printf.sprintf "%s:%s:%d" input_name source_name pos.pos_cnum)
+
 let new_landmark landmark_name loc =
   let landmark = Ppxlib.gen_symbol ~prefix:"__generated_landmark" () in
   let landmark_location = string_of_loc loc in
-  let fname = normalize_filename loc.loc_start.pos_fname in
   landmarks_to_register :=
-    (landmark, landmark_name, landmark_location, Digest.to_hex (Digest.string (fname^landmark))) :: !landmarks_to_register;
+    (landmark, landmark_name, landmark_location, landmark_id loc)
+    :: !landmarks_to_register;
   landmark
 
 let qualified ctx name = String.concat "." (List.rev (name :: ctx))
@@ -304,12 +336,6 @@ let rec wrap_landmark_method ctx landmark loc ({pexp_desc; _} as expr) =
   | Pexp_poly (e, typ) ->
       { expr with pexp_desc = Pexp_poly (wrap_landmark_method ctx landmark loc e, typ)}
   | _ -> wrap_landmark ctx landmark loc expr
-
-module HashString = Hashtbl.Make(struct
-    type t = string
-    let equal = String.equal
-    let hash = Hashtbl.hash
-  end)
 
 let eta_expand f t n =
   let tbl = HashString.create (List.length n) in

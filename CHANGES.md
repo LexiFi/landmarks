@@ -1,5 +1,7 @@
 unreleased
 ----------
+* prevent PPX-generated code with clashing source locations from sharing
+  landmark ids (issue #55).
 * prevent opened modules from shadowing PPX-generated landmarks
   (PR #54, @brandonzstride).
 
