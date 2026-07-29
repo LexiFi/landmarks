@@ -1,0 +1,9 @@
+Hello, world!
+
+Landmark reached:
+Module_a.dummy
+Module_b.dummy_eta
+ROOT
+load(module_a)
+load(module_b)
+load(test)

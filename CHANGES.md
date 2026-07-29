@@ -1,3 +1,8 @@
+unreleased
+----------
+* prevent opened modules from shadowing PPX-generated landmarks
+  (PR #54, @brandonzstride).
+
 version 1.7, 19 jun 2026
 ------------------------
 * stabilize PPX-generated landmark ids across OCaml versions, simplify generated code, and stop auto-instrumenting object methods

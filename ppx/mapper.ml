@@ -96,8 +96,14 @@ let rec filter_map f = function
       | Some x -> x :: (filter_map f tl)
       | None -> filter_map f tl
 
+let rec normalize_filename fname =
+  if String.starts_with ~prefix:"./" fname then
+    normalize_filename (String.sub fname 2 (String.length fname - 2))
+  else
+    fname
+
 let string_of_loc (l : Location.t) =
-  let file = l.loc_start.pos_fname in
+  let file = normalize_filename l.loc_start.pos_fname in
   let line = l.loc_start.pos_lnum in
   Printf.sprintf "%s:%d" file line
 
@@ -125,8 +131,9 @@ let register_constant_landmark ?id name location =
 let new_landmark landmark_name loc =
   let landmark = Ppxlib.gen_symbol ~prefix:"__generated_landmark" () in
   let landmark_location = string_of_loc loc in
+  let fname = normalize_filename loc.loc_start.pos_fname in
   landmarks_to_register :=
-    (landmark, landmark_name, landmark_location, Digest.to_hex (Digest.string (loc.loc_start.pos_fname^landmark))) :: !landmarks_to_register;
+    (landmark, landmark_name, landmark_location, Digest.to_hex (Digest.string (fname^landmark))) :: !landmarks_to_register;
   landmark
 
 let qualified ctx name = String.concat "." (List.rev (name :: ctx))
@@ -628,6 +635,9 @@ let toplevel_mapper auto =
                        (register_constant_landmark ~id landmark_name landmark_location))
                     (List.rev !landmarks_to_register))
             in
+            let open_landmarks =
+              Str.open_ (Opn.mk ~loc:first_loc (Mod.structure ~loc:first_loc [landmarks]))
+            in
             match lm with
             | Some lm ->
                 let begin_load =
@@ -640,8 +650,8 @@ let toplevel_mapper auto =
                     [Vb.mk (Pat.construct (mknoloc (Longident.parse "()")) None)
                        (exit_landmark lm)]
                 in
-                landmarks :: (begin_load :: l @ [exit_load])
+                open_landmarks :: (begin_load :: l @ [exit_load])
             | None ->
-                landmarks :: l
+                open_landmarks :: l
         end
   end

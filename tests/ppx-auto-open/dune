@@ -1,0 +1,36 @@
+(library
+ (name module_a)
+ (modules module_a)
+ (preprocess
+  (pps ppx_landmarks --auto)))
+
+(library
+ (name module_b)
+ (modules module_b)
+ (libraries module_a)
+ (preprocess
+  (pps ppx_landmarks --auto)))
+
+(executable
+ (name test)
+ (modules test)
+ (libraries landmark module_b)
+ (preprocess
+  (pps ppx_landmarks --auto)))
+
+(rule
+ (with-stdout-to
+  test.out
+  (ignore-stderr
+   (setenv
+    "OCAML_LANDMARKS"
+    "on"
+    (run ./test.exe)))))
+
+(rule
+ (alias runtest)
+ (package landmarks-ppx)
+ (enabled_if
+  (>= %{ocaml_version} "4.03"))
+ (action
+  (diff test.out.expected test.out)))
