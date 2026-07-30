@@ -1,3 +1,14 @@
 (executable
  (name standalone)
+ (modules standalone)
  (libraries ppxlib ppx_landmarks))
+
+(library
+ (name same_landmark_locations)
+ (modules same_landmark_locations)
+ (libraries ppxlib))
+
+(executable
+ (name generated_locations_standalone)
+ (modules generated_locations_standalone)
+ (libraries ppxlib same_landmark_locations ppx_landmarks))

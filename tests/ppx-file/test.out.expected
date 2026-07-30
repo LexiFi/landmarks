@@ -1,10 +1,10 @@
 open
   struct
     let __generated_landmark__001_ =
-      Landmark.register ~id:"ad0280311b486e71f0c77df82f413e7a"
+      Landmark.register ~id:"7b809a6a9a1acad2798b7677e63deba9"
         ~location:"test.ml:1" "Test.named"
     and __generated_landmark__002_ =
-      Landmark.register ~id:"94ce63b73c1f78fc2c48c8219b907a5f"
+      Landmark.register ~id:"fb6f8fe69fd1dd24262ed28be64893a8"
         ~location:"test.ml:6" "Test.M.h"
   end
 let f x = x + 1

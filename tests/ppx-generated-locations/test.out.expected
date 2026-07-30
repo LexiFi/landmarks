@@ -1,0 +1,25 @@
+open
+  struct
+    let __generated_landmark__001_ =
+      Landmark.register ~id:"2deac6ef5f854c99570c35c873f2ecd0"
+        ~location:"_none_:0" "Test.first"
+    and __generated_landmark__002_ =
+      Landmark.register ~id:"2988ee77e77e96393192da67eac16525"
+        ~location:"_none_:0" "Test.second"
+  end
+let first () = ()
+let first __x0 =
+  Landmark.enter __generated_landmark__001_;
+  (let r =
+     try first __x0
+     with | e -> (Landmark.exit __generated_landmark__001_; Landmark.raise e) in
+   Landmark.exit __generated_landmark__001_; r)[@@ocaml.warning "-32-16"]
+  [@@inline ]
+let second () = ()
+let second __x0 =
+  Landmark.enter __generated_landmark__002_;
+  (let r =
+     try second __x0
+     with | e -> (Landmark.exit __generated_landmark__002_; Landmark.raise e) in
+   Landmark.exit __generated_landmark__002_; r)[@@ocaml.warning "-32-16"]
+  [@@inline ]
